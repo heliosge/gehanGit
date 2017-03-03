@@ -71,10 +71,10 @@ public class LoginNewAction {
 	 */
 	@RequestMapping(value = "pclogin")
 	@ResponseBody
-	public Object login(HttpServletRequest request, HttpServletResponse response, String userName, String password) {
+	public Object login(HttpServletRequest request, HttpServletResponse response, String userName, String passWord) {
 		Map<String,Object> resultMap = new HashMap<String,Object>();
 		try {
-			log.debug("系统登陆 参数信息 UserName: " + userName + "PassWord: " + password);
+			log.debug("系统登陆 参数信息 UserName: " + userName + "PassWord: " + passWord);
 			// TODO:修改companyId
 			// 默认普联企业id
 			Integer companyId = Constant.PULIAN_COMPANY_ID;
@@ -125,8 +125,8 @@ public class LoginNewAction {
 			log.debug("userBean:" + "\n" + userBean);
 			if (null != userBean) {
 				log.debug("\n" + "userBean.getPassword" + userBean.getPassword() + "\n" + "输入密码:"
-						+ CommonUtil.getMD5(password));
-				if (CommonUtil.getMD5(password).equalsIgnoreCase(userBean.getPassword())) {
+						+ CommonUtil.getMD5(passWord));
+				if (CommonUtil.getMD5(passWord).equalsIgnoreCase(userBean.getPassword())) {
 
 					if (!"1".equals(userBean.getStatus().toString())) {
 						resultMap.put("result", "STATUS_FREEZE");
