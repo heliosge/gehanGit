@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KnowledgeContestApplicationDaoMapper" >
+  <resultMap id="KnowledgeContestApplicationBean" type="com.jftt.wifi.bean.KnowledgeContestApplicationBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="contest_id" property="contestId" jdbcType="INTEGER" />
+    <result column="apply_user_id" property="applyUserId" jdbcType="INTEGER" />
+    <result column="apply_time" property="applyTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="approval_status" property="approvalStatus" jdbcType="INTEGER" />
+    <result column="refuse_reason" property="refuseReason" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, contest_id, apply_user_id, apply_time, update_time, approval_status, refuse_reason
+  </sql>
+  <!-- chenrui start -->
+  <select id="getById" resultMap="KnowledgeContestApplicationBean">
+  	select 
+  	<include refid="Base_Column_List"></include>
+  	from knowledge_contest_application kca
+  	where kca.id=#{id}
+  </select>
+  <!-- 获取我的报名信息 -->
+  <sql id="where_getMyApplications">
+  	<if test="megagameName!=null and megagameName!=''">
+  		and kcc.name like CONCAT('%',#{megagameName},'%')
+  	</if>
+  	
+  	<if test="status!=null and status!=0">
+  		and kca.approval_status=#{status}
+  	</if>
+  	
+  	<if test="startTime!=null and startTime!=''">
+  		and DATE_FORMAT(kca.apply_time, '%Y-%m-%d %H:%i')&gt;#{startTime}
+  	</if>
+  	<if test="endTime!=null and endTime!=''">
+  		and DATE_FORMAT(kca.apply_time, '%Y-%m-%d %H:%i')&lt;#{endTime}
+  	</if>
+  	
+  </sql>
+  <select id="getMyApplicationsCount" resultType="int">
+  	select count(1) from knowledge_contest_application kca
+	left join knowledge_contest_contest kcc on(kca.contest_id=kcc.id)
+	where kca.apply_user_id=#{userId}
+	<include refid="where_getMyApplications"></include>
+  </select>
+  <!-- 获取我的报名列表 -->
+  <select id="getMyApplications" resultType="com.jftt.wifi.bean.vo.MyApplicationsReturnVo">
+  	select kcc.id megagameId,kcc.name,kcc.create_time createTime,kca.id,kca.contest_id contestId,kca.apply_user_id applyUserId,
+  	kca.apply_time applyTime,kca.update_time updateTime,kca.approval_status approvalStatus,
+  	kca.refuse_reason refuseReason from knowledge_contest_application kca
+	left join knowledge_contest_contest kcc on(kca.contest_id=kcc.id)
+	where kca.apply_user_id=#{userId}
+	<include refid="where_getMyApplications"></include>
+	limit ${fromNum},${pageSize}
+  </select>
+  <!-- 判断当前用户是否已报名 -->
+  <select id="isApply" resultMap="KnowledgeContestApplicationBean">
+  	select kca.* from knowledge_contest_application kca
+  	where kca.contest_id=#{megagameId} and kca.apply_user_id=#{userId}
+  </select>
+  
+  <!-- 报名 -->
+  
+  <insert id="doApply">
+  	insert into knowledge_contest_application(contest_id, apply_user_id, apply_time, approval_status)
+  	values(#{megagameId},#{userId},now(),1)
+  </insert>
+  
+  <update id="updateApply">
+  	update knowledge_contest_application set approval_status = 1,apply_time=now()
+  	where apply_user_id=#{userId} and contest_id=#{megagameId} 
+  </update>
+  <!-- 验证报名是否通过审核 -->
+  <select id="checkJoinQualification" resultType="int">
+  	select count(0) from knowledge_contest_application kca
+  	where kca.contest_id=#{megagameId} and kca.apply_user_id=#{userId} and kca.approval_status=2
+  </select>
+  <!-- chenrui end -->
+  
+  <!-- wangyifeng begin -->
+  <update id="approve">
+    update knowledge_contest_application
+    <set>
+        <if test="approvalStatus">approval_status = #{approvalStatus},</if>
+        <if test="refuseReason">refuse_reason = #{refuseReason},</if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <delete id="realDeleteApplication">
+    delete from knowledge_contest_application
+    where id = #{id}
+  </delete>
+  
+  <resultMap type="com.jftt.wifi.bean.knowledge_contest.ContestApplicationListItemVo" id="contestApplicationListItemVoMap">
+	<id property="id" column="id"/>
+	<result property="contestId" column="contest_id"/>
+	<result property="contestName" column="contest_name"/>
+	<result property="contestCreateTime" column="contest_create_time"/>
+	<result property="userId" column="user_id"/>
+	<result property="applyTime" column="apply_time"/>
+	<result property="approvalStatus" column="approval_status"/>
+  </resultMap>
+  
+  <sql id="where_getAppliationVoList">
+      <where>
+		<if test="companyId != null">and kcc.company_id = #{companyId}</if>
+		<if test="subCompanyId != null">and kcc.sub_company_id = #{subCompanyId}</if>
+		<if test="contestName != null">and kcc.name like concat('%', #{contestName}, '%')</if>
+		<!-- <if test="userId != null">and kca.apply_user_id = #{userId}</if> -->
+		<if test="userList!=null and userList.size>0">
+			And kca.apply_user_id in
+			<foreach collection="userList" item="user" open="(" close=")"
+				separator=",">
+				#{user.id}
+			</foreach>
+		</if>
+		<!-- Skip userName, related process will be done in Java side. -->
+		<if test="approvalStatus != null and approvalStatus != 0">and kca.approval_status = #{approvalStatus}</if>
+		<if test="applyTimeBegin != null and applyTimeBegin != '' ">and  DATE_FORMAT(kca.apply_time, '%Y-%m-%d') &gt;= #{applyTimeBegin}</if>
+		<if test="applyTimeEnd != null and applyTimeEnd != '' ">and  DATE_FORMAT(kca.apply_time, '%Y-%m-%d') &lt;= #{applyTimeEnd}</if>
+      </where>
+  </sql>
+
+  <sql id="limit_pagination">
+      <if test="offset != null and pageSize != null">
+          limit #{offset}, #{pageSize}
+      </if>
+  </sql>
+  
+  <select id="getAppliationVoList" resultMap="contestApplicationListItemVoMap">
+    select
+        kca.id, kca.contest_id, kcc.name contest_name,
+        DATE_FORMAT(kcc.create_time, '%Y-%m-%d %H:%i:%S') contest_create_time, kca.apply_user_id user_id,
+        DATE_FORMAT(kca.apply_time, '%Y-%m-%d %H:%i:%S') apply_time, kca.approval_status
+    from
+        knowledge_contest_application kca
+        left join knowledge_contest_contest kcc on kca.contest_id = kcc.id
+    <include refid="where_getAppliationVoList"/>
+    order by kca.apply_time desc
+    <include refid="limit_pagination"/>
+  </select>
+  
+  <select id="getAppliationTotalCount" resultType="Integer">
+    select
+        count(1)
+    from
+        knowledge_contest_application kca
+        left join knowledge_contest_contest kcc on kca.contest_id = kcc.id
+    <include refid="where_getAppliationVoList"/>
+  </select>
+  <!-- wangyifeng end -->
+</mapper>

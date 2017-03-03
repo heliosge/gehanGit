@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.CertificateDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.CertificateBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="theory_score" property="theoryScore" jdbcType="DECIMAL" />
+    <result column="operate_score" property="operateScore" jdbcType="DECIMAL" />
+    <result column="send_date" property="sendDate" jdbcType="TIMESTAMP" />
+    <result column="first_check_date" property="firstCheckDate" jdbcType="TIMESTAMP" />
+    <result column="second_check_date" property="secondCheckDate" jdbcType="TIMESTAMP" />
+    <result column="check_status" property="checkStatus" jdbcType="INTEGER" />
+    <result column="train_style" property="trainStyle" jdbcType="VARCHAR" />
+    <result column="train_agency_level" property="trainAgencyLevel" jdbcType="INTEGER" />
+    <result column="train_agency" property="trainAgency" jdbcType="VARCHAR" />
+    <result column="send_agency" property="sendAgency" jdbcType="VARCHAR" />
+    <result column="front_img" property="frontImg" jdbcType="VARCHAR" />
+    <result column="front_img_size" property="frontImgSize" jdbcType="VARCHAR" />
+    <result column="change_date" property="changeDate" jdbcType="TIMESTAMP" />
+    <result column="descr" property="descr" jdbcType="VARCHAR" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="receive_user_id" property="receiveUserId" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  
+  <sql id="certificateWhere">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="name != null and name != '' ">
+				AND name like CONCAT('%', #{name}, '%')
+			</if>
+			<if test="id != null and id != '' ">
+				AND id = #{id}
+			</if>
+			<if test="companyId != null and companyId != '' ">
+				AND company_id = #{companyId}
+			</if>
+			<if test="subCompanyId != null and subCompanyId != '' ">
+				AND sub_company_id = #{subCompanyId}
+			</if>
+			<if test="receiveUserId != null and receiveUserId != ''">
+				AND  receive_user_id = #{receiveUserId}
+			</if>
+		</trim>
+	</sql>
+  
+  <select id="selectCertificate" resultMap="BaseResultMap">
+    select 
+    id, name, theory_score, DATE_FORMAT(send_date,'%Y-%m-%d') send_date,DATE_FORMAT(first_check_date,'%Y-%m-%d')  first_check_date, receive_user_id, operate_score,
+    DATE_FORMAT(second_check_date,'%Y-%m-%d') second_check_date, check_status, train_style, train_agency_level, train_agency, DATE_FORMAT(change_date,'%Y-%m-%d') change_date, 
+    descr, company_id, sub_company_id, send_agency, front_img, front_img_size
+    from cer_certificate
+    <include refid="certificateWhere" />
+    order by create_time desc
+  </select>
+  
+    <select id="selectCertificateCount" resultType="int">
+    select count(1)
+    from cer_certificate
+    <include refid="certificateWhere" />
+  </select>
+  
+  <delete id="deleteCertificate" parameterType="java.lang.Integer" >
+    delete from cer_certificate
+    where id = #{id}
+  </delete>
+  
+  <insert id="insertCertificate" parameterType="com.jftt.wifi.bean.CertificateBean" >
+    insert into cer_certificate (name, theory_score, operate_score,front_img,front_img_size,
+      send_date, first_check_date, second_check_date, 
+      check_status, train_style, train_agency_level, 
+      train_agency, change_date, descr, send_agency,
+      company_id, sub_company_id, receive_user_id)
+    values (#{name}, #{theoryScore},#{operateScore},  #{frontImg}, #{frontImgSize},
+      #{sendDate}, #{firstCheckDate}, #{secondCheckDate},
+      #{checkStatus}, #{trainStyle}, #{trainAgencyLevel}, 
+      #{trainAgency}, #{changeDate}, #{descr}, #{sendAgency},
+      #{companyId}, #{subCompanyId}, #{receiveUserId})
+  </insert>
+  
+  <update id="updateCertificate" parameterType="com.jftt.wifi.bean.CertificateBean" >
+    update cer_certificate
+    set name = #{name},
+      theory_score = #{theoryScore},
+      operate_score = #{operateScore},
+      send_date = #{sendDate},
+      first_check_date = #{firstCheckDate},
+      second_check_date = #{secondCheckDate},
+      check_status = #{checkStatus},
+      train_style = #{trainStyle},
+      train_agency_level = #{trainAgencyLevel},
+      train_agency = #{trainAgency},
+      send_agency = #{sendAgency},
+      change_date = #{changeDate},
+      descr = #{descr},
+      front_img = #{frontImg},
+      front_img_size = #{frontImgSize},
+      receive_user_id = #{receiveUserId}
+    where id = #{id}
+  </update>
+</mapper>

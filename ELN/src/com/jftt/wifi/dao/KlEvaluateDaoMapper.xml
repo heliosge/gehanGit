@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KlEvaluateDaoMapper">
+	<resultMap id="KlEvaluateBean" type="com.jftt.wifi.bean.KlEvaluateBean">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="resource_id" property="resourceId" jdbcType="INTEGER" />
+		<result column="from_user_id" property="fromUserId" jdbcType="INTEGER" />
+		<result column="score_level" property="scoreLevel" jdbcType="INTEGER" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="evaluate_content" property="evaluateContent" jdbcType="VARCHAR" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<!-- chenrui start -->
+	<sql id="Base_Column_List">
+		id, resource_id, from_user_id, score_level, create_time, evaluate_content, update_time
+	</sql>
+
+	<select id="getById" resultMap="KlEvaluateBean">
+		select
+		<include refid="Base_Column_List"></include>
+		from kl_evaluate ke
+		where ke.id=#{id}
+	</select>
+	
+	<!-- 给知识点评 -->
+	<insert id="giveEvaluate">
+		insert into kl_evaluate(resource_id,from_user_id,score_level,create_time,evaluate_content)
+		values(#{resourceId},#{fromUserId},#{scoreLevel},now(),#{evaluateContent})
+	</insert>
+	<!-- 获取对应知识资源的所有评价信息 -->
+	<select id="getEvaluates" resultMap="KlEvaluateBean">
+		select <include refid="Base_Column_List"></include>
+		from kl_evaluate ke
+		where ke.resource_id=#{knowledgeId}
+		order by ke.create_time desc
+	</select>
+	<!-- 判断是否已评价 -->
+	<select id="judgeEvaluate" resultType="int">
+		select count(1) from kl_evaluate ke
+		where ke.resource_id=#{knowledgeId} and ke.from_user_id=#{userId}
+ 	</select>
+	<!-- chenrui end -->
+</mapper>

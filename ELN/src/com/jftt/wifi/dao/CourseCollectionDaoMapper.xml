@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseCollectionDaoMapper">
+
+    <resultMap type="com.jftt.wifi.bean.CourseCollectionBean" id="CourseCollectionBeanMap">
+        <id property="id" column="id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="collectTime" column="collect_time"/>
+        <result property="companyId" column="company_id"/>
+        <result property="name" column="name"/>
+        <result property="frontImage" column="front_image"/>
+        <result property="averageScore" column="average_score"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.ResCourseVo" id="ResCourseVoMap">
+    	<id property="id" column="id"/>
+    	<result property="name" column="name"/>
+    	<result property="frontImage" column="front_image"/>
+    	<result property="averageScore" column="average_score"/>
+    	<result property="evaluatorNum" column="evaluator_num"/>
+    	<result property="studentNum" column="student_num"/>
+    </resultMap>
+    
+    <!-- 根据id查询课程收藏 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="CourseCollectionBeanMap">
+        select * from course_collection where id = #{id}
+    </select>
+    <!--查询条件 -->
+    <sql id="Where_Clause">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="userId != null and userId != '' ">
+			   <![CDATA[   AND a.user_id = #{userId}]]> 
+			</if>
+			<if test="name != null and name != '' ">
+			   <![CDATA[   AND b.name like '%#{name}%']]> 
+			</if>
+			<if test="createTimeStart != null and createTimeStart != '' ">
+				<![CDATA[  AND a.collect_time >= #{createTimeStart}]]> 
+			</if>
+			<if test="createTimeEnd != null and createTimeEnd != '' ">
+				<![CDATA[  AND a.collect_time <= #{createTimeEnd}]]>
+			</if>
+		</trim>
+	</sql>
+	<!--根据条件查询我的课程收藏-->
+	<select id="queryMyCollectionByCondition" parameterType="com.jftt.wifi.bean.CourseCollectionBean" resultMap="CourseCollectionBeanMap">
+        SELECT
+		a.collect_time,
+		a.course_id,
+		a.id,
+		a.user_id,
+		a.company_id,
+		b.front_image,
+		b.name,
+		(SELECT ROUND(IfNULL(AVG(c.score), 0))FROM course_evaluation AS c where c.course_id=a.course_id) AS average_score
+		FROM
+			course_collection AS a 
+		INNER JOIN res_course AS b ON a.course_id = b.id
+		<include refid="Where_Clause" />
+		ORDER BY a.${sort} ${order}   
+		limit ${pageStartSize}, ${pageSize}
+    </select>
+    <!--根据条件查询我的课程收藏总数-->
+	<select id="countByCondition" parameterType="com.jftt.wifi.bean.CourseCollectionBean" resultType="java.lang.Integer">
+        SELECT 
+		   count(*) 
+		FROM 
+			course_collection AS a 
+		INNER JOIN res_course AS b ON a.course_id = b.id  
+		<include refid="Where_Clause" />
+    </select>
+    <!--添加收藏-->
+    <insert id="addMyCollection" parameterType="com.jftt.wifi.bean.CourseCollectionBean">
+	    insert into course_collection (course_id,user_id,company_id,sub_company_id,collect_time,update_time)
+	    values 
+	    (#{courseId},#{userId},#{companyId},#{subCompanyId},#{collectTime},#{updateTime})
+    </insert>
+    <!-- 删除收藏 -->
+	<delete id="delMyCollection" parameterType="java.lang.Long">
+		delete from course_collection where id = ${id}
+	</delete>
+	
+	<!-- shenhaijun start -->
+	
+	<!-- 获取收藏课程的数量 -->
+	<select id="getCollectCoursesCount" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(rc.id)) 
+		  FROM course_collection cc JOIN res_course rc ON cc.course_id = rc.id 
+		  WHERE cc.user_id = #{userId} AND rc.status = 2 
+		  <trim>
+		  	<if test="courseName != null and courseName != '' ">
+		  		AND rc.name LIKE CONCAT('%',#{courseName},'%') 
+		  	</if>
+		  	<if test="collectTimeStartDate != null">
+		  		AND cc.collect_time &gt;= #{collectTimeStartDate} 
+		  	</if>
+		  	<if test="collectTimeEndDate != null">
+		  		AND cc.collect_time &lt;= #{collectTimeEndDate} 
+		  	</if>
+		  </trim>
+	</select>
+	
+	<!-- 获取收藏的课程 -->
+	<select id="getCollectCourses" resultMap="ResCourseVoMap">
+		SELECT DISTINCT rc.id,rc.name,rc.front_image,
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num 
+		  FROM course_collection cc JOIN res_course rc ON cc.course_id = rc.id 
+		  WHERE cc.user_id = #{userId} AND rc.status = 2
+		  <trim>
+		  	<if test="courseName != null and courseName != '' ">
+		  		AND rc.name LIKE CONCAT('%',#{courseName},'%') 
+		  	</if>
+		  	<if test="collectTimeStartDate != null">
+		  		AND cc.collect_time &gt;= #{collectTimeStartDate} 
+		  	</if>
+		  	<if test="collectTimeEndDate != null">
+		  		AND cc.collect_time &lt;= #{collectTimeEndDate} 
+		  	</if>
+		  </trim>
+		  ORDER BY ${sortName} ${sortOrder} 
+		  LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 取消收藏该课程 -->
+	<delete id="deleteCollection">
+		DELETE FROM course_collection 
+		  WHERE id = 
+		  	(SELECT a.id FROM 
+		      (SELECT id FROM course_collection WHERE user_id = #{userId} AND course_id = #{courseId} LIMIT 0,1) a)
+	</delete>
+	
+	
+	<!-- 取消所有收藏课程 -->
+	<delete id="deleteAllCollection">
+		DELETE FROM course_collection 
+		  WHERE id in 
+		      (select a.id from (SELECT id FROM course_collection WHERE user_id = #{userId}) a)
+	</delete>
+	<!-- 判断该课程是否被收藏 -->
+	<select id="getIsCourseCollection" resultType="java.lang.Integer">
+		SELECT COUNT(id) 
+		  FROM course_collection 
+		  WHERE course_id = #{courseId} AND user_id = #{userId} 
+	</select>
+	
+	<!-- shenhaijun end -->
+	
+</mapper>

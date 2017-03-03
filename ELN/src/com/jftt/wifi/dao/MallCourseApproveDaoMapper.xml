@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MallCourseApproveDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.MallCourseApproveBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="course_id" property="courseId" jdbcType="INTEGER" />
+    <result column="check_user_id" property="checkUserId" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="reason" property="reason" jdbcType="VARCHAR" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+  </resultMap>
+    
+    <resultMap id="MallCourseApproveVoMap" type="com.jftt.wifi.bean.vo.MallCourseApproveVo" >
+     <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="course_id" property="courseId" jdbcType="INTEGER" />
+    <result column="check_user_id" property="checkUserId" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="reason" property="reason" jdbcType="VARCHAR" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="cheap_price" property="cheapPrice" jdbcType="DECIMAL" />
+    
+  </resultMap>
+  
+ 
+  
+   <!-- zhangbocheng start -->
+   
+   
+       <sql id="whereConditions">
+        <trim>
+            <if test="companyId !=null  ">
+              AND c.company_id = #{companyId}
+            </if>
+            <if test="code != null and code != '' ">
+            	  AND c.code like CONCAT('%', #{code}, '%')
+            </if>
+            <if test="name != null and name != '' ">
+            	  AND c.name like CONCAT('%', #{name}, '%')
+            </if>
+            <if test="beginTime != null and beginTime!=''  ">
+            	  AND a.create_time >= #{beginTime}
+            </if>
+            <if test="endTime != null and  endTime!='' ">
+                <![CDATA[  AND a.create_time <= #{endTime}]]>
+            	  
+            </if>
+  
+           <if test="status!= null  ">
+            	  AND a.status = #{status} 
+            </if>
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+              <if test="categoryIds != null and categoryIds != ''">
+            	and b.category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+        </trim>
+    </sql>
+    
+    
+    <select id="getById" resultMap="BaseResultMap">
+    select * from mall_course_approve where id = #{id}
+    </select>
+    <select id="getDetailById"  resultMap="MallCourseApproveVoMap">
+    select a.*, c.code,c.name,c.front_image coverImage,c.outline,c.company_id companyId,c.sub_company_id subCompanyId,
+           DATE_FORMAT(c.create_time, '%Y-%m-%d %H:%i') createTime ,
+           DATE_FORMAT(c.update_time, '%Y-%m-%d %H:%i') updateTime,
+           d.name categoryNames
+     from mall_course_approve a
+     left join mall_course b on a.course_id = b.id
+     left join res_course c on c.id = b.course_id
+     left join mall_course_category d on b.category_id = d.id
+      where a.id = #{id}
+    </select>
+       <select id="getDetailListById"  resultMap="MallCourseApproveVoMap">
+    select a.id,a.course_id,a.create_user_id,a.check_user_id,a.reason,a.status,b.price,b.cheap_price cheapPrice, c.code,c.name,c.front_image coverImage,c.outline,c.company_id companyId,c.sub_company_id subCompanyId,
+           DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i') createTime ,
+           d.name categoryNames,e.name companyName
+     from mall_course_approve a
+     left join mall_course b on a.course_id = b.id
+     left join res_course c on c.id = b.course_id
+     left join mall_course_category d on b.category_id = d.id
+     left join manage_company e on e.id = c.company_id
+      where a.is_delete = 0 and a.course_id = (select course_id from mall_course_approve where id=#{id})
+    </select>
+    
+    
+    <select id="checkMallCourseApprove" resultType="Integer" parameterType="com.jftt.wifi.bean.MallCourseApproveBean">
+    select count(0) from mall_course_approve 
+    where is_delete = 0 and course_id = #{courseId} and status = 0
+    </select>
+ 
+      <!-- 新建-->
+     <insert id="insertMallCourseApprove" parameterType="com.jftt.wifi.bean.MallCourseApproveBean" useGeneratedKeys="true" keyProperty="id">
+     	insert into mall_course_approve(
+     		 course_id,create_user_id,create_time,update_time,status,is_delete
+     	)values(
+     		#{courseId},#{createUserId},now(),now(),
+              0,0
+     	)
+     </insert>
+     
+     <!-- 修改-->
+     <update id="updateMallCourseApprove" parameterType="com.jftt.wifi.bean.MallCourseApproveBean">
+     	update mall_course_approve
+     	set
+     	<if test="courseId!=null">
+     	course_id =#{courseId},
+     	</if>
+     	<if test="createUserId!=null">
+     	create_user_id =#{createUserId},
+     	</if>
+     
+     	<if test="status!=null">
+     	status =#{status},
+     	</if>
+        update_time=now(),
+     	is_delete = 0
+     	    
+     	where id = #{id}
+     </update>
+     
+       <!-- 删除 -->
+     <update id="deleteMallCourseApprove" >
+     	update mall_course_approve
+     	set is_delete = 1
+     	where id = #{id}
+     </update>
+     
+     <!-- 查询 -->
+     <select id="selectMallCourseApproveList" parameterType="com.jftt.wifi.bean.vo.MallCourseApproveVo" resultMap="MallCourseApproveVoMap">
+      select a.id,a.course_id,a.create_user_id,a.status,a.check_user_id,a.reason,a.is_delete,
+             DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i') createTime ,
+             DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i') updateTime,
+             b.price,b.cheap_price cheapPrice,b.is_copy isCopy,b.copy_course_id copyCourseId,
+             c.code,c.name,c.front_image coverImage,c.outline,c.company_id companyId,c.sub_company_id subCompanyId,
+             d.name categoryNames
+       from mall_course_approve a
+       left join mall_course b on a.course_id = b.id
+       left join res_course c on c.id = b.course_id
+       left join mall_course_category d on b.category_id = d.id
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      order by a.id desc
+      <if test="pageIndex!=null and pageSize!=null">
+      limit #{pageIndex},#{pageSize}
+      </if>
+     </select>
+     
+     
+      <select id="selectMallCourseApproveCount" parameterType="com.jftt.wifi.bean.vo.MallCourseApproveVo" resultType="Integer">
+      select count(0)
+      from mall_course_approve a
+       left join mall_course b on a.course_id = b.id
+       left join res_course c on c.id = b.course_id
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      
+     </select>
+     
+     <!-- 审核 -->
+      <update id="doCheck" parameterType="com.jftt.wifi.bean.MallCourseApproveBean">
+        update mall_course_approve
+     	set status = #{status} ,
+     	<if test="reason!=null and reason!=''">
+     	reason=#{reason},
+     	</if>
+     	
+     	update_time=now(),
+     	check_user_id =#{checkUserId}
+     	where id = #{id}
+     </update>
+   
+   
+   <!-- zhangbocheng end -->
+  
+</mapper>

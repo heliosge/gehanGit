@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KnowledgeContestNewsDaoMapper">
+	<resultMap id="KnowledgeContestNewsBean" type="com.jftt.wifi.bean.KnowledgeContestNewsBean">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="contest_id" property="contestId" jdbcType="INTEGER" />
+		<result column="is_published" property="isPublished" jdbcType="INTEGER" />
+		<result column="title" property="title" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="publish_time" property="publishTime" jdbcType="TIMESTAMP" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+		<result column="is_deleted" property="isDeleted" jdbcType="INTEGER" />
+		<result column="content" property="content" jdbcType="LONGVARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, contest_id, is_published, title, create_time, publish_time,
+		update_time, is_deleted,content
+	</sql>
+	<select id="getById" resultMap="KnowledgeContestNewsBean">
+		select
+		<include refid="Base_Column_List" />
+		from knowledge_contest_news kcn
+		where kcn.id = #{id}
+	</select>
+	<!-- chenrui start -->
+	
+	<!-- 获取大赛资讯列表 -->
+	<sql id="SQL_getMatchMessageList">
+		from knowledge_contest_news kcn where kcn.contest_id=#{megagameId} and kcn.is_published=1
+	</sql>
+	<select id="getMatchMessageList" resultMap="KnowledgeContestNewsBean">
+		select  
+		<include refid="Base_Column_List" />
+		<include refid="SQL_getMatchMessageList" />
+		order by kcn.publish_time desc
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getMatchMessageListCount" resultType="int">
+		select count(kcn.id)
+		<include refid="SQL_getMatchMessageList" />
+	</select>
+	<!-- chenrui end -->
+	
+	<!-- wangyifeng begin -->
+	<insert id="addNews" useGeneratedKeys="true" keyProperty="id">
+		insert into knowledge_contest_news
+		(contest_id, is_published, title, content,
+		create_time, update_time, is_deleted)
+		values
+		(#{contestId}, 0, #{title}, #{content},
+		now(), now(), 0)
+	</insert>
+	
+	<update id="deleteNews">
+		update knowledge_contest_news
+		set is_deleted = 1
+		where id = #{id}
+	</update>
+	
+	<update id="modifyNews">
+	   update knowledge_contest_news
+	   <set>
+	       <if test="title != null">title = #{title},</if>
+           <if test="content != null">content = #{content},</if>
+	   </set>
+	   where id = #{id}
+	</update>
+    
+    <update id="publishNews">
+       update knowledge_contest_news
+       set is_published = 1,publish_time=now()
+       where id = #{id}
+    </update>
+    
+    <resultMap type="com.jftt.wifi.bean.KnowledgeContestNewsBean" id="knowledgeContestNewsMap">
+		<id property="id" column="id" />
+		<result property="contestId" column="contest_id" />
+		<result property="isPublished" column="is_published" />
+		<result property="title" column="title" />
+		<result property="content" column="content" />
+		<result property="createTime" column="create_time" />
+		<result property="publishTime" column="publish_time" />
+		<result property="updateTime" column="update_time" />
+		<result property="isDeleted" column="is_deleted" />
+    </resultMap>
+    
+    <select id="getNews" resultMap="knowledgeContestNewsMap">
+        select *
+        from knowledge_contest_news
+        where id = #{id}
+    </select>
+    
+    <resultMap type="com.jftt.wifi.bean.knowledge_contest.ContestNewsListItemVo" id="contestNewsListItemVoMap">
+        <id property="id" column="id" />
+        <result property="title" column="title" />
+        <result property="createTime" column="create_time" />
+        <result property="isPublished" column="is_published" />
+    </resultMap>
+    
+    <sql id="where_getNewsVolist">
+    	where is_deleted=0
+            <if test="title != null and title != ''"> and title like CONCAT('%', #{title}, '%')</if>
+            <if test="createTimeBegin != null and createTimeBegin!=''">and DATE_FORMAT(create_time,'%Y-%m-%d %H:%i') &gt;= #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd!=''">and DATE_FORMAT(create_time,'%Y-%m-%d %H:%i') &lt;= #{createTimeEnd}</if>
+            <if test="contestId != null and contestId!=''">and contest_id = #{contestId}</if>
+    </sql>
+
+    <sql id="limit_pagination">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <select id="getNewsVoList" resultMap="contestNewsListItemVoMap">
+        select id, title, create_time createTime, is_published isPublished
+        from knowledge_contest_news
+        <include refid="where_getNewsVolist" />
+        order by create_time desc
+        <include refid="limit_pagination" />
+    </select>
+    
+    <select id="getNewsTotalCount" resultType="Integer">
+        select count(1)
+        from knowledge_contest_news
+        <include refid="where_getNewsVolist" />
+    </select>
+	<!-- wangyifeng end -->
+	
+	<!--zhangchen start  -->
+		<insert id="addAndPublishNews">
+			insert into knowledge_contest_news
+			(contest_id, is_published, title, content,
+			create_time,publish_time,update_time, is_deleted)
+			values
+			(#{contestId}, 1, #{title}, #{content},
+			now(),now(),now(), 0)
+		</insert>
+	<!--zhangchen end  -->
+</mapper>

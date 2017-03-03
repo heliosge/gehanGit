@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManageGroupStudentDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.ManageGroupStudentBean" id="ManageGroupStudentBeanMap">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="status" column="status"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    
+    <!-- 根据id查询群组学员关系 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="ManageGroupStudentBeanMap">
+        select * from manage_group_student where id = #{id}
+    </select>
+    
+    <!--zhangchen start  -->
+    <!--根据群组ID查询用户ID  -->
+    <select id="selectUserIdByGroupId" resultType="String" parameterType="int">
+    	select GROUP_CONCAT(student_id) from manage_group_student 
+    	where group_id = #{groupId}
+    	and status = 1
+    </select>
+    <!--zhangchen end  -->
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 查询审核未通过的群组成员 -->
+    <select id="getUnpassedMember" resultMap="ManageGroupStudentBeanMap">
+    	SELECT * FROM manage_group_student 
+    	  WHERE group_id = #{groupId} AND student_id = #{studentId} AND status = 3 
+    </select>
+    
+    <!-- 更新用户的群组加入信息 -->
+    <update id="updateMember" parameterType="com.jftt.wifi.bean.ManageGroupStudentBean">
+    	UPDATE manage_group_student 
+    	<set>
+    		<if test="status != null">
+    			status = #{status},
+    		</if>
+    	</set>
+    	WHERE id = #{id} 
+    </update>
+    
+    <!-- 查询用户所在群组id列表 -->
+    <select id="getGroupIdsByUserId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+    	SELECT mgs.group_id 
+    	  FROM manage_group_student mgs 
+    	  WHERE mgs.student_id = #{userId} AND mgs.status = 1 
+    </select>
+    
+    <!-- 根据群组id和用户id查询数量 -->
+    <select id="getCountByGroupIdUserId" resultType="java.lang.Integer">
+    	SELECT COUNT(id) 
+    	FROM manage_group_user 
+    	WHERE group_id = #{groupId} AND student_id = #{userId} AND status = 1 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+</mapper>

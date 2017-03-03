@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.BaseMetaDaoMapper">
+
+	<resultMap id="BaseMetaBean" type="com.jftt.wifi.bean.BaseMetaBean">
+		<id property="id" column="id"/>
+		<result property="parentId" column="parent_id"/>
+		<result property="metaKey" column="meta_key"/>
+		<result property="metaValue" column="meta_value"/>
+		<result property="descr" column="descr"/>
+		<result property="orderIndex" column="order_index"/>
+		<result property="deleteFlag" column="delete_flag"/>
+	</resultMap>
+	
+	<resultMap id="BaseMetaBean2" type="com.jftt.wifi.bean.BaseMetaBean">
+		<id property="id" column="id"/>
+		<result property="parentId" column="parent_id"/>
+		<result property="metaKey" column="meta_key"/>
+		<result property="metaValue" column="meta_value"/>
+		<result property="descr" column="descr"/>
+		<result property="orderIndex" column="order_index"/>
+		<result property="deleteFlag" column="delete_flag"/>
+		<association property="metaList" column="{parentId=id}" select="getMeta"  />
+	</resultMap>
+	
+	<sql id="baseMetaBean_property">
+		id,
+		parent_id,
+		meta_key,
+		meta_value,
+		descr,
+		order_index,
+		delete_flag
+	</sql>
+	
+	<sql id="baseMetaBean_where">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="id !=null and id !=0 ">
+				AND id = #{id, jdbcType=NUMERIC}
+			</if>
+			<if test="parentId !=null and parentId !=0 ">
+				AND parent_id = #{parentId, jdbcType=NUMERIC}
+			</if>
+			<if test="metaKey !=null and metaKey !='' ">
+				AND meta_key = #{metaKey}
+			</if>
+			<if test="deleteFlag != null">
+				AND delete_flag = #{deleteFlag, jdbcType=NUMERIC}
+			</if>
+		</trim>
+	</sql>
+	
+	<!-- 获取元数据 -->
+	<select id="getMeta" parameterType="com.jftt.wifi.bean.BaseMetaBean" resultMap="BaseMetaBean2">
+		select
+		<include refid="baseMetaBean_property"/>
+		from nh_base_meta
+		<include refid="baseMetaBean_where"/>
+	</select>
+	
+	<!-- 获取所以元数据 -->
+	<select id="getAllBaseMeta" resultMap="BaseMetaBean">
+		select
+			<include refid="baseMetaBean_property"/>
+		from 
+			nh_base_meta
+		where
+			delete_flag = 0
+	</select>
+	
+	<!-- 增加元数据 -->
+	<insert id="addMeta" parameterType="com.jftt.wifi.bean.BaseMetaBean" useGeneratedKeys="true" keyProperty="id">
+		insert into nh_base_meta(parent_id, meta_key, meta_value, descr, order_index, delete_flag)
+		values(#{parentId, jdbcType=NUMERIC}, #{metaKey, jdbcType=VARCHAR}, #{metaValue, jdbcType=VARCHAR},
+			   #{descr, jdbcType=VARCHAR}, #{orderIndex, jdbcType=NUMERIC}, #{deleteFlag, jdbcType=NUMERIC})
+	</insert>
+	
+	<!-- 修改元数据 -->
+	<update id="updateMeta" parameterType="com.jftt.wifi.bean.BaseMetaBean">
+		update nh_base_meta
+		<set>
+			<if test="metaValue !=null ">
+				meta_value = #{metaValue},
+			</if>
+			<if test="descr !=null ">
+				descr = #{descr},
+			</if>
+			<if test="deleteFlag != null">
+				delete_flag = #{deleteFlag, jdbcType=NUMERIC},
+			</if>
+		</set>
+		where
+			id = #{id, jdbcType=NUMERIC}
+	</update>
+	
+	<select id="getTeseByLouPan" resultMap="BaseMetaBean" parameterType="map">
+		select b.* from nh_base_meta b,nh_loupan_tese lt where lt.tese=b.id and lt.loupan=#{loupan_id}
+	</select>
+	
+	<select id="findValueByID" parameterType="long" resultType="String">
+		select meta_value from nh_base_meta where id=#{id}
+	</select>
+	
+	<select id="getIdByNameAndKey" parameterType="String" resultType="String">
+		select id from nh_base_meta where meta_value=#{name, jdbcType=VARCHAR} and meta_key=#{key, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getValueByKey" resultType="String">
+		select meta_value from nh_base_meta where meta_key=#{key} and delete_flag = 0
+	</select>
+	
+</mapper>

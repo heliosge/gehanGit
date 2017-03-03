@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.QuestionnaireQuestionDaoMapper">
+	<!--bean Map  -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.QuestionnaireQuestionBean" id="questionnaireQuestion">
+        <id property="id" column="id"/>
+        <result property="questionnaireId" column="questionnaire_id"/>
+        <result property="content" column="content"/>
+        <result property="type" column="type"/>
+        <result property="isRequired" column="is_required"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <!--一个问题Bean,包括选项  -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.QuestionnaireQuestionBean" id="questionnaireBeanMap">
+	        <id property="id" column="id"/>
+	        <result property="questionnaireId" column="questionnaire_id"/>
+	        <result property="content" column="content"/>
+	        <result property="type" column="type"/>
+	        <result property="type" column="type"/>
+	        <result property="isRequired" column="is_required"/>
+	        <result property="orderNum" column="order_num"/>
+	        <result property="updateTime" column="update_time"/>
+	        <collection property="options" column="id"
+					select="com.jftt.wifi.dao.QuestionnaireQuestionOptionDaoMapper.getQuestionOption"
+					ofType="com.jftt.wifi.bean.questionnaire.QuestionnaireQuestionOptionBean">
+			</collection>
+        </resultMap>
+    
+    <sql id="where_getQuestionVoList">
+        <where>
+          <if test="content != null and content != ''">
+            and content like CONCAT('%',#{content},'%')
+          </if>
+        </where>
+    </sql>
+    
+    <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <!--骑过ID查询问题  -->
+    <select id="getQuestionnaireQuestion" resultMap="questionnaireQuestion">
+    	select *
+    	from questionnaire_question
+    	where id=#{id}
+    </select>
+    
+    <!--通过idListStr查询问题  -->
+    <select id="getQuestionnaireQuestionList" resultMap="questionnaireBeanMap">
+        select *
+        from questionnaire_question
+        where questionnaire_id = #{questionnaireId}
+        order by order_num
+    </select>
+    
+    <!--插入问题  -->
+    <insert id="addQuestionnaireQuestion" useGeneratedKeys="true" keyProperty="id">
+    	insert into questionnaire_question
+    	(questionnaire_id,content, type, is_required,order_num)
+    	values
+    	(#{questionnaireId},#{content}, #{type}, #{isRequired},#{orderNum})
+    </insert>
+    
+    <!--更新问题  -->
+    <update id="modifyQuestionnaireQuestion">
+        update questionnaire_question
+        <set>
+            <if test="content != null and content != ''">content=#{content},</if>
+            <if test="type != null">type=#{type},</if>
+            <if test="isRequired != null">is_required=#{isRequired},</if>
+        </set>
+        where id=#{id}
+    </update>
+    
+    <!--删除问题  -->
+    <delete id="deleteQuestionnaireQuestion">
+        delete from questionnaire_question
+        where id=#{id}
+    </delete>
+    
+    <!--通过问题ID查询问题类型   -->
+    <select id="selectTypeByID" resultType="int" parameterType="int">
+    	select type from questionnaire_question where id = #{id}
+    </select>
+    
+     <!--通过问卷ID删除问题  -->
+    <delete id="deleteQuestionByQuestionnaireId">
+        delete from questionnaire_question
+        where questionnaire_id=#{id}
+    </delete>
+</mapper>

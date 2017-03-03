@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.ShoppingCartDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.ShoppingCartBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="user_id" property="userId" jdbcType="INTEGER" />
+    <result column="product_id" property="productId" jdbcType="INTEGER" />
+    <result column="type" property="type" jdbcType="INTEGER" />
+    <result column="counts" property="counts" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, user_id, product_id, type, counts, create_time, update_time
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from shopping_cart
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <!-- chenrui start -->
+  <!-- 检测当前加入购物车的记录是否已存在 -->
+  <select id="checkIsExist" resultMap="BaseResultMap">
+  	select <include refid="Base_Column_List"></include> 
+  	from shopping_cart sc where sc.user_id = #{userId} and sc.product_id = #{productId} and sc.type = #{type}
+  </select>
+  
+  <!-- 更新购物车数量 -->
+  <update id="updateRecord">
+  	update shopping_cart set counts = #{counts} where id = #{id}
+  </update>
+  <!-- 插入购物车记录 -->
+  <insert id="insertRecord">
+  	insert into shopping_cart(user_id, product_id, type, counts)
+  	values(#{userId},#{productId},#{type},1)
+  </insert>
+  
+  <!-- 移除购物车记录 -->
+  <delete id="removeShoppingRecord">
+  	delete from shopping_cart
+  	where find_in_set(id,#{ids})
+  </delete>
+  
+  <delete id="removeShoppingRecordByIdAndType">
+  	delete from shopping_cart
+  	where find_in_set(product_id,#{productIds}) and type = #{orderType} and user_id = #{userId}
+  </delete>
+  
+  <select id="getShoppingCarCount" resultType="int">
+  	select count(0) from shopping_cart
+  	where user_id = #{userId}
+  </select>
+  
+  <!-- chenrui end -->
+  
+</mapper>

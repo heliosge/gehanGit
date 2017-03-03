@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.TrainArrangeScoreDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainArrangeScoreBean" >
+    <id column="id" property="id"/>
+    <result column="train_arrange_content_id" property="trainArrangeContentId"/>
+    <result column="user_id" property="userId"/>
+    <result column="is_sign" property="isSign"/>
+    <result column="score" property="score"/>
+    <result column="is_pass" property="isPass"/>
+    <result column="create_time" property="createTime" />
+    <result column="update_time" property="updateTime" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, train_arrange_content_id, user_id, is_sign, score, is_pass, create_time, update_time
+  </sql>
+  <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from train_arrange_score
+    where id = #{id}
+  </select>
+  <delete id="deleteById" parameterType="java.lang.Integer" >
+    delete from train_arrange_score
+    where id = #{id}
+  </delete>
+  
+  <delete id="delete">
+  	delete from train_arrange_score where user_id=#{userId} and train_arrange_content_id = #{trainArrangeContentId}
+  </delete>
+  
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainArrangeScoreBean" >
+    insert into train_arrange_score (train_arrange_content_id, user_id, 
+      is_sign, score, is_pass)
+    values (#{trainArrangeContentId}, #{userId}, 
+      #{isSign}, #{score}, #{isPass})
+  </insert>
+
+  <update id="updateById" parameterType="com.jftt.wifi.bean.TrainArrangeScoreBean" >
+    update train_arrange_score
+    set train_arrange_content_id = #{trainArrangeContentId},
+      user_id = #{userId},
+      is_sign = #{isSign},
+      score = #{score},
+      is_pass = #{isPass}
+    where id = #{id}
+  </update>
+  
+  <select id="selectTrainArrangeUserScoreList" resultMap="BaseResultMap">
+  	select a.user_id,b.id,b.train_arrange_content_id, b.is_sign, b.score, b.is_pass
+  	from train_arrange_user a
+  	LEFT JOIN train_arrange_content c ON a.train_arrange_id=c.train_arrange_id 
+	LEFT JOIN train_arrange_score b ON a.user_id=b.user_id AND c.id=b.train_arrange_content_id
+  	where a.pass_status = 2 and c.id = #{contentId} 
+  	 <if test="userId != null and userId != ''">
+         AND a.user_id = #{userId} 
+     </if>
+  </select>
+  
+  <select id="selectTrainArrangeUserScoreCount" resultType="int">
+  	select count(1)
+  	from train_arrange_user a
+  	left join train_arrange_content c on a.train_arrange_id=c.train_arrange_id
+  	where a.pass_status = 2 and c.id = #{contentId} 
+  </select>
+</mapper>

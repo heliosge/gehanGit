@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.TeacherManageDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.TeacherBean" id="teacherBean">
+        <result property="teacherId" column="teacher_id"/>
+        <result property="companyId" column="company_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="sex" column="sex"/>
+        <result property="teacherCategory" column="teacher_category"/>
+        <result property="eMail" column="e_mail"/>
+        <result property="cardId" column="card_id"/>
+        <result property="education" column="education"/>
+        <result property="phoneNum" column="phone_num"/>
+        <result property="iconPath" column="icon_path"/>
+        <result property="description" column="description"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateUserId" column="update_user_id"/>
+     	<result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <sql id="t_protery">
+		teacher_id,
+		company_id,
+		user_name,
+		teacher_name,
+		sex,
+		teacher_category,
+		e_mail,
+		card_id,
+		education,
+		phone_num,
+		icon_path,
+		description
+	</sql>
+        
+    <!-- 根据讲师id查询讲师的相信信息 -->
+    <select id="detailTeacher" parameterType="java.util.HashMap" resultMap="teacherBean">
+    	select * from res_teacher where teacher_id = #{teacherId} and is_delete !="1"
+    </select>
+    
+    
+    <!-- 根据公司id查询讲师列表 -->
+    <select id="listTeacher" parameterType="java.util.HashMap" resultMap="teacherBean">
+        select <include refid="t_protery"/> from res_teacher where company_id = #{companyId} and is_delete !="1"
+         <if test="userName != null and userName!=''">
+                AND user_name   like CONCAT('%',#{userName},'%')
+            </if>
+            <if test="teacherCategory!= null and teacherCategory!= ''">
+                AND teacher_category = #{teacherCategory} 
+            </if>
+            <if test="teacherName != null and teacherName != ''">
+            	AND teacher_name like CONCAT('%',#{teacherName},'%')     
+            </if>
+        order by create_time desc 
+        limit ${fromNum},${pageSize}
+    </select>
+    
+    
+    <!-- 根据公司id查询讲师列表总数 -->
+    <select id="queryListTeacherCount" parameterType="java.util.HashMap" resultType="int">
+        select count(1) from res_teacher where company_id = #{companyId} and is_delete !=1
+        	 <if test="userName != null and userName!=''">
+                AND user_name   like CONCAT('%',#{userName},'%')
+            </if>
+            <if test="teacherCategory!= null and teacherCategory!= ''">
+                AND teacher_category = #{teacherCategory} 
+            </if>
+            <if test="name != null and name != ''">
+            	AND teacher_name like CONCAT('%',#{teacherName},'%')     
+            </if>
+        order by create_time desc
+    </select>
+    
+    <!-- 添加或者更新某个讲师 -->
+     <insert id="saveTeacherInfo" parameterType="com.jftt.wifi.bean.TeacherBean">
+     	 insert into res_teacher (
+		 company_id,user_name,teacher_name,sex,teacher_category,e_mail,card_id,
+		 	<if test="education != null and education!=''">
+		 		education,
+		 	</if>
+		 	<if test="phoneNum != null and phoneNum!='' ">
+		 		phone_num,
+		 	</if>
+		 	<if test="iconPath!= null and iconPath!=''">
+		 		icon_path,
+		 	</if>
+		 	<if test="description!= null and description!=''">
+		 		description,
+		 	</if>
+		 create_user_id,create_time,update_user_id,update_time,is_delete
+		 ) 
+		 values(
+		 #{companyId},#{userName},#{teacherName},#{sex},#{teacherCategory},#{eMail},#{cardId},
+			 <if test="education != null and education!=''">
+		 		 #{education},
+		 	</if>
+		 	<if test="phoneNum != null and phoneNum!='' ">
+		 		#{phoneNum},
+		 	</if>
+		 	<if test="iconPath!= null and iconPath!=''">
+		 		#{iconPath},
+		 	</if>
+		 	<if test="description!= null and description!=''">
+		 		#{description},
+		 	</if>
+		 #{userId},now(),#{userId},now(),"0")
+     </insert>
+    
+    
+     <!-- 根据某个讲师id删除讲师信息 ，此处做的是逻辑删除 -->
+    <update id="deleteOneTeacher" parameterType="java.util.HashMap" >
+        update res_teacher 
+        set is_delete ="1",update_time=(select now()),update_user_id=#{userId}
+        where teacher_id = #{teacherId}
+    </update>
+    
+    
+    <!-- 更新某个讲师的信息 -->
+     <update id="updateTeacherInfo" parameterType="com.jftt.wifi.bean.TeacherBean">
+     	 update  res_teacher  
+     	 set teacher_name =#{teacherName},
+			sex=#{sex},
+			e_mail=#{eMail},
+			card_id=#{cardId},
+			 <if test="education != null and education!=''">
+		 		education=#{education},
+		 	</if>
+		 	<if test="phoneNum != null and phoneNum!='' ">
+		 		phone_num=#{phoneNum},
+		 	</if>
+		 	<if test="iconPath!= null and iconPath!=''">
+		 		icon_path=#{iconPath},
+		 	</if>
+		 	<if test="description!= null and description!=''">
+		 		description=#{description},
+		 	</if>
+			update_time=now(),
+			update_user_id=#{userId}
+		 where teacher_id =#{teacherId}
+     </update>
+    <select id="getPostById" resultType="String">
+    	select name from manage_post where id=#{id}
+    </select>
+     <select id="getDeptNameById" resultType="String">
+    	select name from manage_department  where id=#{id}
+    </select>
+    
+    <select id="queryUserCount" resultType="int">
+    	select count(1) from res_teacher where user_name=#{userName} and company_id =#{companyId} and is_delete!=1
+    </select>
+</mapper>

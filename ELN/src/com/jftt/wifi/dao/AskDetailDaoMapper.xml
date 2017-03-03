@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.AskDetailDaoMapper">
+	<resultMap type="com.jftt.wifi.bean.ask.AskDetailBean" id="AskDetailBeanMap">
+		<id property="id" column="id"/>
+		<result property="typeId" column="type_id"/>
+		<result property="title" column="title"/>
+		<result property="content" column="content"/>
+		<result property="askerId" column="asker_id"/>
+		<result property="askerName" column="asker_name"/>
+		<result property="createTime" column="create_time"/>
+		<result property="addPics" column="add_pics"/>
+		<result property="label" column="label"/>
+		<result property="effectiveTime" column="effective_time"/>
+		<result property="toWhom" column="to_whom"/>
+		<result property="isAnonymous" column="is_anonymous"/>
+		<result property="isTop" column="is_top"/>
+		<result property="topTime" column="top_time"/>
+		<result property="isDelete" column="is_delete"/>
+		<result property="isThematic" column="is_thematic"/>
+		<result property="initialAnswer" column="initial_answer"/>
+		<result property="coverPic" column="cover_pic"/>
+		<result property="rewardPoints" column="reward_points"/>
+		<result property="companyId" column="company_id"/>
+		<result property="subCompanyId" column="sub_company_id"/>
+	</resultMap>
+	
+	<!-- 管理端问问vo -->
+	<resultMap type="com.jftt.wifi.bean.ask.ManageAskVo" id="ManageAskVoMap">
+		<id property="id" column="id"/>
+		<result property="typeId" column="type_id"/>
+		<result property="typeName" column="type_name"/>
+		<result property="isTop" column="is_top"/>
+		<result property="title" column="title"/>
+		<result property="askerName" column="asker_name"/>
+		<result property="askTime" column="ask_time"/>
+		<result property="searchTypeId" column="search_type_id"/>
+		<result property="searchTitle" column="search_title"/>
+		<result property="searchAsker" column="search_asker"/>
+		<result property="searchAskStartTime" column="search_ask_start_time"/>
+		<result property="searchAskEndTime" column="search_ask_end_time"/>
+		<result property="sortName" column="sort_name"/>
+		<result property="sortOrder" column="sort_order"/>
+		<result property="fromNum" column="from_num"/>
+		<result property="pageSize" column="page_size"/>
+		<result property="topCount" column="top_count"/>
+	</resultMap>
+	
+	<!-- 管理端专题问答vo -->
+	<resultMap type="com.jftt.wifi.bean.thematicAsk.ManageThematicAskVo" id="ManageThematicAskVoMap">
+		<id property="" column=""/>
+		<result property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="contentSummary" column="content_summary"/>
+		<result property="askTime" column="ask_time"/>
+		<result property="effectiveTime" column="effective_time"/>
+		<result property="replyCount" column="reply_count"/>
+		<result property="askState" column="ask_state"/>
+		<result property="askerId" column="asker_id"/>
+		<result property="searchAskState" column="search_ask_state"/>
+		<result property="searchTitle" column="search_title"/>
+		<result property="fromNum" column="from_num"/>
+		<result property="pageSize" column="page_size"/>
+	</resultMap>
+	
+	<!-- 前台专题问答 -->
+	<resultMap type="com.jftt.wifi.bean.thematicAsk.ThematicAskVo" id="ThematicAskVoMap">
+		<id property="id" column="id"/>
+		<result property="coverPic" column="cover_pic"/>
+		<result property="title" column="title"/>
+		<result property="satisfactoryAnswer" column="satisfactory_answer"/>
+		<result property="replyerName" column="replyer_name"/>
+		<result property="replyTime" column="reply_time"/>
+	</resultMap>
+	
+	<!-- 前台问问 -->
+	<resultMap type="com.jftt.wifi.bean.ask.AskVoForMMGrid" id="AskVoForMMGridMap">
+		<id property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="createTime" column="create_time"/>
+		<result property="effectiveTime" column="effective_time"/>
+		<result property="answerCount" column="answer_count"/>
+	</resultMap>
+	
+	<sql id="askDerailAll">
+		ad.id, ad.type_id, ad.title, ad.content, ad.asker_id, ad.asker_name, DATE_FORMAT(ad.create_time,'%Y-%m-%d %H:%I:%S') create_time,
+		ad.add_pics, ad.label, ad.effective_time, ad.to_whom, ad.is_anonymous, ad.is_top, ad.top_time,
+		ad.is_delete, ad.is_thematic, ad.initial_answer, ad.cover_pic, ad.reward_points, ad.company_id, ad.sub_company_id  
+	</sql>
+	
+	<sql id="whereConditions">
+		<trim>
+			<if test="searchParams.searchTypeId != null">
+				AND ad.type_id = #{searchParams.searchTypeId} 
+			</if>
+			<if test="searchParams.searchTitle != null">
+				AND ad.title LIKE CONCAT('%',#{searchParams.searchTitle},'%') 
+			</if>
+			<if test="searchParams.searchAsker != null">
+				AND ad.asker_name LIKE CONCAT('%',#{searchParams.searchAsker},'%') 
+			</if>
+			<if test="searchParams.searchAskStartTime != null">
+				AND ad.create_time &gt;= #{searchParams.searchAskStartTime} 
+			</if>
+			<if test="searchParams.searchAskEndTime != null">
+				AND ad.create_time &lt;= #{searchParams.searchAskEndTime} 
+			</if>
+		</trim>
+	</sql>
+	
+	<!-- 根据id查询问问详情 -->
+	<select id="getById" parameterType="java.lang.Integer" resultMap="AskDetailBeanMap">
+		SELECT <include refid="askDerailAll"/> 
+		  FROM ask_detail ad 
+		  WHERE ad.id = #{id} 
+	</select>
+	
+	<!-- 获取管理端问问数量 -->
+	<select id="getManageAskCount" parameterType="com.jftt.wifi.bean.ask.ManageAskVo" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(ad.id)) 
+		  FROM ask_detail ad 
+		  WHERE ad.is_thematic = 1 AND ad.is_delete = 2 AND ad.company_id = #{searchParams.companyId} AND ad.sub_company_id = #{searchParams.subCompanyId}
+		    AND ((ad.effective_time is null) OR (ad.effective_time &gt;= now()))
+		    <include refid="whereConditions"/>
+	</select>
+	
+	<!-- 获取管理端问问列表 -->
+	<select id="getManageAsks" parameterType="com.jftt.wifi.bean.ask.ManageAskVo" resultMap="ManageAskVoMap">
+		SELECT DISTINCT ad.id, ad.type_id, ad.is_top, ad.title, ad.asker_name, ad.create_time ask_time,
+		    (SELECT name FROM ask_type WHERE id = ad.type_id) type_name,
+		    (SELECT IFNULL(COUNT(DISTINCT(id)),0) FROM ask_detail WHERE is_top = 1 AND is_delete = 2) top_count 
+		  FROM ask_detail ad 
+		  WHERE ad.is_thematic = 1 AND ad.is_delete = 2 AND ad.company_id = #{searchParams.companyId} AND ad.sub_company_id = #{searchParams.subCompanyId}
+		    AND ((ad.effective_time is null) OR (ad.effective_time &gt;= now()))
+		    <include refid="whereConditions"/>
+		ORDER BY ad.top_time DESC, ad.create_time DESC 
+		LIMIT ${searchParams.fromNum},${searchParams.pageSize} 
+	</select>
+	
+	<!-- 改变问问置顶状态 -->
+	<update id="updateAskTopState">
+		UPDATE ask_detail SET is_top = #{isTop}, top_time = #{topTime} WHERE id = #{askId} 
+	</update>
+	
+	<!-- 删除一条问问 -->
+	<update id="deleteAsk" parameterType="java.lang.Integer">
+		UPDATE ask_detail SET is_delete = 1 WHERE id = #{askId} 
+	</update>
+	
+	<!-- 批量删除问问 -->
+	<update id="batchDeleteAsks">
+		UPDATE ask_detail SET is_delete = 1 
+		WHERE id IN (<foreach collection="ids" item="id" separator=",">#{id}</foreach>) 
+	</update>
+	
+	<!-- 修改问问分类 -->
+	<update id="updateAskType">
+		UPDATE ask_detail SET type_id = #{typeId} 
+		WHERE id = #{askId}
+	</update>
+	
+	<!-- 批量修改问问分类 -->
+	<update id="batchUpdateAskType">
+		UPDATE ask_detail SET type_id = #{typeId} 
+		WHERE id IN (<foreach collection="askIds" item="askId" separator=",">#{askId}</foreach>) 
+	</update>
+	
+	<!-- 专题问答条件 -->
+	<sql id="thematicAskConditions">
+		<trim>
+			<if test="searchParams.searchAskState != null">
+				<choose>
+					<!-- 未处理 -->
+					<when test="searchParams.searchAskState == 1">
+						AND NOT EXISTS (SELECT id FROM ask_answer WHERE question_id = ad.id AND is_satisfactory = 1 AND is_delete = 2 > 0)  
+						AND ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) 
+					</when>
+					<!-- 已处理 -->
+					<when test="searchParams.searchAskState == 2">
+						AND EXISTS (SELECT id FROM ask_answer WHERE question_id = ad.id AND is_satisfactory = 1 AND is_delete = 2 > 0) 
+						AND ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) 
+					</when>
+					<!-- 已过期 -->
+					<when test="searchParams.searchAskState == 3">
+						AND ad.effective_time &lt; now() 
+					</when>
+				</choose>
+			</if>
+			<if test="searchParams.searchTitle != null">
+				AND ad.title LIKE CONCAT('%',#{searchParams.searchTitle},'%') 
+			</if>
+		</trim>
+	</sql>
+	
+	<!-- 根据条件查询管理端专题问答数量 -->
+	<select id="getThematicAskCount" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(ad.id)) 
+		FROM ask_detail ad LEFT JOIN ask_answer aa ON ad.id = aa.question_id 
+		WHERE ad.is_thematic = 2 AND ad.is_delete = 2 
+		<include refid="thematicAskConditions"/>
+	</select>
+	
+	<!-- 根据条件查询管理端专题问答列表 -->
+	<select id="getThematicAsks" resultMap="ManageThematicAskVoMap">
+		SELECT DISTINCT ad.id, ad.title, ad.content content_summary, ad.create_time ask_time,
+		  ad.effective_time,ad.asker_id,
+		  (SELECT COUNT(id) FROM ask_answer WHERE question_id = ad.id) reply_count 
+		FROM ask_detail ad LEFT JOIN ask_answer aa ON ad.id = aa.question_id 
+		WHERE ad.is_thematic = 2 AND ad.is_delete = 2 
+		<include refid="thematicAskConditions"/>
+		ORDER BY ad.create_time DESC 
+		LIMIT ${searchParams.fromNum},${searchParams.pageSize} 
+	</select>
+	
+	<!-- 根据标题查询专题问答 -->
+	<select id="getThematicAsksByTitle" parameterType="java.lang.String" resultMap="AskDetailBeanMap">
+		SELECT <include refid="askDerailAll"/> 
+		  FROM ask_detail ad 
+		WHERE ad.title = #{thematicTitle} AND ad.is_thematic = 2 AND ad.is_delete = 2
+	</select>
+	
+	<!-- 添加专题问答 -->
+	<insert id="addThematicAsk" parameterType="com.jftt.wifi.bean.ask.AskDetailBean" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO ask_detail(type_id,title,content,asker_id,asker_name,create_time,add_pics,label,
+		  effective_time,to_whom,is_anonymous,is_top,top_time,is_delete,is_thematic,initial_answer,
+		  cover_pic,reward_points,company_id,sub_company_id) 
+		VALUES(#{typeId},#{title},#{content},#{askerId},#{askerName},now(),#{addPics},#{label},
+		  #{effectiveTime},#{toWhom},#{isAnonymous},#{isTop},#{topTime},#{isDelete},#{isThematic},#{initialAnswer},
+		  #{coverPic},#{rewardPoints},#{companyId},#{subCompanyId})  
+	</insert>
+	
+	<!-- 删除专题问答 -->
+	<update id="deleteThematicAsk" parameterType="java.lang.Integer">
+		UPDATE ask_detail 
+		SET is_delete = 1 
+		WHERE id = #{id} 
+	</update>
+	
+	<!-- 批量删除专题问答 -->
+	<update id="batchDeleteThematicAsks">
+		UPDATE ask_detail 
+		SET is_delete = 1 
+		WHERE id IN (<foreach collection="ids" item="id" separator=",">#{id}</foreach>) 
+	</update>
+	
+	<!-- 获取我提问的问问数量 -->
+	<select id="getAskCountByAskerId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT COUNT(ad.id) 
+		FROM ask_detail ad 
+		WHERE ad.asker_id = #{askerId} AND ad.is_delete = 2 AND ad.is_thematic = 1 
+	</select>
+	
+	<!-- 获取我提问的问问列表 -->
+	<select id="getAskListByAskerId" resultMap="AskVoForMMGridMap">
+		SELECT ad.id,ad.title,ad.create_time,ad.effective_time,
+		  (SELECT COUNT(id) FROM ask_answer WHERE question_id = ad.id AND is_delete = 2 AND is_shield = 2) answer_count 
+		FROM ask_detail ad 
+		WHERE ad.asker_id = #{askerId} AND ad.is_delete = 2 AND ad.is_thematic = 1 
+		ORDER BY ad.create_time DESC 
+		LIMIT ${fromNum},${pageSize}
+	</select>
+	
+	<!-- 获取我回答的问问数量 -->
+	<select id="getAskCountByReplyerId" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(ad.id)) 
+		FROM ask_detail ad LEFT JOIN ask_answer aa ON ad.id = aa.question_id 
+		WHERE aa.replyer_id = #{replyerId} AND ad.is_delete = 2 AND ad.is_thematic = 1 
+	</select>
+	
+	<!-- 获取我回答的问问列表 -->
+	<select id="getAskListByReplyerId" resultMap="AskVoForMMGridMap">
+		SELECT DISTINCT ad.id,ad.title,ad.create_time,ad.effective_time,
+		  (SELECT COUNT(id) FROM ask_answer WHERE question_id = ad.id AND is_delete = 2 AND is_shield = 2) answer_count 
+		FROM ask_detail ad LEFT JOIN ask_answer aa ON ad.id = aa.question_id 
+		WHERE aa.replyer_id = #{replyerId} AND ad.is_delete = 2 AND ad.is_thematic = 1 
+		ORDER BY ad.create_time DESC 
+		LIMIT ${fromNum},${pageSize}
+	</select>
+	
+	<!-- 获取待解决的问题数量 -->
+	<select id="getToDealAskCount" resultType="java.lang.Integer">
+		SELECT COUNT(ad.id) 
+		FROM ask_detail ad 
+		WHERE ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) AND is_delete = 2 AND ad.is_thematic = 1 
+		  AND ad.company_id = #{companyId} AND ad.sub_company_id = #{subCompanyId} 
+		  AND NOT EXISTS (SELECT id FROM ask_answer WHERE question_id = ad.id AND is_satisfactory = 1 AND is_delete = 2 AND is_thematic = 1 > 0) 
+	</select>
+	
+	<!-- 获取待解决的问题列表 -->
+	<select id="getToDealAskList" resultMap="AskVoForMMGridMap">
+		SELECT ad.id,ad.title,ad.create_time,ad.effective_time,
+		  (SELECT COUNT(id) FROM ask_answer WHERE question_id = ad.id AND is_delete = 2 AND is_shield = 2) answer_count 
+		FROM ask_detail ad 
+		WHERE ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) AND ad.is_delete = 2 AND ad.is_thematic = 1 
+		  AND ad.company_id = #{companyId} AND ad.sub_company_id = #{subCompanyId} 
+		  AND NOT EXISTS (SELECT id FROM ask_answer WHERE question_id = ad.id AND is_satisfactory = 1 AND is_delete = 2 AND is_thematic = 1 > 0) 
+		ORDER BY ad.create_time DESC 
+		LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 获取已解决的问题数量 -->
+	<select id="getDealedAskCount" resultType="java.lang.Integer">
+		SELECT COUNT(ad.id) 
+		FROM ask_detail ad 
+		WHERE ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) AND ad.is_delete = 2 AND ad.is_thematic = 1 
+		  AND ad.company_id = #{companyId} AND ad.sub_company_id = #{subCompanyId} 
+		  AND EXISTS (SELECT id FROM ask_answer WHERE question_id = ad.id AND is_satisfactory = 1 AND is_delete = 2 AND is_thematic = 1 > 0) 
+	</select>
+	
+	<!-- 获取已解决的问题列表 -->
+	<select id="getDealedAskList" resultMap="AskVoForMMGridMap">
+		SELECT ad.id,ad.title,ad.create_time,ad.effective_time,
+		  (SELECT COUNT(id) FROM ask_answer WHERE question_id = ad.id AND is_delete = 2 AND is_shield = 2) answer_count 
+		FROM ask_detail ad 
+		WHERE ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) AND ad.is_delete = 2 AND ad.is_thematic = 1 
+		  AND ad.company_id = #{companyId} AND ad.sub_company_id = #{subCompanyId} 
+		  AND EXISTS (SELECT id FROM ask_answer WHERE question_id = ad.id AND is_satisfactory = 1 AND is_delete = 2 AND is_thematic = 1 > 0) 
+		ORDER BY ad.create_time DESC 
+		LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 获取专题问答 -->
+	<select id="getThematicAskList" resultMap="ThematicAskVoMap">
+		SELECT ad.id,ad.cover_pic,ad.title,
+		  (SELECT content FROM ask_answer WHERE question_id = ad.id AND is_thematic = 2 AND is_satisfactory = 1 AND is_delete = 2) satisfactory_answer,
+		  (SELECT replyer_name FROM ask_answer WHERE question_id = ad.id AND is_thematic = 2 AND is_satisfactory = 1 AND is_delete = 2) replyer_name,
+		  (SELECT create_time FROM ask_answer WHERE question_id = ad.id AND is_thematic = 2 AND is_satisfactory = 1 AND is_delete = 2) reply_time 
+		FROM ask_detail ad 
+		WHERE ad.is_thematic = 2 AND ad.is_delete = 2 AND ((ad.effective_time is null) OR (ad.effective_time &gt;= now()))
+		ORDER BY ad.create_time DESC 
+		LIMIT 0,3 
+	</select>
+	
+	<!-- 获取该分类下的问问数量 -->
+	<select id="getTypeAskCount" resultType="java.lang.Integer">
+		SELECT COUNT(ad.id) 
+		FROM ask_detail ad
+		WHERE ad.type_id IN (<foreach collection="typeIdList" item="typeId" separator=",">#{typeId}</foreach>) 
+		  AND ad.is_delete = 2 AND ad.is_thematic = 1 AND ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) 
+		  <trim>
+			  <if test="searchContent != null and searchContent != '' ">
+				  AND title LIKE CONCAT('%',#{searchContent},'%')
+			  </if>
+		  </trim>
+	</select>
+	
+	<!-- 获取该分类下的问问列表 -->
+	<select id="getTypeAskList" resultMap="AskVoForMMGridMap">
+		SELECT ad.id,ad.title,ad.create_time create_time,ad.effective_time effective_time,
+		  (SELECT COUNT(id) FROM ask_answer WHERE question_id = ad.id AND is_delete = 2 AND is_shield = 2) answer_count 
+		FROM ask_detail ad
+		WHERE ad.type_id IN (<foreach collection="typeIdList" item="typeId" separator=",">#{typeId}</foreach>) 
+		  AND ad.is_delete = 2 AND ad.is_thematic = 1 AND ((ad.effective_time is null) OR (ad.effective_time &gt;= now())) 
+		  <trim>
+			  <if test="searchContent != null and searchContent != '' ">
+				  AND title LIKE CONCAT('%',#{searchContent},'%')
+			  </if>
+		  </trim>
+		ORDER BY ${sortName} ${sortOrder} 
+		LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 根据搜索条件查询问问数量 -->
+	<select id="getAskCountForSearch" resultType="java.lang.Integer">
+		SELECT COUNT(ad.id) 
+		FROM ask_detail ad
+		WHERE ad.is_delete = 2 AND ad.is_thematic = 1 
+	      <trim>
+		      <if test="searchContent != null and searchContent != '' ">
+			      AND title LIKE CONCAT('%',#{searchContent},'%')
+		      </if>
+	      </trim>
+	</select>
+	
+	<!-- 根据搜索条件查询问问 -->
+	<select id="getAskListForSearch" resultMap="AskVoForMMGridMap">
+		SELECT ad.id,ad.title,ad.create_time create_time,ad.effective_time effective_time,
+		  (SELECT COUNT(id) FROM ask_answer WHERE question_id = ad.id AND is_delete = 2 AND is_shield = 2) answer_count 
+		FROM ask_detail ad 
+		WHERE ad.is_delete = 2 AND ad.is_thematic = 1 
+	      <trim>
+		      <if test="searchContent != null and searchContent != '' ">
+			      AND title LIKE CONCAT('%',#{searchContent},'%')
+		      </if>
+	      </trim>
+	    ORDER BY ${sortName} ${sortOrder} 
+		LIMIT ${fromNum},${pageSize}  
+	</select>
+	
+	<!-- 根据标题查询问问 -->
+	<select id="getAsksByTitle" resultMap="AskDetailBeanMap">
+		SELECT <include refid="askDerailAll"/> 
+		FROM ask_detail ad 
+		WHERE ad.title = #{title} AND ad.is_thematic = 1 AND ad.is_delete = 2 
+	</select>
+	
+	<!--zhangchen add start  -->
+	<!-- 获取问问回答列表 -->
+	<select id="getMyAskList" resultMap="AskDetailBeanMap">
+		SELECT distinct ask_detail.id,ask_detail.title,
+				DATE_FORMAT(ask_detail.create_time,'%Y-%m-%d %H:%I:%S') create_time
+		FROM ask_detail left join ask_answer on ask_detail.id = ask_answer.question_id 
+		<include refid="where_condition"></include>
+	</select>
+	
+	 <sql id="where_condition">
+	 	<trim prefix="where" prefixOverrides="and">
+			<if test="askerId != null">
+              and ask_detail.asker_id = #{askerId}
+            </if>
+			<if test="companyId != null">
+               and ask_detail.company_id = #{companyId}
+            </if>
+            <if test="subCompanyId != null">
+                and ask_detail.sub_company_id = #{subCompanyId}
+            </if>
+            <if test="toWhom != null">
+                and find_in_set(#{toWhom},ask_detail.to_whom) 
+            </if>
+            <if test="replyerId != null">
+            	and ask_answer.replyer_id = #{replyerId} and ask_answer.is_shield = 2 and ask_answer.is_delete = 2 
+            </if>
+            and ask_detail.is_delete = 2 and ask_detail.is_thematic = 1 
+		</trim>
+		order by ask_detail.create_time desc 
+	 </sql>
+	<!--zhangchen add end  -->
+	
+</mapper>

@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManageGroupDaoMapper">
+    
+	<resultMap type="com.jftt.wifi.bean.ManageGroupBean" id="ManageGroupBeanMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createUserName" column="create_user_name"/>
+        <result property="descr" column="descr"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="capacity" column="capacity"/>
+        <result property="userCount" column="user_count"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.ManageGroupVo" id="ManageGroupVoMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="joinNum" column="join_num"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createUserName" column="create_user_name"/>
+        <result property="status" column="status"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="capacity" column="capacity"/>
+    </resultMap>
+    
+    <!-- 根据id查询群组 -->
+    <select id="getById" parameterType="Integer" resultMap="ManageGroupBeanMap">
+        select * from manage_group where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 查询群组数目 -->
+    <select id="getGroupsCount" resultType="java.lang.Integer">
+    	SELECT COUNT(id) 
+    	  FROM manage_group 
+    	  WHERE company_id = #{manageGroupVo.companyId} AND sub_company_id = #{manageGroupVo.subCompanyId} 
+    	  <trim>
+	    	  <if test="manageGroupVo.name != null and manageGroupVo.name != '' ">
+	    	  	AND name LIKE CONCAT('%',#{manageGroupVo.name},'%') 
+	    	  </if>
+	    	  <if test="manageGroupVo.createUserName != null and manageGroupVo.createUserName != '' ">
+	    	    AND create_user_name LIKE CONCAT('%',#{manageGroupVo.createUserName},'%') 
+	    	  </if>
+    	  </trim>
+    </select>
+    
+    <!-- 根据条件查询群组列表 -->
+    <select id="getGroupsByConditions" resultMap="ManageGroupVoMap">
+        SELECT mg.id,mg.name,mg.type,mg.capacity,mg.create_time,mg.create_user_name,mgs.status, 
+		    (SELECT count(student_id) FROM manage_group_student WHERE group_id = mg.id AND status != 3) join_num 
+		  FROM manage_group mg LEFT JOIN (select * from manage_group_student where student_id = #{studentId}) mgs 
+		    ON mg.id = mgs.group_id 
+		  WHERE company_id = #{manageGroupVo.companyId} AND sub_company_id = #{manageGroupVo.subCompanyId} 
+		  <trim>
+	    	  <if test="manageGroupVo.name != null and manageGroupVo.name != '' ">
+	    	  	  AND mg.name LIKE CONCAT('%',#{manageGroupVo.name},'%') 
+	    	  </if>
+	    	  <if test="manageGroupVo.createUserName != null and manageGroupVo.createUserName != '' ">
+	    	    AND mg.create_user_name LIKE CONCAT('%',#{manageGroupVo.createUserName},'%') 
+	    	  </if>
+    	  </trim>
+    	  ORDER BY mg.create_time DESC 
+    	  LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- 添加群组成员 -->
+    <insert id="addGroupMember" parameterType="com.jftt.wifi.bean.ManageGroupStudentBean">
+        insert into manage_group_student(group_id,student_id,status) values(#{groupId},#{studentId},#{status})
+    </insert>
+    
+    <!-- 获取公司的所有群组管理员 -->
+    <select id="getManageUserIds" resultType="java.lang.Integer">
+    	SELECT mur.user_id FROM manage_user_role mur 
+		  LEFT JOIN manage_role_page mrp ON mur.role_id = mrp.role_id 
+		  LEFT JOIN manage_page mp ON mrp.page_id = mp.id 
+		  LEFT JOIN manage_role mr ON mur.role_id = mr.id 
+		WHERE mp.url ='manageGroup/toGroupListPage.action' 
+		  AND mr.company_id=#{companyId} AND mr.sub_company_id =#{subCompanyId} AND mp.delete_flag !=1 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+    <!-- luyunlong begin -->
+    
+    <sql id="groupWhere">
+	    	<trim prefix="where" prefixOverrides="AND">
+         	<if test="id != null and id != '' ">
+            	AND id = #{id}
+            </if>
+            <if test="name != null and name != '' ">
+            	AND name like CONCAT('%',#{name},'%')     
+            </if>
+            <if test="createUserName != null and createUserName != '' ">
+            	AND create_user_name like CONCAT('%',#{createUserName},'%') 
+            </if>
+            <if test="companyId != null">
+                AND company_id = #{companyId}
+            </if>
+            <if test="subCompanyId != null">
+            	AND sub_company_id = #{subCompanyId}
+            </if>
+        </trim>
+        </sql>
+    
+    <select id="selectGroupCount" resultType="Integer" parameterType="com.jftt.wifi.bean.vo.ManageGroupBeanVo">
+    	select count(1) from manage_group 
+    	<include refid="groupWhere"/>
+    </select>
+    
+    <select id="selectGroupList" parameterType="com.jftt.wifi.bean.vo.ManageGroupBeanVo" resultMap="ManageGroupBeanMap">
+	    select id, name, type, descr, create_user_id, company_id, sub_company_id, create_time, create_user_name , capacity,
+	    (select count(1) from manage_group_student where group_id=g.id and status=1) user_count
+	    	from manage_group g
+	    	 <include refid="groupWhere"/>
+	    	order by create_time desc
+	    	<if test="pageSize != null">
+	    		limit ${fromNum}, ${pageSize}
+	    	</if>
+    </select>
+    
+    <insert id="insertGroup" parameterType="com.jftt.wifi.bean.ManageGroupBean" useGeneratedKeys="true" keyProperty="id">
+    	insert into manage_group(name, type, descr, create_user_id, company_id, sub_company_id, capacity, create_user_name)
+    	values(#{name}, #{type}, #{descr}, #{createUserId}, #{companyId}, #{subCompanyId}, #{capacity}, #{createUserName})
+    </insert>
+    
+    <insert id="insertGroupAndStudent" parameterType="com.jftt.wifi.bean.ManageGroupBean" useGeneratedKeys="true" keyProperty="id">
+    	insert into manage_group_student(group_id, student_id)
+    	values(#{groupId}, #{studentId})
+    </insert>
+    
+    <select id="selectGroupStudentCountByGroupId" parameterType="com.jftt.wifi.bean.vo.ManageGroupBeanVo" resultType="int">
+    	select count(1) from manage_group_student where group_id=#{id} and status != 3
+    </select>
+    
+     <resultMap type="com.jftt.wifi.bean.ManageGroupStudentBean" id="ManageGroupStudentMap">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="status" column="status"/>
+    </resultMap>
+    
+    <select id="selectGroupStudentListByGroupId" parameterType="com.jftt.wifi.bean.vo.ManageGroupBeanVo" resultMap="ManageGroupStudentMap">
+    	select id, group_id, student_id, status from  manage_group_student where group_id=#{id} and status != 3
+    	<if test="pageSize != null and pageSize != '' ">
+    		limit ${fromNum}, ${pageSize}
+    	</if>
+    </select>
+    
+    <delete id="deleteGroup" parameterType="Integer">
+    	delete from manage_group where id=#{id}
+    </delete>
+    
+    <delete id="deleteGroupStudent" parameterType="com.jftt.wifi.bean.ManageGroupStudentBean">
+    	delete from manage_group_student where group_id=#{groupId} 
+    	<if test="studentId != null and studentId != ''">
+    		and student_id = #{studentId}
+    	</if>
+    </delete>
+    
+    <update id="checkGroup" parameterType="com.jftt.wifi.bean.ManageGroupStudentBean">
+    	update manage_group_student set status=#{status} where group_id=#{groupId} and student_id = #{studentId}
+    </update>
+    
+    <update id="updateGroup" parameterType="com.jftt.wifi.bean.ManageGroupBean">
+    	update manage_group set name = #{name}, type = #{type}, descr = #{descr}, capacity = #{capacity} where id = #{id}
+    </update>
+    
+    <select id="selectCourseOpenGroupByCourseId" resultMap="ManageGroupBeanMap">
+    	 select id, name, type, descr, create_user_id, company_id, sub_company_id, create_time, create_user_name 
+	    	from manage_group 
+	    	where id in (select open_crow_id  from res_course_open_crowd where course_id=#{courseId} and open_type=3)
+    </select>
+    
+    <resultMap type="com.jftt.wifi.bean.ManageGroupCondition" id="ManageGroupConditionBeanMap">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="compareKey" column="compare_key"/>
+        <result property="compareType" column="compare_type"/>
+        <result property="compareValue" column="compare_value"/>
+    </resultMap>
+    
+    <select id="selectGroupCondition" resultMap="ManageGroupConditionBeanMap">
+    	select * from manage_group_condition where group_id = #{groupId}
+    </select>
+    
+    <delete id="deleteGroupCondition">
+    	delete from manage_group_condition where group_id = #{groupId}
+    </delete>
+    
+    <insert id="insertGroupCondition" parameterType="com.jftt.wifi.bean.ManageGroupCondition">
+    	insert into manage_group_condition (group_id,compare_key, compare_value)
+    	values (#{groupId}, #{compareKey}, #{compareValue})
+    </insert>
+    
+    <!-- luyunlong end -->
+    
+</mapper>

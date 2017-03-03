@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamQuestionDaoMapper">
+    <!-- wangyifeng begin -->
+    <resultMap type="com.jftt.wifi.bean.exam.vo.QuestionListItemVo" id="questionListItemVoMap">
+        <id property="id" column="id"/>
+        <result property="content" column="content"/>
+        <result property="displayType" column="display_type"/>
+        <result property="type" column="type"/>
+        <result property="isMultimedia" column="is_multimedia"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="questionCategoryId" column="category_id"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.exam.QuestionBean" id="questionMap">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="content" column="content"/>
+        <result property="displayType" column="display_type"/>
+        <result property="type" column="type"/>
+        <result property="isSubQuestion" column="is_sub_question"/>
+        <result property="questionIdList" column="question_id_list"/>
+        <result property="isMultimedia" column="is_multimedia"/>
+        <result property="multimediaType" column="multimedia_type"/>
+        <result property="multimediaUrl" column="multimedia_url"/>
+        <result property="file_size" column="file_size"/>
+        <result property="isTrue" column="is_true"/>
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="answerKeys" column="answer_keys"/>
+        <result property="analysis" column="analysis"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.exam.vo.DifficultyLevelCountVo" id="difficultyLevelCountVoMap">
+        <result property="difficultyLevel" column="difficulty_level"/>
+        <result property="count" column="count"/>
+    </resultMap>
+    
+    <sql id="where_getQuestionVoList">
+        <where>
+          <if test="isEnabled != null">
+            is_enabled=#{isEnabled}
+          </if>
+          <if test="content != null and content != ''">
+            and content like CONCAT('%',#{content},'%')
+          </if>
+          <if test="questionDisplayType != null and questionDisplayType.isMultimedia != null">
+            and is_multimedia = 1
+          </if>
+          <if test="questionDisplayType != null and questionDisplayType.rawType != null">
+            and type = #{questionDisplayType.rawType}
+            and (is_multimedia is null or is_multimedia != 1)
+          </if>
+          <if test="difficultyLevel != null">
+            and difficulty_level=#{difficultyLevel}
+          </if>
+          <if test="difficultyLevelStr != null">
+            and difficulty_level in (${difficultyLevelStr})
+          </if>
+          <if test="categoryId != null">
+            and category_id = #{categoryId}
+          </if>
+          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+            and category_id in (${categoryIdListStr})
+          </if>
+          <if test="subCompanyId != null">
+            and sub_company_id=#{subCompanyId}
+          </if>
+          <if test="companyId != null">
+            and company_id=#{companyId}
+          </if>
+          <if test="createUserId != null">
+            and create_user_id=#{createUserId}
+          </if>
+            and (is_deleted is null or is_deleted != 1)
+            and (is_sub_question is null or is_sub_question != 1)
+        </where>
+    </sql>
+    
+    <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <select id="getQuestionListItemVoList" resultMap="questionListItemVoMap">
+        select id, content, display_type, type, is_multimedia, difficulty_level, is_enabled, category_id
+        from exam_question
+        <include refid="where_getQuestionVoList"></include>
+        order by create_time desc
+        <include refid="limitClause"></include>
+    </select>
+
+    <select id="getQuestionTotalCount" resultType="Integer">
+        select count(1)
+        from exam_question
+        <include refid="where_getQuestionVoList"></include>
+    </select>
+    
+    <select id="getQuestion" resultMap="questionMap">
+    	select *
+    	from exam_question
+    	where id=#{questionId}
+    </select>
+    
+    <select id="getQuestionList" resultMap="questionMap">
+        select *
+        from exam_question
+        where id in (${idListStr})
+    </select>
+    
+    <insert id="addQuestion" useGeneratedKeys="true" keyProperty="id">
+    	insert into exam_question
+    	(category_id, content, display_type, type, is_sub_question, question_id_list, is_multimedia, multimedia_type,
+    	multimedia_url, is_true, difficulty_level, answer_keys, analysis, create_user_id,
+    	create_time, update_time, is_enabled, is_deleted, sub_company_id, company_id, file_size)
+    	values
+    	(#{categoryId}, #{content}, #{displayType}, #{type}, #{isSubQuestion}, #{questionIdList}, #{isMultimedia}, #{multimediaType},
+    	#{multimediaUrl}, #{isTrue}, #{difficultyLevel}, #{answerKeys}, #{analysis}, #{createUserId},
+    	now(), now(), #{isEnabled}, 0, #{subCompanyId}, #{companyId}, #{file_size})
+    </insert>
+    
+    <update id="modifyQuestion">
+        update exam_question
+        <set>
+            <if test="categoryId != null">category_id=#{categoryId},</if>
+            <if test="content != null and content != ''">content=#{content},</if>
+            <if test="displayType != null">display_type=#{displayType},</if>
+            <if test="type != null">type=#{type},</if>
+            <if test="isSubQuestion != null">is_sub_question=#{isSubQuestion},</if>
+            <if test="questionIdList != null and questionIdList != ''">question_id_list=#{questionIdList},</if>
+            <if test="isMultimedia != null">is_multimedia=#{isMultimedia},</if>
+            <if test="multimediaType != null">multimedia_type=#{multimediaType},</if>
+            <if test="multimediaUrl != null and multimediaUrl != ''">multimedia_url=#{multimediaUrl},</if>
+            <if test="file_size != null ">file_size=#{file_size},</if>
+            <if test="isTrue != null">is_true=#{isTrue},</if>
+            <if test="difficultyLevel != null">difficulty_level=#{difficultyLevel},</if>
+            <if test="answerKeys != null and answerKeys != ''">answer_keys=#{answerKeys},</if>
+            <if test="analysis != null and analysis != ''">analysis=#{analysis},</if>
+            <if test="isEnabled != null">is_enabled=#{isEnabled}</if>
+            <!-- skipped fields: create_user_id, create_time, update_time, is_deleted, sub_company_id, company_id -->
+        </set>
+        where id=#{id}
+    </update>
+    
+    <delete id="realDeleteQuestion">
+        delete from exam_question
+        where id=#{questionId}
+    </delete>
+    
+    <update id="deleteQuestion">
+        update exam_question
+        set is_deleted=1
+        where id=#{questionId}
+    </update>
+    
+    <sql id="where_getDifficultyLevelCountList">
+          <if test="displayType != null and displayType.isMultimedia != null">
+            and is_multimedia = 1
+          </if>
+          <if test="displayType != null and displayType.rawType != null">
+            and type = #{displayType.rawType}
+            and (is_multimedia is null or is_multimedia != 1)
+          </if>
+          <if test="categoryId != null">
+            and category_id = #{categoryId}
+          </if>
+          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+            and category_id in (${categoryIdListStr})
+          </if>
+            and (is_deleted is null or is_deleted != 1)
+            and is_enabled = 1
+            and (is_sub_question is null or is_sub_question != 1)
+    </sql>
+    
+    <select id="getDifficultyLevelCountList" resultMap="difficultyLevelCountVoMap">
+        select count(1) count, difficulty_level
+        from exam_question
+        <where>
+            <include refid="where_getDifficultyLevelCountList"></include>
+        </where>
+        group by difficulty_level
+        order by difficulty_level desc
+    </select>
+    
+    <select id="getQuestionIdListForAutoGroup" resultType="Integer">
+        select id
+        from exam_question
+        <where>
+            <include refid="where_getDifficultyLevelCountList"></include>
+            and difficulty_level = #{curDifficultyLevel}
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="checkQuestionReference" resultType="Boolean">
+      select count(1) > 0
+      from exam_paper_question
+      where question_id = #{questionId}
+    </select>
+    
+    <update id="disableQuestion">
+        update exam_question
+        set is_enabled=0
+        where id=#{id}
+    </update>
+    <!-- wangyifeng end -->
+	
+	<!-- zhangchen start -->
+		 <resultMap type="com.jftt.wifi.bean.exam.QuestionBean" id="questionBeanMap">
+	        <id property="id" column="id"/>
+	        <result property="content" column="content"/>
+	        <result property="categoryId" column="category_id"/>
+	        <result property="type" column="type"/>
+	        <result property="questionIdList" column="question_id_list"/>
+	        <result property="isMultimedia" column="is_multimedia"/>
+	        <result property="multimediaType" column="multimedia_type"/>
+	        <result property="multimediaUrl" column="multimedia_url"/>
+	        <result property="displayType" column="display_type"/>
+	        <result property="isTrue" column="is_true"/>
+        	<result property="answerKeys" column="answer_keys"/>
+        	<result property="analysis" column="analysis"/>
+        	<!-- <association property="correctAnswer" column="id"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.ExamUserAnswerDaoMapper.selectExamCorrectAnswer"/> -->
+	        <collection property="options" column="id"
+					select="com.jftt.wifi.dao.ExamQuestionOptionDaoMapper.selectOptionsByQuestionId"
+					ofType="com.jftt.wifi.bean.exam.QuestionOptionBean">
+			</collection>
+        </resultMap>
+        
+        <!--通过题目ID查询题目内容   -->
+        <select id="selectQuestionById" resultMap="questionBeanMap" parameterType="int">
+	    	select id,category_id,content,type,display_type,question_id_list,is_multimedia,
+	    			multimedia_type,multimedia_url,is_true,answer_keys,analysis
+	    	from exam_question
+	    	where id = #{id}
+	    </select>
+	    
+        <!--通过题目IDs查询子题目list   -->
+        <select id="selectQuestionListByIdList" resultMap="questionBeanMap" parameterType="String">
+	    	select id,category_id,content,type,display_type,question_id_list,is_multimedia,
+	    			multimedia_type,multimedia_url,is_true,answer_keys,analysis
+	    	from exam_question
+	    	where id in (${question_id_list})
+	    </select>
+	    
+	    <!--通过题目IDs查询试题类型   -->
+	    <select id="selectTypeByID" resultType="int" parameterType="int">
+	    	select type from exam_question where id = #{id}
+	    </select>
+	    
+	    <!--练习-生成试题list  -->
+	    <select id="getExerciseQuestionList" resultMap="questionBeanMap" parameterType="com.jftt.wifi.bean.exam.vo.QuestionSearchOptionVo">
+	        select id,content,type,display_type,question_id_list,is_multimedia,multimedia_type,multimedia_url,is_true,answer_keys
+	        from exam_question
+	        <include refid="where_getQuestionVoList"></include>
+	        order by create_time desc
+	        <include refid="limitClause"></include>
+	    </select>
+	    
+	    <!--练习-生成试题list  -->
+	    <select id="getExerciseQuestionIdList" resultType="String" parameterType="com.jftt.wifi.bean.exam.vo.QuestionSearchOptionVo">
+	        select group_concat(id)
+	        from exam_question
+	     <include refid="where_exercise"></include>
+	     <include refid="limitClause"></include>
+	    </select>
+	    
+	    <!--练习-生成试题list 条数  -->
+	    <select id="getExerciseQuestionCount" resultType="Integer">
+	        select count(1)
+	        from exam_question
+	        <include refid="where_exercise"></include>
+	    </select>
+    
+    <sql id="where_exercise">
+        <where>
+	         <if test="questionDisplayType != null and questionDisplayType.isMultimedia != null">
+	            and is_multimedia = 1
+	          </if>
+	          <if test="questionDisplayType != null and questionDisplayType.rawType != null">
+	            and type = #{questionDisplayType.rawType}
+	            and (is_multimedia is null or is_multimedia != 1)
+	          </if>
+	          <if test="difficultyLevelStr != null">
+	            and difficulty_level in (${difficultyLevelStr})
+	          </if>
+	          <if test="categoryId != null">
+	            and category_id = #{categoryId}
+	          </if>
+	          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+	            and category_id in (${categoryIdListStr})
+	          </if>
+	          <if test="subCompanyId != null">
+	            and sub_company_id=#{subCompanyId}
+	          </if>
+	          <if test="companyId != null">
+	            and company_id=#{companyId}
+	          </if>
+	          <if test="createUserId != null">
+	            and create_user_id=#{createUserId}
+	          </if>
+	        and is_enabled = 1
+	        and (is_deleted is null or is_deleted != 1)
+	        and (is_sub_question is null or is_sub_question != 1)
+	        order by create_time desc
+	     </where>
+    </sql>
+    
+    	<!--通过题目IDs查询子questionIdList   -->
+        <select id="selectQuestionIdListById" resultType="String" parameterType="int">
+	    	select question_id_list
+	    	from exam_question
+	    	where id = #{id}
+	    </select>
+	<!-- zhangchen end -->
+	
+	<!-- zhangbocheng start -->
+	<select id="getQuestionExportVoList" resultMap="questionBeanMap">
+        select id,category_id,content,type,display_type,question_id_list,is_multimedia,
+	    			multimedia_type,multimedia_url,is_true,answer_keys,analysis,difficulty_level difficultyLevel
+        from exam_question
+        where display_type!= 6 and display_type!= 7
+        <if test="isEnabled != null">
+            and is_enabled=#{isEnabled}
+          </if>
+          <if test="content != null and content != ''">
+            and content like CONCAT('%',#{content},'%')
+          </if>
+          <if test="questionDisplayType != null and questionDisplayType.isMultimedia != null">
+            and is_multimedia = 1
+          </if>
+          <if test="questionDisplayType != null and questionDisplayType.rawType != null">
+            and type = #{questionDisplayType.rawType}
+            and (is_multimedia is null or is_multimedia != 1)
+          </if>
+          <if test="difficultyLevel != null">
+            and difficulty_level=#{difficultyLevel}
+          </if>
+          <if test="difficultyLevelStr != null">
+            and difficulty_level in (${difficultyLevelStr})
+          </if>
+          <if test="categoryId != null">
+            and category_id = #{categoryId}
+          </if>
+          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+            and category_id in (${categoryIdListStr})
+          </if>
+          <if test="subCompanyId != null">
+            and sub_company_id=#{subCompanyId}
+          </if>
+          <if test="companyId != null">
+            and company_id=#{companyId}
+          </if>
+          <if test="createUserId != null">
+            and create_user_id=#{createUserId}
+          </if>
+            and (is_deleted is null or is_deleted != 1)
+            and (is_sub_question is null or is_sub_question != 1)
+        order by create_time desc
+        <if test="pageSize != null">
+            limit 0, #{pageSize}
+        </if>
+    </select>
+	
+	<!-- zhangbocheng end -->
+</mapper>

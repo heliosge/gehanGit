@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.LearnPlanStageCourseRelationDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.LearnPlanStageCourseRelationBean" id="BaseBeanMap">
+        <id property="id" column="id"/>
+        <result property="stageId" column="stage_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="isDisabled" column="is_disabled"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+      <resultMap type="com.jftt.wifi.bean.vo.LearnPlanStageCourseRelationVo" id="BaseVoMap">
+        <id property="id" column="id"/>
+        <result property="stageId" column="stage_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="courseCode" column="course_code"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="isDisabled" column="is_disabled"/>
+    </resultMap>
+    
+    
+    <!-- 根据id获取 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="BaseBeanMap">
+        select * from learn_plan_stage_course_relation where id = #{id}
+    </select>
+    
+    
+     <!-- zhangbocheng start -->
+     
+      <!-- 根据条件查询数目 -->
+    <select id="getCountByMap" parameterType="Map" resultType="int">
+        select count(0) from learn_plan_stage_course_relation where stage_id = #{stageId}
+           <trim>
+           <if test="courseId!=null">
+           AND course_id = #{courseId} 
+           </if>
+           <if test="isDisabled!=null">
+           AND is_disabled = #{isDisabled} 
+           </if>
+           	<if test="beginTime != null and beginTime != '' ">
+				<![CDATA[  AND begin_time >= #{beginTime}]]> 
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[  AND end_time <= #{endTime}]]>
+			</if>
+        </trim>
+    </select>
+      <!-- 重复查询 -->
+    <select id="getCountByBean" parameterType="com.jftt.wifi.bean.LearnPlanStageCourseRelationBean" resultType="int">
+        select count(0) from learn_plan_stage_course_relation where stage_id = #{stageId} and course_id =#{courseId}
+    </select>
+          <!-- 查询阶段下所有课程 -->
+    <select id="getCourseListByStageId"  resultMap="BaseVoMap">
+        select lpscr.id,lpscr.stage_id,lpscr.course_id,DATE_FORMAT(lpscr.begin_time, '%Y-%m-%d %H:%i') begin_time,DATE_FORMAT(lpscr.end_time, '%Y-%m-%d %H:%i') end_time,
+        lpscr.is_disabled,rs.name course_name,rs.code course_code
+          from learn_plan_stage_course_relation lpscr
+         left join res_course rs on rs.id =lpscr.course_id
+         where stage_id = #{stageId} 
+    </select>
+     <!-- 插入课程 -->
+     <insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.LearnPlanStageCourseRelationBean">
+     	insert into learn_plan_stage_course_relation (stage_id, course_id,begin_time,end_time,is_disabled,update_time)
+     	values(#{stageId}, #{courseId},#{beginTime},#{endTime},#{isDisabled},now())
+     </insert>
+     
+     <!-- 修改 -->
+     <update id="updateById" parameterType="com.jftt.wifi.bean.LearnPlanStageCourseRelationBean">
+      update learn_plan_stage_course_relation
+      set 
+      stage_id=#{stageId}, 
+      course_id=#{courseId}, 
+      begin_time=#{beginTime},
+      end_time=#{endTime}, 
+      is_disabled=#{isDisabled},
+      update_time=now()
+      where id = #{id}
+     </update>
+      <update id="update" parameterType="com.jftt.wifi.bean.LearnPlanStageCourseRelationBean">
+      update learn_plan_stage_course_relation
+      set 
+      stage_id=#{stageId}, 
+      course_id=#{courseId}, 
+      begin_time=#{beginTime},
+      end_time=#{endTime}, 
+      is_disabled=#{isDisabled},
+      update_time=now()
+      where stage_id = #{stageId} AND course_id=#{courseId}
+     </update>
+      <!-- 删除 -->
+     <delete id="deleteById" parameterType="Integer">
+     	delete from learn_plan_stage_course_relation where id = #{id};
+     </delete>
+     
+      <!-- 删除 -->
+     <delete id="deleteByStageId" parameterType="Integer">
+     	delete from learn_plan_stage_course_relation where stage_id = #{stageId};
+     </delete>
+     <!-- zhangbocheng end -->
+    
+</mapper>

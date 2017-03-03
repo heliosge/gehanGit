@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseEvaluationDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.CourseEvaluationBean" id="CourseEvaluationBeanMap">
+        <id property="id" column="id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="score" column="score"/>
+        <result property="commentTime" column="comment_time"/>
+        <result property="content" column="content"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+    </resultMap>
+    
+    <!-- 根据id查询课程评价 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="CourseEvaluationBeanMap">
+        select * from course_evaluation where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+   	
+   	<select id="getEvaluateCount" resultType="java.lang.Integer">
+   		SELECT COUNT(user_id) 
+   		  FROM course_evaluation 
+   		  WHERE course_id = #{courseId} 
+   		    AND company_id = #{companyId} AND sub_company_id =#{subCompanyId} 
+   	</select>
+   	
+   	<!-- 查询课程所有评价（分页查询） -->
+   	<select id="getCourseEvaluations" resultMap="CourseEvaluationBeanMap">
+   	    SELECT id,course_id,user_id,score,comment_time,content,company_id,sub_company_id 
+   	      FROM course_evaluation 
+   	      WHERE course_id = #{courseId} 
+   	        AND company_id = #{companyId} AND sub_company_id = #{subCompanyId} 
+   	      ORDER BY comment_time DESC 
+   	      LIMIT ${fromNum},${pageSize} 
+   	</select>
+   	
+   	<!-- 添加一条评价记录 -->
+   	<insert id="addCourseEvaluation" parameterType="com.jftt.wifi.bean.CourseEvaluationBean">
+   	    INSERT INTO course_evaluation(course_id,user_id,score,comment_time,content,company_id,sub_company_id) 
+   	      VALUES (#{courseId},#{userId},#{score},#{commentTime},#{content},#{companyId},#{subCompanyId})
+   	</insert>
+   	
+   	<!-- 获取我的课程评价 -->
+   	<select id="getMyEvaluate" resultMap="CourseEvaluationBeanMap">
+   		SELECT ce.id,ce.course_id,ce.user_id,ce.score,ce.comment_time,ce.content,
+   		    ce.update_time,ce.company_id,ce.sub_company_id 
+   		  FROM course_evaluation ce 
+   		  WHERE ce.course_id = #{courseId} AND ce.user_id = #{userId} 
+   		ORDER BY ce.comment_time DESC 
+   		LIMIT 0,1 
+   	</select>
+   	
+   	<!-- 更新评价信息 -->
+   	<update id="updateCourseEvaluation" parameterType="com.jftt.wifi.bean.CourseEvaluationBean">
+   		UPDATE course_evaluation 
+   		  <set>
+   		  	<if test="score != null">
+   		  		score = #{score},
+   		  	</if>
+   		  	<if test="commentTime != null">
+   		  		comment_time = #{commentTime},
+   		  	</if>
+   		  	<if test="content != null">
+   		  		content = #{content},
+   		  	</if>
+   		  </set>
+   		  WHERE id = #{id}
+   	</update>
+   	
+   	<!-- 删除学员该课程的评价记录 -->
+   	<delete id="deleteRecord">
+   		DELETE FROM course_evaluation 
+   		WHERE id IN (SELECT a.id FROM (SELECT ce.id FROM course_evaluation ce WHERE ce.course_id = #{courseId} AND ce.user_id = #{userId}) a)
+   	</delete>
+   	
+    <!-- shenhaijun end -->
+    
+    
+    <!-- chenrui start -->
+    
+    <!-- 获取商品课程评价信息 -->
+    
+    <select id="getMallEvaluationCount" resultType="int">
+    	select count(0) from course_evaluation ce where ce.course_id = #{courseId}
+    </select>
+    
+    <select id="getMallEvaluation" resultMap="CourseEvaluationBeanMap">
+    	select * from course_evaluation ce where ce.course_id = #{courseId}
+    </select>
+    
+    <select id="checkAlreadyEvaluate" resultMap="CourseEvaluationBeanMap">
+    	select * from course_evaluation ce where ce.course_id = #{courseId} and ce.user_id = #{userId}
+    </select>
+    
+    <insert id="giveEvaluate">
+	    insert into course_evaluation(course_id,user_id,score,comment_time,content,company_id,sub_company_id) 
+	   	values (#{courseId},#{userId},#{score},now(),#{content},#{companyId},#{subCompanyId})
+    </insert>
+    <!-- chenrui end -->
+</mapper>

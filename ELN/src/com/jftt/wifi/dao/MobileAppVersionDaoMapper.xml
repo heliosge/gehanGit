@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.MobileAppVersionDaoMapper">
+    <!-- 审核路线bean -->
+    <resultMap type="com.jftt.wifi.bean.MobileAppVersionBean" id="AppVersionBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="code" column="code"/>
+        <result property="descr" column="descr"/>
+        <result property="isPublished" column="is_published"/>
+        <result property="isForce" column="is_force"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="updateUserId" column="update_user_id"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="publicTime" column="publish_time"/>
+        <result property="publicUserId" column="public_user_id"/>
+        <result property="isDelete" column="is_delete"/>
+        <result property="fileName" column="file_name"/>
+    </resultMap>
+
+
+    <sql id="selectAll">
+        id,name,code,descr,file_name,type,path,DATE_FORMAT(publish_time, '%Y-%m-%d %H:%i') publish_time ,
+        DATE_FORMAT(create_time, '%Y-%m-%d %H:%i') create_time,is_force, create_user_id,
+        DATE_FORMAT(update_time, '%Y-%m-%d %H:%i') update_time,is_force,  public_user_id,   update_user_id,is_delete,
+         is_published
+    </sql>
+    <select id="getById" resultMap="AppVersionBean">
+        select  * from mobile_app_version where id =#{id}
+    </select>
+
+    <!-- 查询版本列表 -->
+    <select id="selectList" resultMap="AppVersionBean" parameterType="com.jftt.wifi.bean.MobileAppVersionBean">
+		select  <include refid="selectAll"/>  from mobile_app_version where is_delete=0
+		<if test="name!=null and name !=''">
+            and name like CONCAT('%',#{name},'%')
+		</if>
+
+        <if test="code!=null ">
+            and code = #{code}
+        </if>
+
+        <if test="beginTime != null and beginTime != '' ">
+            <![CDATA[  AND publish_time >= #{beginTime}]]>
+        </if>
+        <if test="endTime != null and endTime != '' ">
+            <![CDATA[  AND publish_time <= #{endTime}]]>
+        </if>
+        <if test="publicTime!=null and publicTime!=''">
+            and publish_time = #{publicTime}
+        </if>
+        <if test="isForce!=null and isForce!=''">
+            and is_force = #{isForce}
+        </if>
+        <if test="isPublished!=null ">
+            and is_published = #{isPublished}
+        </if>
+
+        order by id desc
+        limit #{pageIndex},#{pageSize}
+
+
+	</select>
+
+    <!-- 查询版本列表 -->
+    <select id="selectCount" resultType="java.lang.Integer" parameterType="com.jftt.wifi.bean.MobileAppVersionBean">
+        select count(0) from mobile_app_version where is_delete=0
+        <if test="name!=null and name !=''">
+            and name like CONCAT('%',#{name},'%')
+        </if>
+
+        <if test="code!=null and code!=''">
+            and code = #{code}
+        </if>
+        <if test="type!=null and type!=''">
+            and type = #{type}
+        </if>
+
+        <if test="beginTime != null and beginTime != '' ">
+            <![CDATA[  AND publish_time >= #{beginTime}]]>
+        </if>
+        <if test="endTime != null and endTime != '' ">
+            <![CDATA[  AND publish_time <= #{endTime}]]>
+        </if>
+        <if test="publicTime!=null and publicTime!=''">
+            and publish_time = #{publicTime}
+        </if>
+        <if test="isForce!=null and isForce!=''">
+            and is_force = #{isForce}
+        </if>
+        <if test="isPublished!=null ">
+            and is_published = #{isPublished}
+        </if>
+
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.MobileAppVersionBean">
+    	insert into mobile_app_version
+    		(name,
+	    	code,
+	    	descr,
+	    	type,
+	    	file_name,
+	    	path,
+	    	create_user_id,
+			create_time,
+			update_user_id,
+			update_time,
+			is_delete,
+			is_force,
+			is_published)
+		values(#{name},
+			  #{code},
+			  #{descr},
+			  #{type},
+			  #{fileName},
+			  #{path},
+			  #{createUserId},
+			  now(),
+			  #{createUserId},
+			  now(),
+			  0,
+			  #{isForce},
+			 0)
+    </insert>
+
+    <!-- 更新 -->
+    <update id="update" parameterType="com.jftt.wifi.bean.MobileAppVersionBean">
+    	update mobile_app_version
+    	set
+    	    <if test="name!=null and name!=''">
+                name =#{name},
+    	    </if>
+        <if test="code!=null and code!=''">
+            code =#{code} ,
+        </if>
+        <if test="descr!=null and descr!=''">
+            descr =#{descr} ,
+        </if>
+        <if test="path!=null and path!=''">
+            path =#{path} ,
+        </if>
+        <if test="fileName!=null and fileName!=''">
+            file_name =#{fileName} ,
+        </if>
+        <if test="type!=null and type=!''">
+            type =#{type} ,
+        </if>
+        <if test="isForce!=null and isForce!=''">
+            is_force =#{isForce}   ,
+        </if>
+
+    		update_user_id=#{updateUserId},
+			update_time=now()
+		where id =#{id}
+    </update>
+
+    <!--  删除 -->
+    <update id="deleteById" >
+    	update  mobile_app_version set is_delete = 1 where id=#{id} and is_published =0
+    </update>
+
+    <update id="unPublicVersion" >
+    	update  mobile_app_version set is_published = 2 where id != #{id} and  is_published =1 and is_delete=0
+    </update>
+
+    <!-- 发布 -->
+    <update id="publicVersion">
+    	update  mobile_app_version set is_published =1 ,publish_time =now() where id=#{id}
+    </update>
+
+    <!-- 检查名称是否重复 -->
+    <select id="checkName" resultType="java.lang.Integer" parameterType="com.jftt.wifi.bean.MobileAppVersionBean">
+        select count(0) from mobile_app_version where is_delete = 0 and name = #{name}
+        <if test="id!=null and id!=''">
+            and id !=#{id}
+        </if>
+
+    </select>
+    <!-- 检查编号是否重复 -->
+    <select id="checkCode" resultType="java.lang.Integer" parameterType="com.jftt.wifi.bean.MobileAppVersionBean">
+        select count(0) from mobile_app_version where is_delete = 0 and code = #{code}
+        <if test="id!=null and id!=''">
+            and id !=#{id}
+        </if>
+
+    </select>
+
+
+    <!-- 获取当前版本 -->
+    <select id="getNewVersion" resultMap="AppVersionBean" >
+        select <include refid="selectAll"/>  from mobile_app_version
+        where id = (select max(id) from mobile_app_version where is_published=1 and is_delete = 0)
+    </select>
+
+</mapper>

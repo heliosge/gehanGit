@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ResSectionCoursewareDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.ResSectionCoursewareBean" id="ResSectionCoursewareBeanMap">
+        <id property="id" column="id"/>
+        <result property="sectionId" column="section_id"/>
+        <result property="coursewareId" column="courseware_id"/>
+    </resultMap>
+    
+    <!-- 章节课件vo（课程详情展示用vo） -->
+    <resultMap type="com.jftt.wifi.bean.vo.SectionWareVo" id="SectionWareVoMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="progressPercent" column="progress_percent"/>
+        <result property="totalContent" column="total_content"/>
+        <result property="currentContent" column="studyed_content"/>
+    </resultMap>
+    
+    <!-- 根据id查询章节课件关系 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="ResSectionCoursewareBeanMap">
+        select * from res_section_courseware where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据章节查询所有课件及该课件的学习记录 -->
+    <select id="getSectionWares" resultMap="SectionWareVoMap">
+		SELECT ware.id,ware.name,ware.type,IFNULL(record.progress_percent,0) AS progress_percent ,record.total_content,record.studyed_content
+		  FROM 
+		    (SELECT res_courseware.* 
+		       FROM res_courseware LEFT JOIN res_section_courseware ON res_courseware.id = res_section_courseware.courseware_id 
+		       WHERE res_section_courseware.section_id = #{sectionId}) AS ware 
+		    LEFT JOIN 
+		    (SELECT * FROM course_ware_record WHERE user_id = #{userId} AND section_id = #{sectionId}) AS record 
+		    ON ware.id = record.ware_id 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+</mapper>

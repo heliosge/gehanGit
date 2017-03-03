@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.TrainArrangeUserDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainArrangeUserBean" >
+    <id column="id" property="id"/>
+    <result column="user_id" property="userId"/>
+    <result column="train_arrange_id" property="trainArrangeId"/>
+    <result column="pass_status" property="passStatus"/>
+    <result column="score" property="score"/>
+    <result column="is_pass" property="isPass"/>
+    <result column="is_sign" property="isSign"/>
+    <result column="create_time" property="createTime" />
+    <result column="update_time" property="updateTime" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, user_id, train_arrange_id, pass_status, create_time, update_time, score, is_pass, is_sign
+  </sql>
+  
+  <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from train_arrange_user
+    where id = #{id}
+  </select>
+  
+  <delete id="deleteById">
+    delete from train_arrange_user
+    where user_id = #{userId} and train_arrange_id = #{trainArrangeId}
+  </delete>
+  
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainArrangeUserBean" >
+    insert into train_arrange_user (user_id, train_arrange_id, pass_status )
+    values (#{userId}, #{trainArrangeId}, #{passStatus} )
+  </insert>
+ 
+  <update id="updateById" parameterType="com.jftt.wifi.bean.TrainArrangeUserBean" >
+    update train_arrange_user
+    set pass_status = #{passStatus},
+    	update_time = now()
+    where id = #{id}
+  </update>
+  
+  <update id="updateTrainArrangeUserScore" parameterType="com.jftt.wifi.bean.TrainArrangeUserBean" >
+    update train_arrange_user
+    set 
+   		is_pass = #{isPass},
+   		is_sign = #{isSign},
+   		score = #{score},
+    	update_time = now()
+    where user_id = #{userId} and train_arrange_id = #{trainArrangeId}
+  </update>
+  
+  <select id="selectTrainArrangeUserIds" resultType="String">
+  	select user_id from train_arrange_user where train_arrange_id = #{arrangeId} and pass_status in (${passStatus})
+  	order by id desc
+  </select>
+  
+  <delete id="deleteTrainArrangeUser">
+  	delete from train_arrange_user where train_arrange_id = #{arrangeId}
+  </delete>
+  
+  <sql id="whereConditions">
+        <trim>
+            <if test="beginTime != null and beginTime != '' ">
+            	  AND create_time &gt; str_to_date(#{beginTime},"%Y-%m-%d %T") 
+            </if>
+             <if test="endTime != null and endTime != '' ">
+            	  AND create_time &lt; str_to_date(CONCAT(#{endTime}," 23:59:59"),"%Y-%m-%d %T") 
+            </if>
+        </trim>
+    </sql>
+  
+  <select id="selectTrainArrangeUserDetail" resultMap="BaseResultMap" >
+  	select <include refid="Base_Column_List" />
+    from train_arrange_user
+	where  train_arrange_id = #{arrangeId} and pass_status in (${passStatus})
+      <if test="user_id!=null and user_id!=''">
+          and user_id = #{user_id}
+      </if>
+	<include refid="whereConditions"/>
+	order by id desc
+  </select>
+</mapper>

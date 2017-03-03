@@ -1,0 +1,462 @@
+@charset "utf-8";
+/* CSS Document */
+
+	.text-p{
+	 width:250px;
+	padding: 0 2px;
+	height: 28px;
+	color: #555;
+	font: 12px Verdana;
+	border: 1px solid #cacaca;
+	line-height: 20px;
+	vertical-align: middle;}	
+.tree{
+	width:250px;
+	float: left;
+	min-height: 550px;
+	border: 1px solid;
+	height: 100%;
+	margin: 0px;
+	padding: 0px
+}
+.main-list{
+	float: right;
+	width: 780px;
+}
+.ui-tit-h2{
+	position: relative;
+	margin-bottom: 20px;
+	height: 30px;
+}
+
+.ui-tit-h2 hr{
+	position: absolute;
+	left: 0;
+	top: 50%;
+	width: 100%;
+	height: 1px;
+	border: none;
+	border-top: 1px solid #ddd;
+	z-index: 20;
+	}
+.red-btn{
+	height: 34px;
+	background: #dd0500;
+	color: #fff;
+	line-height: 34px;
+	text-align: center;
+	border: none;
+	font-weight: bold;
+	cursor: pointer;
+	margin-left: 8px;
+}
+.gray-btn{
+	height: 34px;
+	background: #d8d8d8;
+	color: #000;
+	line-height: 34px;
+	text-align: center;
+	border: none;
+	font-weight: bold;
+	cursor: pointer;
+}	
+.search_3{
+	height: 30px;
+	line-height: 34px;
+	padding: 10px;
+	border-top: 1px solid #cccccc;
+	border-left: 1px solid #cccccc;
+	border-right: 1px solid #cccccc;
+}
+.text{
+	height: 30px;
+	border: 1px solid #cccccc;
+}
+.fn-clear:after{
+	content: " ";
+	display: block;
+	height: 0;
+	clear: both;
+}
+.op-area .btn,.search_3 .btn{
+	margin-right: 5px!important;;
+	margin-bottom: 3px!important;
+	padding: 0 14px!important;
+ 	color: #fff!important;
+	margin-top:0px!important;
+	line-height: 28px;
+}
+.span_btn{
+	color: #0C9C92;
+	display: inline-block;
+	padding: 0 2px;
+	line-height: 14px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+span.gray{
+	color: #999;
+	 cursor: auto;;
+}
+.tree-tit{
+background: #333;
+font: 14px/30px "\5FAE\8F6F\96C5\9ED1";
+color: #fff;
+text-align: center;
+}
+.tit{
+	padding: 0 200px 20px 0;
+	position: relative;
+}
+div.detail-content{
+	height: 500px;
+	overflow: auto;
+	width: 800px;
+	border: 1px solid gray;
+}
+a.back{
+	width: 30px;
+height: 30px;
+background: url(../images/other-bg.png) -37px 5px no-repeat #888;
+display: inline-block;
+position: relative;
+z-index: 30;
+float: left;
+}
+div.controls .btn{
+	width: 60px;
+	height: 30px;
+	background: #cc0404;
+	color: #fff;
+	text-align: center;
+	line-height: 30px;
+	border: none;
+}
+div.controls  .btn-cancel {
+background: #999;
+border-color: #999;
+}
+div.kl-label{
+	float: left;
+padding: 3px 0;
+line-height: 24px;
+text-align: right;
+width: 80px;
+white-space: nowrap;
+position: relative;
+}
+div.kl-content{
+	margin-left: 90px;
+	position: relative;
+	line-height: 30px;
+	min-height: 30px;
+}
+ul.kl-list li{
+	margin-bottom: 20px;
+}
+#clickupload{
+	height: 30px;
+	line-height: 30px;
+	overflow: hidden;
+	position: relative;
+	text-align: center;
+	width: 100px;
+	cursor: pointer;
+}
+div.upload-btn{
+	height: 30px;
+	line-height: 30px;
+	overflow: hidden;
+	position: relative;
+	text-align: center;
+	width: 100px;
+	cursor: pointer;
+	border-color: #e4932a;
+	background: #f5a743;
+}
+div.upload-btn:HOVER{
+	border-color: #e4932a;
+	background: #e4932a;
+}
+
+div.kl-content .tishi{
+	padding: 14px;
+	background: #f5f5f5;
+	margin-top: 20px;
+}
+input[type='file']{
+	cursor: pointer;
+}
+.uploadify-queue-item {
+background-color: #F5F5F5;
+-webkit-border-radius: 3px;
+-moz-border-radius: 3px;
+border-radius: 3px;
+font: 11px Verdana, Geneva, sans-serif;
+margin-top: 5px;
+max-width: 350px;
+padding: 10px;
+}
+.uploadify-queue-item .cancel a, .uploadify-queue-item .close {
+background: url("../images/knowledge/uploadify-cancel.png") 0 0 no-repeat;
+float: right;
+height: 16px;
+text-indent: -9999px;
+width: 16px;
+}
+.content h3{
+	background: url(../images/img/ico_4.png) no-repeat left 2px;
+	width: 1052px;
+	padding-left: 20px;
+	color: #3a3a3a;
+	border-bottom: 1px solid #cccccc;
+	padding-bottom: 10px;
+	margin-bottom: 10px;
+}
+/*知识审批页面css begin*/
+div.op-area input.btn{
+	margin-left: 0px;
+	/* padding-left: 0px; */
+	height: 35px;
+	width: 130px;
+}
+
+/*知识审批页面css end*/
+
+/*知识创建上传页面css begin*/
+.knowledge h4{
+	width: 1036px;
+	padding-left: 10px;
+	font-size: 14px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #111111;
+}
+.category-search{
+	width: 60px;
+	height: 30px;
+	background: #cc0404;
+	color: #fff;
+	text-align: center;
+	line-height: 30px;
+	border: none;
+}
+/*知识创建上传页面css end*/
+
+ul.category {
+	width: 350px;
+	height: 100px;
+	font-family: "微软雅黑", "宋体", Arial, sans-serif;
+font-size: 12px;
+}
+ul.category li{
+	height: 35px;
+	line-height: 32px;
+}
+ul.category li label.label{
+	width: 80px;
+	display: block;
+	float: left;
+}
+label.error{
+	color:red
+}
+div.tit-error{
+	display: inline;
+}
+
+.tags-box {
+	border: 1px solid #cacaca;
+	height: 100px;
+	width: 300px;
+	float: left;
+}
+
+.tags-box {
+	padding: 4px;
+	border: 1px solid #cacaca;
+	height: auto
+}
+
+.tags li,.tagspan {
+	float: left;
+	background: #d8f4f2;
+	display: inline-block;
+	padding: 2px 4px;
+	margin: 5px 0 0 5px;
+	cursor: pointer;
+	position: relative;
+	top: -2px;
+	border: 1px solid #88c6c1;
+	text-overflow: ellipsis;
+	-o-text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden
+}
+
+.tags li:hover,.tagspan:hover {
+	border-color: #0C9C92
+}
+
+.tags li a,.deleteTag {
+	position: relative;
+	top: 1px;
+	margin-left: 3px;
+	text-decoration: none;
+	color: #88c6c1;
+	font-size: 14px
+}
+
+.tags li:hover a,.tagspan:hover .deleteTag {
+	color: #0C9C92
+}
+
+.tags li.active {
+	background: #0C9C92;
+	color: #fff
+}
+
+.tags li {
+	border: none;
+	border-radius: 6px
+}
+.icon-remove-circle:before {
+	content: "X"
+}
+textarea:focus,input[type="text"]:focus,input[type="password"]:focus,select:focus{
+	border: 1px solid #2698e4;
+	box-shadow: 0 0 3px rgba(38, 152, 228, 0.2);
+	-moz-box-shadow: 0 0 3px rgba(38, 152, 228, 0.2);
+	-webkit-box-shadow: 0 0 3px rgba(38, 152, 228, 0.3);
+	color: #333;
+	position: relative;
+	z-index: 1000
+}
+.noborder {
+	border: none ;
+	margin-top: 4px !important;
+	height: 30px;
+}
+
+.webuploader-pick {
+	background: red;
+}
+div.kl-item{
+/* 	width: 100%;
+ */	top: 0px;
+	left: 120px;
+	background: #eee;
+	height: 25px;
+	line-height: 25px;
+	/* float: left; */
+	padding-left: 7px;
+	margin-top: 2px;
+}
+div.kl-item h4{
+	display: inline-block;
+}
+div.kl-item  span.close{
+	float: right;
+	width:10px;
+	margin-right: 5px;
+	cursor: pointer;
+}
+
+.ui-dialog .ui-dialog-title {
+	float: inherit;;
+	margin: .1em 0;
+	white-space: nowrap;
+	width: auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ui-dialog {
+	_float: left;
+	position: relative;
+	background-color: #FFF;
+	border: 1px solid #999;
+	border-radius: 6px;
+	outline: 0;
+	background-clip: padding-box;
+	font-family: Helvetica, arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.428571429;
+	color: #333;
+	opacity: 0;
+	-webkit-transform: scale(0);
+	transform: scale(0);
+	-webkit-transition: -webkit-transform .15s ease-in-out, opacity .15s ease-in-out;
+	transition: transform .15s ease-in-out, opacity .15s ease-in-out;
+}
+
+
+.ztree li ul{ margin:0; padding:0}
+.ztree li {line-height:30px;}
+.ztree li a {width:98%;height:30px;padding-top: 0px;border-bottom: 1px dotted #ccc;}
+.ztree li a:hover {text-decoration:none; background-color: #E7E7E7;}
+.ztree li a span.button.switch {visibility:visible}
+.ztree.showIcon li a span.button.switch {visibility:visible;}
+.ztree li a.curSelectedNode {background-color:#D4D4D4;border:0;height:30px;}
+.ztree li span {line-height:30px;}
+.ztree li span.button {margin-top: -7px;}
+.ztree li span.button.switch {width: 14px;height: 14px;}
+
+.ztree li span.button.switch.level0 {width: 14px; height:14px}
+.ztree li span.button.switch.level1 {width: 14px; height:14px}
+.ztree li span.button.noline_open {background-position: 0 0;}
+.ztree li span.button.noline_close {background-position: -18px 0;}
+.ztree li span.button.noline_open.level0 {background-position: 0 -18px;}
+.ztree li span.button.noline_close.level0 {background-position: -18px -18px;}
+
+.ztree li span.button{	background: url("") 0 0 no-repeat;
+}
+.ztree li span.button.center_close,.ztree li span.button.root_close,.ztree li span.button.roots_close,.ztree li span.button.bottom_close  {
+	background: url(../images/img/ico_zk.png) 0 0 no-repeat;
+	vertical-align: middle;
+	margin-top: 0px;
+	margin-left: 5px;
+	margin-right: 2px;
+	width: 14px;height: 14px;
+}
+.ztree li span.button.center_open,.ztree li span.button.root_open,.ztree li span.button.roots_open,.ztree li span.button.bottom_open{
+	background: url(../images/img/ico_sq.png) 0 0 no-repeat;
+	vertical-align: middle;
+	margin-top: 0px;
+	margin-left: 5px;
+	margin-right: 2px;
+	width: 14px;height:14px;
+}
+.ztree li span.button.ico_docu{
+	background: url(../images/img/ico_txt.png) 0 0 no-repeat;
+	vertical-align: middle;
+	margin-top: 0px;
+	margin-left: 5px;
+	margin-right: 2px;
+	width: 14px;height: 14px;
+}
+
+.ztree li span.button.ico_close{
+	display: none;
+}
+.ztree li span.button.ico_open{
+	display: none;
+}
+.ztree li ul.line{
+	background: url("");
+}
+
+.n-icon,.n-arrow{
+	margin-left: 0px!important;
+	margin-right: 0px!important;
+}
+
+div.content input[type='radio']{
+	cursor: pointer;
+}
+.cate-style{
+	width: 100%;
+	display: block;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}

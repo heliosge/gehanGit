@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManageRoleDaoMapper">
+
+	<resultMap id="ManageRoleBean" type="com.jftt.wifi.bean.ManageRoleBean">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="deleteFlag" column="delete_flag"/>
+		<result property="companyId" column="company_id"/>
+		<result property="subCompanyId" column="sub_company_id"/>
+	</resultMap>
+	
+	<sql id="manageRoleMap">
+		<if test="companyId != null and companyId != ''">
+			AND company_id = #{companyId}
+		</if>
+		<if test="subCompanyId != null and subCompanyId != ''">
+			AND sub_company_id = #{subCompanyId}
+		</if>
+		<if test="status != null and status != ''">
+			AND status = #{status}
+		</if>
+		<if test="id != null and id != ''">
+			AND id = #{id}
+		</if>
+		<if test="name != null and name != ''">
+			AND name like '%${name}%'
+		</if>
+		<if test="nameEqule != null and nameEqule != ''">
+			AND name = #{nameEqule}
+		</if>
+		
+	</sql>
+	
+	<!-- 根据条件获得权限 -->
+	<select id="getManageRoleByMap" parameterType="java.util.HashMap" resultMap="ManageRoleBean">
+		select * from manage_role where id not in (select init_role_id from manage_company WHERE init_role_id IS NOT NULL)
+		<include refid="manageRoleMap"/>
+		<if test="pageSize != null">
+			limit ${fromNum}, ${pageSize}
+		</if>
+	</select>
+	
+	<!-- 根据条件获得权限数量 -->
+	<select id="getManageRoleCountByMap" parameterType="java.util.HashMap" resultType="int">
+		select count(1) from manage_role where id not in (select init_role_id from manage_company WHERE init_role_id IS NOT NULL)
+		<include refid="manageRoleMap"/>
+	</select>
+	
+	<!-- 增加角色 -->
+	<insert id="addManageRole" parameterType="com.jftt.wifi.bean.ManageRoleBean"  useGeneratedKeys="true" keyProperty="id">
+		insert into manage_role
+			(name, company_id, sub_company_id, descr)
+		values 
+			(#{name}, #{companyId}, #{subCompanyId}, #{descr})
+	</insert>
+	
+	<!-- 修改角色 -->
+	<update id="updateManageRoleById" parameterType="java.util.HashMap">
+		update manage_role set 
+			<trim suffixOverrides=",">
+				<if test="name != null and name != '' ">
+					name = #{name},
+				</if>
+				<if test="descr != null and descr != '' ">
+					descr = #{descr},
+				</if>
+				<if test="status != null and status != '' ">
+					status = #{status},
+				</if>
+			</trim>
+		where id = #{id}
+	</update>
+	
+	<update id="updateManageRole" parameterType="com.jftt.wifi.bean.ManageRoleBean">
+		update manage_role set 
+			<trim suffixOverrides=",">
+				<if test="name != null and name != '' ">
+					name = #{name},
+				</if>
+				<if test="descr != null and descr != '' ">
+					descr = #{descr},
+				</if>
+				<if test="status != null and status != '' ">
+					status = #{status},
+				</if>
+			</trim>
+		where id = #{id}
+	</update>
+	
+	<delete id="deleteRolebyId">
+		delete from manage_role where id =#{id}
+	</delete>
+	
+	<select id="getManageUserByRoleName" resultType="String">
+		select user_id from manage_user_role where role_id in (select id from manage_role where name like '%${roleName}%' and company_id=#{companyId})
+	</select>
+</mapper>

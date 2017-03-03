@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamQuestionOptionDaoMapper">
+	<!-- wangyifeng begin -->
+	<insert id="addQuestionOption" useGeneratedKeys="true" keyProperty="id">
+		insert into exam_question_option
+		(question_id, order_num, type, content, is_answer, update_time)
+		values (#{questionId}, #{orderNum}, #{type}, #{content}, #{isAnswer}, now())
+	</insert>
+	<delete id="deleteQuestionOptions">
+		delete from exam_question_option
+		where question_id = #{questionId}
+	</delete>
+    <select id="getOptionList" resultMap="question">
+        select id,question_id,order_num,type,content,is_answer 
+        from exam_question_option
+        where question_id in (${questionIdListStr})
+        order by question_id, order_num
+    </select>
+	<!-- wangyifeng end -->
+
+
+	<!--zhangchen start  -->
+	<resultMap type="com.jftt.wifi.bean.exam.QuestionOptionBean" id="question">
+        <id property="id" column="id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="type" column="type"/>
+        <result property="content" column="content"/>
+        <result property="isAnswer" column="is_answer"/>
+	</resultMap>
+	
+	<!--通过questionId查询题目选项  -->
+	<select id="selectOptionsByQuestionId" resultMap="question" parameterType="Integer">
+		select id,question_id,order_num,type,content,is_answer 
+		from exam_question_option
+		where question_id = #{question_id}
+		order by order_num
+	</select>
+	
+	<!--查询主观题中用户答案与正确答案关键字的匹配数  -->
+	<select id="selectAnswerKeyCount" parameterType="java.util.HashMap" resultType="int">
+		select count(1) from exam_question_option
+		where content like CONCAT('%', #{content}, '%')
+		and question_id = #{question_id}
+	</select>
+	
+	<!--zhangchen end  -->
+</mapper>

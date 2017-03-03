@@ -1,0 +1,203 @@
+package com.jftt.wifi.action_new;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.jftt.wifi.bean.ManageCompanyBean;
+import com.jftt.wifi.bean.ManageUserBean;
+import com.jftt.wifi.bean.vo.ManageCompanyVo;
+import com.jftt.wifi.common.Constant;
+import com.jftt.wifi.dao.BaseMetaDaoMapper;
+import com.jftt.wifi.service.InformationManageService;
+import com.jftt.wifi.service.IntegralManageService;
+import com.jftt.wifi.service.LoginHisService;
+import com.jftt.wifi.service.ManageCompanyService;
+import com.jftt.wifi.service.ManageIndustryCategoryService;
+import com.jftt.wifi.service.ManageUserService;
+import com.jftt.wifi.util.CommonUtil;
+import com.jftt.wifi.util.TimeUtil;
+
+/**
+ * class name:LoginAction <BR>
+ * class description: 处理登录页面 <BR>
+ * Remark: <BR>
+ * 
+ * @version 1.00 2013-12-13
+ * @author JFTT)WANGJIAN
+ */
+@Controller
+@RequestMapping(value = "login_new")
+public class LoginNewAction {
+
+	private static Logger log = Logger.getLogger(LoginNewAction.class);
+
+	@Resource(name = "manageUserService")
+	private ManageUserService manageUserService;
+
+	@Resource(name = "manageCompanyService")
+	private ManageCompanyService manageCompanyService;
+
+	@Resource(name = "manageIndustryCategoryService")
+	private ManageIndustryCategoryService manageIndustryCategoryService;
+
+	@Resource(name = "informationManageService")
+	private InformationManageService informationManageService;
+
+	@Resource(name = "integralManageService")
+	private IntegralManageService integralManageService;
+
+	@Resource(name = "baseMetaDaoMapper")
+	private BaseMetaDaoMapper baseMetaDaoMapper;
+
+	@Resource(name = "loginHisService")
+	private LoginHisService loginHisService;
+
+	/**
+	 * Method name: pclogin <BR>
+	 * Description: 登录的ajax <BR>
+	 * Remark: <BR>
+	 */
+	@RequestMapping(value = "pclogin")
+	@ResponseBody
+	public Object login(HttpServletRequest request, HttpServletResponse response, String userName, String password) {
+		Map<String,Object> resultMap = new HashMap<String,Object>();
+		try {
+			log.debug("系统登陆 参数信息 UserName: " + userName + "PassWord: " + password);
+			// TODO:修改companyId
+			// 默认普联企业id
+			Integer companyId = Constant.PULIAN_COMPANY_ID;
+			// Integer companyId = null;
+			ManageCompanyBean company = new ManageCompanyBean();
+			// 获取用户登录域名
+			String url = request.getHeader("Host");// TODO
+			log.debug("url: "+url);
+			// System.out.println("url:"+url);
+			// StringBuffer url= request.getRequestURL();
+			String domain = url.split(Constant.PULIAN_SITE)[0].replace(Constant.HTTP, "");// TODO
+			log.debug("domain: "+domain);
+			// 根据域名获取该用户的公司
+			ManageCompanyVo vo = new ManageCompanyVo();
+			vo.setDomain(domain);// TODO
+			List<ManageCompanyBean> comList = manageCompanyService.selectCompanyList(vo);
+			log.debug("comList:" + "\n" + comList);
+			if (comList != null && comList.size() > 0) {
+				company = comList.get(0);
+				companyId = company.getId();
+				log.debug("公司ID ：" + companyId + "\n" + "冻结:" + company.getStatus() + comList.toString());
+				if (companyId > Constant.PULIAN_COMPANY_ID) {
+					// 判断公司账号过期时间
+					if (new Date().getTime() > TimeUtil.parseString2Date(company.getEndTime()).getTime()) {
+						resultMap.put("result", "OVER_DATE");
+						resultMap.put("msg", "该企业租用时间已经过期");
+						return resultMap;
+					}
+					// 判断该企业是否冻结
+					if (!"1".equals(company.getStatus().toString())) {
+						resultMap.put("result", "COMPANY_STATUS_FREEZE");
+						resultMap.put("msg", "该企业已经被冻结");
+						return resultMap;
+					}
+					// 判断该企业当前在线用户是否大于最大并发用户
+					Map<String, Object> param = new HashMap<String, Object>();
+					param.put("companyId", companyId);
+					int currentUser = loginHisService.selectUserCountByMap(param);
+					if (currentUser >= company.getMaxConcurrent()) {
+						resultMap.put("result", "OVER_MAXCONCURRENT");
+						resultMap.put("msg", "该企业当前在线用户大于最大并发用户");
+						return resultMap;
+					}
+				}
+			}
+			// 根据域名、登陆账号获取该用户
+			ManageUserBean userBean = manageUserService.findUserByUserName(userName.trim(), companyId);
+			log.debug("userBean:" + "\n" + userBean);
+			if (null != userBean) {
+				log.debug("\n" + "userBean.getPassword" + userBean.getPassword() + "\n" + "输入密码:"
+						+ CommonUtil.getMD5(password));
+				if (CommonUtil.getMD5(password).equalsIgnoreCase(userBean.getPassword())) {
+
+					if (!"1".equals(userBean.getStatus().toString())) {
+						resultMap.put("result", "STATUS_FREEZE");
+						resultMap.put("msg", "该企业已经被冻结");
+						return resultMap;
+					}
+
+					// 设置Session
+					HttpSession session = request.getSession();
+					session.setAttribute(Constant.SESSION_USER_COMPANYID, userBean.getCompanyId());
+					session.setAttribute(Constant.SESSION_USERID_LONG, userBean.getId());
+					session.setAttribute(Constant.SESSION_USERNAME_STRING, userBean.getUserName());
+					session.setAttribute(Constant.SESSION_NAME, userBean.getName());
+					session.setAttribute(Constant.SESSION_USERBEAN,
+							manageUserService.findUserByIdCondition(userBean.getId()));
+
+					log.debug(userName + " 登陆成功");
+					// 积累积分
+					integralManageService.handleIntegral(Integer.parseInt(userBean.getId()), 7009);
+					// 初始化课件查询参数
+					String VideoLimitMinute = baseMetaDaoMapper.getValueByKey("VideoLimitMinute");
+					String TestLimitMinute = baseMetaDaoMapper.getValueByKey("TestLimitMinute");
+					String ScormLimitMinute = baseMetaDaoMapper.getValueByKey("ScormLimitMinute");
+					String LimitPage = baseMetaDaoMapper.getValueByKey("LimitPage");
+					String PdfTimeInterval = baseMetaDaoMapper.getValueByKey("PdfTimeInterval");
+					log.debug("当前视频课件预览最大分钟=>" + VideoLimitMinute);
+					log.debug("测试课件预览最大分钟=>" + TestLimitMinute);
+					log.debug("Scorm课件预览最大分钟=>" + ScormLimitMinute);
+					log.debug("flexpaper预览最大页码=>" + LimitPage);
+					log.debug("pdf课件翻页间隔时间=>" + PdfTimeInterval);
+					if (VideoLimitMinute != null && !VideoLimitMinute.isEmpty()) {
+						session.setAttribute("VideoLimitMinute", Integer.parseInt(VideoLimitMinute));
+					}
+					if (TestLimitMinute != null && !TestLimitMinute.isEmpty()) {
+						session.setAttribute("TestLimitMinute", Integer.parseInt(TestLimitMinute));
+					}
+					if (ScormLimitMinute != null && !ScormLimitMinute.isEmpty()) {
+						session.setAttribute("ScormLimitMinute", Integer.parseInt(ScormLimitMinute));
+					}
+					if (LimitPage != null && !LimitPage.isEmpty()) {
+						session.setAttribute("LimitPage", Integer.parseInt(LimitPage));
+					}
+					if (PdfTimeInterval != null && !PdfTimeInterval.isEmpty()) {
+						session.setAttribute("PdfTimeInterval", Integer.parseInt(PdfTimeInterval));
+					}
+					resultMap.put("result", "OK");
+					resultMap.put("msg", "登录成功");
+					return resultMap;
+
+				} else {
+
+					log.debug(userName + " 密码错误");
+					resultMap.put("result", "PASSWORD_ERROR");
+					resultMap.put("msg", "密码错误");
+					return resultMap;
+				}
+
+			} else {
+
+				log.debug(userName + " 不存在");
+				resultMap.put("result", "NO_EXIST");
+				resultMap.put("msg", "用户不存在");
+				return resultMap;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error(e, e);
+			resultMap.put("result", "ERROR");
+			resultMap.put("msg", "其他错误");
+			return resultMap;
+		}
+	}
+
+}

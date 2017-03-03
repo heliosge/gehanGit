@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManagementLearningMapDaoMapper">
+     
+      <!-- 关系映射 -->
+    <resultMap type="com.jftt.wifi.bean.vo.PostStage" id="PostStageBean">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="postName" column="post_name"/>
+        <result property="description" column="description"/>
+        <result property="period" column="period"/>
+        <result property="obligatoryMinCredits" column="obligatory_min_credits"/>
+        <result property="electiveMinCredits" column="elective_min_credits"/>
+        <result property="examId" column="exam_id"/>
+        <result property="duration" column="duration"/>
+        <result property="paperId" column="paperId"/>
+        <result property="examTitle" column="title"/>
+        <result property="passScorePercent" column="pass_score_percent"/>
+        <result property="orderNum" column="order_num"/>
+    </resultMap>
+      <resultMap type="com.jftt.wifi.bean.vo.PostStage" id="PostStageBaseBean">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="pathId" column="promotion_path_id"/>
+        <result property="postName" column="post_name"/>
+        <result property="description" column="description"/>
+        <result property="period" column="period"/>
+        <result property="obligatoryMinCredits" column="obligatory_min_credits"/>
+        <result property="electiveMinCredits" column="elective_min_credits"/>
+        <result property="examId" column="exam_id"/>
+        <result property="examTitle" column="title"/>
+        <result property="passScorePercent" column="pass_score_percent"/>
+        <result property="orderNum" column="order_num"/>
+    </resultMap>
+    
+       <resultMap type="com.jftt.wifi.bean.vo.PostPath" id="PostPathBaseBean">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="desc" column="description"/>
+        <result property="isDisabled" column="is_disabled"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.vo.PostPath" id="PostPathBean">
+        <id property="id" column="pathId"/>
+        <result property="name" column="name"/>
+         <!--将stage属性映射到collection-->
+        <collection property="stage" ofType="com.jftt.wifi.bean.vo.PostStage" resultMap="PostStageBean"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.vo.PostApplyVo" id="postStudentBean">
+        <result property="userId" column="user_id"/>
+        <result property="postId" column="post_id"/>
+        <result property="postName" column="post_name"/>
+        <result property="obligatoryProp" column="obligatory_prop"/>
+        <result property="electiveProp" column="elective_prop"/>
+        <result property="isPassed" column="is_passed"/>
+        <result property="progress" column="progress"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.vo.PostCourseVo" id="PostCourseBean">
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="courseType" column="course_type"/>
+        <result property="score" column="score"/>
+    </resultMap>
+     <resultMap type="com.jftt.wifi.bean.PostPromotionState" id="PostPromotionStateBean">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="promotionStageId" column="promotion_stage_id"/>
+        <result property="isExamPassed" column="promotion_stage_id"/>
+        <result property="examScore" column="exam_score"/>
+        <result property="isCourseFinished" column="is_course_finished"/>
+        <result property="obligatoryCredits" column="obligatory_credits"/>
+        <result property="electiveCredits" column="elective_credits"/>
+        <result property="promotionApproveStatus" column="promotion_approve_status"/>
+        <result property="promotionRefuseReason" column="promotion_refuse_reason"/>
+        <result property="reStartApproveStatus" column="re_start_approve_status"/>
+        <result property="reStartRefuseReason" column="re_start_refuse_reason"/>
+        <result property="reStartTime" column="re_start_time"/>
+        <result property="promotionStatus" column="promotion_status"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="stageBeginTime" column="stage_begin_time"/>
+        <result property="promotionSucceedTime" column="promotion_succeed_time"/>
+    </resultMap>
+      <!-- zhangbocheng start -->
+    <!--验证晋升路径名称是否存在-->
+	<select id="queryCountByPathName" parameterType="java.lang.String" resultType="java.lang.Integer">
+            SELECT 
+				count(*) 
+			FROM 
+				post_promotion_path   
+		    WHERE 
+		         name =#{name} AND is_deleted = 0 AND company_id = #{companyId}
+		     <if test="subCompanyId != null and subCompanyId != '' ">
+			    AND sub_company_id = #{subCompanyId}
+			</if>
+		    <if test="id!=null">
+		       AND  id!=#{id}
+		    </if>  
+    </select>
+        <!--根据id查询路径-->
+	<select id="getPathById"  resultMap="PostPathBaseBean">
+            SELECT 
+				id,name,description,is_disabled
+			FROM 
+				post_promotion_path   
+		    WHERE 
+		        id = #{id}
+    </select>
+    <!--查询所有路径-->
+	<select id="getPathList"  resultMap="PostPathBaseBean">
+            SELECT 
+				id,name,description,is_disabled
+			FROM 
+				post_promotion_path   
+		    WHERE 
+		        is_deleted =0 AND
+		        company_id=#{companyId}
+		    <if test="subCompanyId!=null">
+		      AND    sub_company_id=#{subCompanyId}
+		    </if>  
+    </select>
+    <insert id="insertPath" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.vo.PostPath">
+       insert into post_promotion_path ( 
+    name,
+    description,
+    is_disabled,
+    company_id,
+    sub_company_id,
+    is_deleted,
+    update_time)
+    values(
+     #{name}, 
+     #{desc}, 
+     0,
+     #{companyId}, 
+     #{subCompanyId}, 
+     0, 
+     now())
+    </insert>
+       <!-- 晋升路径-修改 -->
+    <update id="updatePath" parameterType="com.jftt.wifi.bean.vo.PostPath">
+	    update post_promotion_path set 
+	    name =#{name}
+	    <if test="desc!=null">
+	     ,description=#{desc}
+	    </if>
+	     where id = #{id} 
+    </update>
+
+      <!-- 晋升路径-删除 -->
+    <update id="deletePath" parameterType="Integer">
+	    update post_promotion_path set 
+	    is_deleted = 1
+	     where id = #{id} 
+    </update>
+    
+    
+      <!-- 根据id取得阶段 -->
+     <select id="getStageById"  resultMap="PostStageBaseBean">
+      SELECT * FROM post_promotion_path_stage 
+      WHERE  id= #{id} 
+     </select>
+       <!-- 查询出阶段重复 -->
+    <select id="checkPathStage" resultType="int" >
+		SELECT COUNT(0)
+		  FROM post_promotion_path_stage  
+		  WHERE is_deleted = 0 AND promotion_path_id =#{pathId} AND post_id = #{postId}
+    </select>
+        <!-- 查询出课程总学分 -->
+    <select id="getTotalCredits" resultType="Integer" >
+		SELECT IFNULL(SUM(b.learn_score),0)
+		  FROM post_course_relation a 
+		  LEFT JOIN res_course b ON a.course_id = b.id 
+		  WHERE a.is_deleted = 0 AND a.post_id =#{postId} 
+		  <if test="type!=null">
+		   AND a.course_type = #{type}
+		  </if>
+		 
+    </select>
+         <!-- 查询出某岗位关联的阶段的最大学分 -->
+    <select id="getMAXCredits" resultType="Integer" >
+       SELECT
+         <if test="type==1">
+         MAX(elective_min_credits)
+         </if>
+         <if test="type!=1">
+         MAX(obligatory_min_credits)
+         </if>
+		 FROM post_promotion_path_stage WHERE post_id = #{postId}
+		 
+    </select>
+    
+      <!-- 新建阶段 -->
+      <insert id="insertPathStage" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.vo.PostStage">
+       insert into post_promotion_path_stage ( 
+       post_id,
+       promotion_path_id,
+       description,
+       period,
+       obligatory_min_credits,
+       elective_min_credits,
+       exam_id,
+       order_num,
+       is_deleted,
+       update_time)
+       values(
+       #{postId},
+       #{pathId}, 
+       #{description},
+       #{period},
+       #{obligatoryMinCredits},
+       #{electiveMinCredits},
+       #{examId},
+       #{orderNum},
+       0, 
+       now())
+    </insert>
+       <!-- 修改阶段 -->
+    <update id="updatePathStage" parameterType="com.jftt.wifi.bean.vo.PostStage">
+	    update post_promotion_path_stage set 
+	      <if test="postId !=null">post_id= #{postId}, </if>
+          <if test="pathId !=null">promotion_path_id= #{pathId},  </if>
+          <if test="description !=null">description=#{description}, </if>
+          <if test="period !=null">period =#{period}, </if>
+          <if test="electiveMinCredits !=null">obligatory_min_credits=  #{electiveMinCredits},  </if>
+          <if test="obligatoryMinCredits !=null">elective_min_credits =#{obligatoryMinCredits}, </if>
+          <if test="examId !=null">exam_id= #{examId}, </if>
+         
+         <if test="orderNum !=null">
+         order_num = #{orderNum},
+         </if>
+         update_time=now() 
+	     where id = #{id} 
+    </update>
+    
+      <!-- 删除阶段 -->
+    <update id="deletePathStage" parameterType="Integer">
+	    update post_promotion_path_stage set 
+	    is_deleted = 1
+	     where id = #{id} 
+    </update>
+     <!-- 获取最大的排序字段order_num -->
+     <select id="getMaxOrderNum"  resultType="Integer">
+      SELECT MAX(order_num) FROM  post_promotion_path_stage where  promotion_path_id = #{pathId}
+     </select>
+       <!-- 获取自己上一级的阶段 -->
+     <select id="getUpStage"  resultMap="PostStageBaseBean">
+      SELECT * FROM post_promotion_path_stage 
+      WHERE promotion_path_id = #{pathId} 
+      AND order_num = ( SELECT MAX(order_num) FROM post_promotion_path_stage 
+            WHERE promotion_path_id =  #{pathId} AND  #{orderNum} > order_num )
+     
+     </select>
+        <!-- 获取自己下一级的阶段 -->
+     <select id="getDownStage"  resultMap="PostStageBaseBean">
+      SELECT * FROM post_promotion_path_stage 
+      WHERE promotion_path_id = #{pathId} AND order_num = ( SELECT MIN(order_num) FROM post_promotion_path_stage 
+            WHERE promotion_path_id =  #{pathId} AND   order_num > #{orderNum} )
+     </select>
+     
+         <!-- 获取第一阶段 -->
+     <select id="getFirstStage"  resultMap="PostStageBaseBean">
+      SELECT * FROM post_promotion_path_stage 
+      WHERE promotion_path_id = #{pathId} AND order_num = ( SELECT MIN(order_num) FROM post_promotion_path_stage 
+            WHERE promotion_path_id =  #{pathId} )
+     </select>
+     
+       <!-- 根据岗位id取得阶段 -->
+     <select id="getStageByPostId"  resultType="Integer">
+      SELECT id FROM post_promotion_path_stage 
+      WHERE post_id = #{postId} 
+      AND is_deleted = 0
+     </select>
+     
+     <!-- 根据路径id取得阶段 -->
+     <select id="getStageByPathId"  resultType="Integer">
+      SELECT id FROM post_promotion_path_stage 
+      WHERE promotion_path_id = #{pathId} 
+      AND is_deleted = 0
+     </select>
+     
+      <!-- 是否满足晋升条件 -->
+     <select id="isCanPromotion"  resultType="int">
+     SELECT COUNT(0) FROM post_promotion_state a
+     LEFT JOIN post_promotion_path_stage b ON a.promotion_stage_id = b.id
+     LEFT JOIN exam_assign_info as d ON d.relation_id=b.exam_id AND a.user_id = d.user_id
+     LEFT JOIN post_promotion_path e ON b.promotion_path_id = e.id
+      WHERE a.id = #{id} AND e.is_deleted=0 AND e.is_disabled = 0
+      AND ((
+      get_learn_score(#{id},2) >=b.obligatory_min_credits   
+      AND get_learn_score(#{id},1)>= b.elective_min_credits ) OR  d.is_passed=1)
+      
+     </select>
+       <!-- 同意晋升 -->
+    <update id="agreePromotion" >
+	    update post_promotion_state set 
+	    promotion_succeed_time = now(),
+	    <if test="status==3">
+	      promotion_status = 3,
+	      promotion_approve_status=3,
+	      promotion_refuse_reason=#{reason},
+	      re_start_approve_status=2,
+	      re_start_refuse_reason=''
+	    </if>
+	    <if test="status==4">
+	      promotion_approve_status=4,
+	      promotion_status = 1
+	    </if>
+	   
+	    where id = #{id} 
+    </update>
+    
+
+    
+         <!-- 根据id取得记录 -->
+     <select id="getPromotionStateById"  resultMap="PostPromotionStateBean">
+      SELECT * FROM post_promotion_state 
+      WHERE  id= #{id} 
+     </select>
+       <!-- 检查晋升记录是否重复 -->
+    <select id="checkPromotionState" resultType="int" >
+		SELECT COUNT(0)
+		  FROM post_promotion_state  
+		  WHERE  promotion_stage_id =#{stageId} 
+           AND user_id =#{userId}
+    </select>
+      <!-- 新建晋升记录 -->
+      <insert id="insertPromotionState" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.PostPromotionState">
+       insert into post_promotion_state ( 
+       user_id,
+       promotion_stage_id,
+       is_exam_passed,
+       exam_score,
+       is_course_finished,
+       obligatory_credits,
+       elective_credits,
+       promotion_approve_status,
+       promotion_refuse_reason,
+       re_start_approve_status,
+       re_start_refuse_reason,
+       re_start_time,
+       promotion_status,
+       update_time,
+       stage_begin_time,
+       promotion_succeed_time)
+       values(
+       #{userId},
+       #{promotionStageId},
+       #{isExamPassed},
+       #{examScore},
+       #{isCourseFinished},
+       #{obligatoryCredits},
+       #{electiveCredits},
+       1,
+       #{promotionRefuseReason},
+       1,
+       #{reStartRefuseReason},
+       #{reStartTime},
+       2,
+       now(),
+       now(),
+       #{promotionSucceedTime})
+    </insert>
+       <!-- 修改记录 -->
+    <update id="updatePromotionState" parameterType="com.jftt.wifi.bean.PostPromotionState">
+	    update post_promotion_state 
+	    set 
+	    <if test="userId !=null">user_id =#{userId},</if>
+        <if test="promotionStageId !=null">promotion_stage_id=#{promotionStageId},</if>
+         <if test="isExamPassed !=null">
+         is_exam_passed = #{isExamPassed},
+         </if>
+          <if test="reStartRefuseReason !=null">
+         re_start_refuse_reason = #{reStartRefuseReason},
+         </if>
+          <if test="reAtartApproveStatus !=null">
+         re_start_approve_status = #{reAtartApproveStatus},
+         </if>
+          <if test="promotionRefuseReason !=null">
+         promotion_refuse_reason = #{promotionRefuseReason},
+         </if>
+          <if test="promotionApproveStatus !=null">
+         promotion_approve_status = #{promotionApproveStatus},
+         </if>
+          <if test="electiveCredits !=null">
+         elective_credits = #{electiveCredits},
+         </if>
+          <if test="obligatoryCredits !=null">
+         obligatory_credits = #{obligatoryCredits},
+         </if>
+          <if test="examScore !=null">
+         exam_score = #{examScore},
+         </if>
+          <if test="isCourseFinished !=null">
+         is_course_finished = #{isCourseFinished},
+         </if>
+          <if test="promotionStatus !=null">
+         promotion_status = #{promotionStatus},
+         </if>
+          <if test="reStartTime !=null">
+         re_start_time = #{reStartTime},
+         </if>
+         <if test="promotionSucceedTime !=null">
+         promotion_succeed_time = #{promotionSucceedTime},
+         </if>
+         update_time = now()
+	     where id = #{id} 
+    </update>
+    
+      <!-- 审批-->
+    <update id="examinePostPromotionState" >
+	    update post_promotion_state 
+	    set 
+	    re_start_approve_status=#{status},
+	    <if test="status==3 and reason!=null">
+	    re_start_refuse_reason=#{reason},
+	    </if>
+	    <if test="status==4">promotion_status = 2,</if>
+         re_start_time = now(),
+         update_time = now()
+	     where id = #{id} 
+    </update>
+      <!-- 删除晋升记录 -->
+    <delete id="deletePromotionState" parameterType="Integer">
+	    delete from post_promotion_state 
+	     where id = #{id} 
+    </delete>
+     
+      <!-- 删除晋升记录 -->
+    <delete id="deletePromotionStateByUserId" >
+	    delete from post_promotion_state 
+	     where user_id = #{userId}  
+    </delete>
+     <!-- 删除晋升记录 -->
+    <delete id="deletePromotionStateByStageId" >
+	    delete from post_promotion_state 
+	     where promotion_stage_id = #{stageId}  
+    </delete>
+    <!--查询未完成的晋升记录总数-->
+	<select id="countUnfinishRecord"  resultType="int">
+      SELECT 
+			COUNT(0) 
+	  FROM post_promotion_state a
+      LEFT JOIN post_promotion_path_stage b ON a.promotion_stage_id = b.id
+      LEFT JOIN exam_assign_info as d ON d.relation_id=b.exam_id AND a.user_id = d.user_id
+      LEFT JOIN post_promotion_path e ON b.promotion_path_id = e.id
+      WHERE  a.promotion_status = 2 AND e.is_deleted=0 AND e.is_disabled = 0
+      AND (b.obligatory_min_credits > (get_learn_score(a.id,2)    
+            AND b.elective_min_credits > get_learn_score(a.id,1)  ) OR  d.is_passed=1)
+    </select>
+    <!--查询未完成的晋升记录总数-->
+	<select id="getUnfinishRecord"  resultMap="postStudentBean">
+      SELECT 
+			a.id,
+				a.user_id,
+				a.promotion_approve_status promotionApproveStatus,
+				a.promotion_refuse_reason promotionRefuseReason,
+				a.re_start_approve_status reStartApproveStatus,
+				a.re_start_refuse_reason reStartRefuseReason,
+				a.promotion_status promotionStatus,
+				a.stage_begin_time stageBeginTime,
+				a.re_start_time reStartTime,
+				b.post_id,
+				b.period
+	  FROM post_promotion_state a
+      LEFT JOIN post_promotion_path_stage b ON a.promotion_stage_id = b.id
+      LEFT JOIN exam_assign_info as d ON d.relation_id=b.exam_id AND a.user_id = d.user_id
+      LEFT JOIN post_promotion_path e ON b.promotion_path_id = e.id
+      WHERE  a.promotion_status = 2 AND e.is_deleted=0 AND e.is_disabled = 0
+      AND (b.obligatory_min_credits > (get_learn_score(a.id,2)    
+            AND b.elective_min_credits > get_learn_score(a.id,1)  ) OR  d.is_passed=1)
+           
+           <if test="beginId != null and endId != null ">
+			  AND a.id > #{beginId} AND #{endId} >= a.id
+			</if>
+    </select>
+    
+          <!-- 最大id-->
+     <select id="getMaxStateId"  resultType="Integer">
+      SELECT MAX(id) FROM post_promotion_state 
+     </select>
+    
+    <!-- 晋升失败 -->
+    <update id="setPromotionFail" >
+	    update post_promotion_state set 
+	    promotion_status = 3 ,
+	    re_start_approve_status =1,
+	    re_start_refuse_reason = ''  
+	    where id = #{id} 
+    </update>
+    <!-- zhangbocheng end -->
+    <!--新增晋升路径-->
+    <insert id="addPromotionPath" parameterType="com.jftt.wifi.bean.vo.PostPath">
+	    insert into post_promotion_path (name, description, company_id,sub_company_id) 
+	    values 
+	    (#{name}, #{desc},#{companyId},#{subCompanyId})
+    </insert>
+  
+    <!-- 晋升路径-停用/启用 -->
+    <update id="editPromotionPath" parameterType="com.jftt.wifi.bean.vo.PostPath">
+	    update post_promotion_path set is_disabled = #{isDisabled} where id = #{id} 
+    </update>
+    <!--根据路径ID查询路径信息及关联的阶段信息-->
+	<select id="queryLearningMapByPath" parameterType="java.lang.Long" resultMap="PostPathBean">
+            SELECT
+				  a.id as pathId,
+				  a.name,
+				  b.id ,
+				  b.post_id,
+				  c.name as post_name,
+				  b.description,
+				  b.period,
+				  b.obligatory_min_credits,
+				  b.elective_min_credits,
+				  b.exam_id,
+				  d.title,
+				  d.duration,
+				  d.paper_id as paperId,
+				  d.pass_score_percent,
+				  b.order_num
+				  
+			FROM 
+				post_promotion_path AS a 
+			LEFT JOIN post_promotion_path_stage AS b ON b.is_deleted = 0 AND a.id = b.promotion_path_id 
+			LEFT JOIN manage_post as c ON c.id=b.post_id 
+			LEFT JOIN exam_schedule as d ON d.id=b.exam_id 
+			WHERE  a.id=#{pathId} ORDER BY b.order_num
+    </select>
+     <!--查看阶段信息-->
+	<select id="queryStageByPathId" parameterType="java.lang.Long" resultMap="PostStageBean">
+            SELECT 
+                a.id,
+				a.post_id,
+				b.NAME AS post_name,
+				a.description,
+				a.order_num 
+			FROM 
+				post_promotion_path_stage AS a 
+			LEFT JOIN manage_post AS b ON a.post_id = b.id 
+			WHERE a.is_deleted =0 AND 
+				a.promotion_path_id =#{pathId} 
+			ORDER BY a.is_deleted = 0 AND a.order_num ASC
+    </select>
+    
+    
+     <!--查看阶段学员信息-->
+	<select id="countStudentByStageId" parameterType="com.jftt.wifi.bean.vo.PostApplyVo" resultType="int">
+            SELECT 
+                count(0)
+			FROM
+				post_promotion_state AS a 
+			LEFT JOIN post_promotion_path_stage AS b ON a.promotion_stage_id = b.id
+			LEFT JOIN manage_post as c ON c.id=b.post_id 
+			WHERE  a.promotion_stage_id=#{stageId} 
+			<if test="type == 0 ">
+			   AND a.promotion_status in(1,2)  
+			</if>
+			<if test="type == 1 "> 
+			   AND a.promotion_status = 3 
+			</if>
+			<if test="userIds!= null and userIds !='' ">
+			AND a.user_id in(${userIds})
+			</if>
+    </select>
+     <!--查看阶段学员信息-->
+	<select id="queryStudentByStageId" parameterType="com.jftt.wifi.bean.vo.PostApplyVo" resultMap="postStudentBean">
+            SELECT 
+                a.id,
+				a.user_id,
+				a.promotion_approve_status promotionApproveStatus,
+				a.promotion_refuse_reason promotionRefuseReason,
+				a.re_start_approve_status reStartApproveStatus,
+				a.re_start_refuse_reason reStartRefuseReason,
+				a.promotion_status promotionStatus,
+				b.post_id,
+			  	c.name as post_name,
+				get_stage_account(a.user_id,a.promotion_stage_id,2) as obligatory_prop,
+ 				get_stage_account(a.user_id,a.promotion_stage_id,1) as elective_prop,
+				d.is_passed,
+				get_stage_account(a.user_id,a.promotion_stage_id,null) as progress 
+			FROM
+				post_promotion_state AS a 
+			LEFT JOIN post_promotion_path_stage AS b ON a.promotion_stage_id = b.id
+			LEFT JOIN manage_post as c ON c.id=b.post_id 
+			LEFT JOIN exam_assign_info as d ON d.relation_id=b.exam_id  AND a.user_id = d.user_id
+			WHERE  a.promotion_stage_id=#{stageId} 
+			<if test="type == 0 ">
+			   AND a.promotion_status in(1,2) 
+			</if>
+			<if test="type == 1 "> 
+			   AND a.promotion_status = 3 
+			</if>
+			<if test="userIds!= null and userIds !='' ">
+			AND a.user_id in(${userIds})
+			</if>
+			
+			ORDER BY a.promotion_status desc,a.update_time desc
+			<if test="page != null and pageSize != '' ">
+			   LIMIT #{page},#{pageSize}
+			</if>
+    </select>
+     <!--查看阶段对应课程-->
+	<select id="queryCourseByPostId" parameterType="java.lang.Long" resultMap="PostCourseBean">
+	     SELECT 
+		  b.code,
+		  b.name, 
+		  c.name as category_name,
+		  a.course_type,
+		  b.learn_score as score 
+		FROM 
+			post_course_relation AS a 
+		LEFT JOIN res_course as b ON b.id=a.course_id 
+		LEFT JOIN res_course_category  as c  ON  b.category_id=c.id 
+		WHERE a.is_deleted=0 and a.post_id=#{postId} 
+	</select>
+	
+	
+</mapper>

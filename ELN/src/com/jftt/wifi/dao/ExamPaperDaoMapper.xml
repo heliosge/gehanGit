@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamPaperDaoMapper">
+	<!-- wangyifeng begin -->
+    <resultMap type="com.jftt.wifi.bean.exam.PaperBean" id="paperDetailMap">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="organizingMode" column="organizing_mode"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="description" column="description"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.exam.vo.PaperListItemVo" id="paperListItemMap">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <insert id="addPaper" useGeneratedKeys="true"
+        keyProperty="id">
+        insert into exam_paper
+        (title, organizing_mode, total_score, description, category_id, is_enabled,
+        create_user_id, create_time, update_time, is_deleted, sub_company_id, company_id)
+        values
+        (#{title}, #{organizingMode}, #{totalScore}, #{description}, #{categoryId}, #{isEnabled},
+        #{createUserId}, now(), now(), #{isDeleted}, #{subCompanyId}, #{companyId})
+    </insert>
+    <select id="getPaper" resultMap="paperDetailMap">
+        select *
+        from exam_paper
+        where id=#{paperId}
+    </select>
+    <update id="deletePaper">
+        update exam_paper
+        set is_deleted = 1
+        where id = #{paperId}
+    </update>
+    <update id="modifyPaper">
+        update exam_paper
+        <set>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="organizingMode != null">organizing_mode = #{organizingMode},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            update_time = (select now())
+        </set>
+        where id = #{id}
+    </update>
+    
+    <sql id="where_getVoList">
+        <where>
+            <if test="subCompanyId != null">sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null">and company_id = #{companyId}</if>
+            <if test="createUserId != null">and create_user_id = #{createUserId}</if>
+            <if test="title != null and title != ''">and title like CONCAT('%', #{title}, '%')</if>
+            <if test="createTimeBegin != null and createTimeBegin != ''">and create_time &gt;= #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd != ''">and create_time &lt;= #{createTimeEnd}</if>
+            <if test="categoryId != null">and category_id = #{categoryId}</if>
+            <if test="isEnabled != null">and is_enabled = #{isEnabled}</if>
+            <if test="categoryIdListStr != null and categoryIdListStr != ''">and category_id in (${categoryIdListStr})</if>
+            and (is_deleted is null or is_deleted != 1)
+        </where>
+    </sql>
+    
+    <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <select id="getVoList" resultMap="paperListItemMap">
+        select id, title, is_enabled, category_id, update_time
+        from exam_paper
+        <include refid="where_getVoList"></include>
+        order by update_time desc
+        <include refid="limitClause"></include>
+    </select>
+    <select id="getTotalCount" resultType="Integer">
+        select count(1)
+        from exam_paper
+        <include refid="where_getVoList"></include>
+    </select>
+
+    <select id="checkPaperReference" resultType="Boolean">
+        select (
+        (select count(1) from exam_schedule where paper_id = #{paperId})
+        +
+        (select count(1) from res_section_exam where exam_id = #{paperId})
+        ) > 0 from dual
+    </select>
+    
+    <update id="disablePaper">
+        update exam_paper
+        set is_enabled=0
+        where id=#{id}
+    </update>
+	<!-- wangyifeng end -->
+	
+	<!--zhangchen start  -->
+	<!--通过ID查询试卷信息  -->
+	<resultMap id="paperMap" type="com.jftt.wifi.bean.exam.PaperBean">
+		<id property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="organizingMode" column="organizing_mode"/>
+		<result property="totalScore" column="total_score"/>
+		<result property="description" column="description"/>
+		<result property="categoryId" column="category_id"/>
+		<result property="isEnabled" column="is_enabled"/>
+		<result property="createUserId" column="create_user_id"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="isDeleted" column="is_deleted"/>
+		<result property="companyId" column="company_id"/>
+		<collection property="paperQuestionList" column="id"
+			select="com.jftt.wifi.dao.ExamPaperQuestionDaoMapper.selectExamQuestionByPaperId"
+			ofType="com.jftt.wifi.bean.exam.PaperQuestionBean">
+		</collection>
+	</resultMap>
+	
+	<!--查询试卷基本信息  -->
+	<select id="selectById" resultMap="paperMap" parameterType="int">
+		select id,title,organizing_mode,total_score 
+		from exam_paper where id=#{id}
+	</select>
+	
+	<!--查询试卷部分  -->
+	<select id="selectTotalScoreById" resultType="int" parameterType="int">
+		select ifnull(total_score,0) total_score
+		from exam_paper where id = #{id}
+	</select>
+	
+	<!--zhangchen end  -->
+	
+	<!-- chenrui start -->
+	<sql id="where_getPaperByCategory">
+		where ep.company_id=#{companyId} and ep.sub_company_id=#{subCompanyId} and ep.is_deleted=0 and ep.is_enabled=1
+		<if test="categoryIdList!=null and categoryIdList.size>0">
+			and ep.category_id in (
+				<foreach collection="categoryIdList" item="categoryId" separator=",">
+					#{categoryId}
+				</foreach>
+			)
+		</if>
+		<if test="name!=null and name!=''">
+			and ep.title like CONCAT('%',#{name},'%')
+		</if>
+	</sql>
+	<select id="getPaperByCategory" resultMap="paperDetailMap">
+		select ep.id,ep.title,ep.total_score,ep.organizing_mode,epc.name categoryName,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=ep.id) and display_type=1) count1,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=ep.id) and display_type=2) count2,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=ep.id) and display_type=3) count3,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=ep.id) and display_type=4) count4,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=ep.id) and display_type=5) count5,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=ep.id) and display_type=6) count6,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=ep.id) and display_type=7) count7
+		from exam_paper ep
+		left join exam_paper_category epc on(ep.category_id=epc.id)
+		<include refid="where_getPaperByCategory"></include>
+		ORDER BY ep.update_time DESC 
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getPaperByCategoryCount" resultType="int">
+		select count(1) from exam_paper ep
+		<include refid="where_getPaperByCategory"></include>
+	</select>
+	<!-- chenrui end -->
+	
+	
+	<!--luyunlong start  -->
+	 <resultMap type="com.jftt.wifi.bean.SectionExamBean" id="sectionExamMap">
+        <id property="sectionId" column="section_id"/>
+        <result property="title" column="title"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="examDuration" column="exam_duration"/>
+        <result property="examTimes" column="exam_times"/>
+        <result property="passPercent" column="pass_percent"/>
+        <result property="organizingMode" column="organizing_mode"/>
+        <result property="examId" column="exam_id"/>
+        <result property="count1" column="count1"/>
+        <result property="count2" column="count2"/>
+        <result property="count3" column="count3"/>
+        <result property="count4" column="count4"/>
+        <result property="count5" column="count5"/>
+        <result property="count6" column="count6"/>
+        <result property="count7" column="count7"/>
+    </resultMap>
+	<select id="selectSectionAndCourseware" resultMap="sectionExamMap">
+        SELECT a.section_id,b.organizing_mode, b.title,b.total_score, c.name category_name,a.exam_duration, a.exam_times,a.pass_percent,b.id exam_id,
+        (select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=1) count1,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=2) count2,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=3) count3,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=4) count4,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=5) count5,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=6) count6,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=7) count7
+			FROM res_section_exam a
+			JOIN exam_paper b ON a.exam_id=b.id
+			JOIN exam_paper_category c ON b.category_id=c.id
+			where 1=1
+			 <if test="courseId == null or courseId == ''">and a.section_id=#{sectionId}</if>
+			 <if test="examName != null and examName != ''">and b.title like '%${examName}%'</if>
+			 <if test="courseId != null and courseId != ''">and a.section_id in (select id from res_section where course_id=#{courseId})</if>
+    </select>
+    
+    	<select id="selectExamList" resultMap="sectionExamMap">
+        SELECT  b.organizing_mode,b.title,b.total_score, c.name category_name,b.id exam_id,
+        (select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=1) count1,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=2) count2,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=3) count3,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=4) count4,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=5) count5,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=6) count6,
+		(select count(1) from exam_question where id in (select question_id from exam_paper_question where paper_id=b.id) and display_type=7) count7
+			FROM exam_paper b
+			JOIN exam_paper_category c ON b.category_id=c.id
+			where b.is_deleted = 0 and b.is_enabled = 1 and b.sub_company_id=#{subCompanyId}
+			 <if test="name != null and name != ''">and b.title like '%${name}%'</if>
+            <if test="categoryIds != null and categoryIds != ''">
+            	and b.category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+            order by b.create_time desc
+			 <if test="pageSize != null and pageSize != ''">
+				 limit ${fromNum},${pageSize}
+			 </if>
+    </select>
+    
+    <select id="selectExamListCount" resultType="int">
+        SELECT  count(1) FROM exam_paper b
+			where  b.is_deleted = 0 and b.is_enabled = 1 and b.sub_company_id=#{subCompanyId}
+			 <if test="name != null and name != ''">and b.title like '%${name}%'</if>
+			 <if test="categoryIds != null and categoryIds != ''">
+            	and b.category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+    </select>
+    <!--luyunlong end  -->
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据id查询试卷总分 -->
+    <select id="getTotalScoreById" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+    	SELECT total_score FROM exam_paper WHERE id = #{paperId} 
+    </select>
+    
+    <!-- 查询课程试卷 -->
+    <select id="getCoursePapers" parameterType="java.lang.Integer" resultMap="paperDetailMap">
+    	SELECT ep.* 
+    	  FROM exam_paper ep LEFT JOIN res_section_exam rse ON ep.id = rse.exam_id 
+    	    LEFT JOIN res_section rs ON rse.section_id = rs.id 
+    	  WHERE rs.course_id = #{courseId} 
+    	    AND ep.is_enabled = 1 AND ep.is_deleted = 0 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+</mapper>

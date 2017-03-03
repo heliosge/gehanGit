@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamScheduleDaoMapper">
+    <!-- wangyifeng begin -->
+    <resultMap type="com.jftt.wifi.bean.exam.ExamScheduleBean" id="examScheduleMap">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="duration" column="duration"/>
+        <result property="displayMode" column="display_mode"/>
+        <result property="allowTimes" column="allow_times"/>
+        <result property="randomOrderMode" column="random_order_mode"/>
+        <result property="isAnswerPublic" column="is_answer_public"/>
+        <result property="isScorePublic" column="is_score_public"/>
+        <result property="passScorePercent" column="pass_score_percent"/>
+        <result property="notice" column="notice"/>
+        <result property="scoreMarker" column="score_marker"/>
+        <result property="isPublished" column="is_published"/>
+        <result property="isMarked" column="is_marked"/>
+        <result property="isScorePublished" column="is_score_published"/>
+        <result property="isAntiCheating" column="is_anti_cheating"/>
+        <result property="allowLeaveTimes" column="allow_leave_times"/>
+        <result property="isAutoMarking" column="is_auto_marking"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+        <result property="type" column="type"/>
+        <result property="paperName" column="paper_name"/>
+        <result property="submitDuration" column="submit_duration"/>
+    </resultMap>
+    <insert id="addExam" useGeneratedKeys="true" keyProperty="id">
+        insert into exam_schedule
+        (title, paper_id, begin_time, end_time,
+		duration, display_mode, allow_times,
+		random_order_mode, is_answer_public,
+		is_score_public, pass_score_percent,
+		notice, score_marker, is_published,
+		is_marked, is_score_published, is_anti_cheating,
+		allow_leave_times, is_auto_marking, create_user_id,
+		create_time, update_time, is_deleted,
+		sub_company_id, company_id, type,submit_duration)
+        values
+        (#{title}, #{paperId}, #{beginTime}, #{endTime},
+        #{duration}, #{displayMode}, #{allowTimes},
+        #{randomOrderMode}, #{isAnswerPublic},
+        #{isScorePublic}, #{passScorePercent},
+        #{notice}, #{scoreMarker}, #{isPublished},
+        #{isMarked}, #{isScorePublished}, #{isAntiCheating},
+        #{allowLeaveTimes}, #{isAutoMarking}, #{createUserId},
+        now(), now(), 0,
+        #{subCompanyId}, #{companyId}, #{type},#{submitDuration})
+    </insert>
+    
+    <update id="deleteExam">
+        update exam_schedule
+        set is_deleted = 1
+        where id = #{id}
+    </update>
+    
+    <update id="modifyExam">
+        update exam_schedule
+        <set>
+            <!-- skip id -->
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="paperId != null">paper_id = #{paperId},</if>
+            <if test="beginTime != null and beginTime != ''">begin_time = #{beginTime},</if>
+            <if test="endTime != null and endTime != ''">end_time = #{endTime},</if>
+            <if test="duration != null">duration = #{duration},</if>
+            <if test="submitDuration != null">submit_duration = #{submitDuration},</if>
+            <if test="displayMode != null">display_mode = #{displayMode},</if>
+            <if test="allowTimes != null">allow_times = #{allowTimes},</if>
+            <if test="randomOrderMode != null">random_order_mode = #{randomOrderMode},</if>
+            <if test="isAnswerPublic != null">is_answer_public = #{isAnswerPublic},</if>
+            <if test="isScorePublic != null">is_score_public = #{isScorePublic},</if>
+            <if test="passScorePercent != null">pass_score_percent = #{passScorePercent},</if>
+            <if test="notice != null and notice != ''">notice = #{notice},</if>
+            <if test="scoreMarker != null and scoreMarker != ''">score_marker = #{scoreMarker},</if>
+            <if test="isMarked != null and isMarked != ''">is_marked = #{isMarked},</if>
+            <if test="isPublished != null and isPublished != ''">is_published = #{isPublished},</if>
+            <if test="isScorePublished != null and isScorePublished != ''">is_score_published = #{isScorePublished},</if>
+            <!-- skip is_score_published -->
+            <if test="isAntiCheating != null">is_anti_cheating = #{isAntiCheating},</if>
+            <if test="allowLeaveTimes != null">allow_leave_times = #{allowLeaveTimes},</if>
+            <if test="isAutoMarking != null">is_auto_marking = #{isAutoMarking},</if>
+            <!-- skip create_user_id -->
+            <!-- skip create_time -->
+            <!-- skip update_time -->
+            <!-- skip is_deleted -->
+            <!-- skip sub_company_id -->
+            <!-- skip company_id -->
+            <!-- skip type -->
+        </set>
+        where id = #{id}
+    </update>
+    
+    <update id="publishExam">
+        update exam_schedule
+        set is_published = 1
+        where id = #{examId}
+    </update>
+    
+    <update id="cancelExam">
+        update exam_schedule
+        set is_published = 0
+        where id = #{examId}
+    </update>
+    
+    <select id="getExam" resultMap="examScheduleMap">
+        select exam.id,exam.paper_id,exam.title,DATE_FORMAT(exam.begin_time, '%Y-%m-%d %H:%i') begin_time, 
+        		DATE_FORMAT(exam.end_time, '%Y-%m-%d %H:%i') end_time,exam.duration,exam.display_mode,
+        		exam.allow_times,exam.random_order_mode,exam.is_answer_public,exam.is_score_public,exam.pass_score_percent,
+        		exam.notice,exam.score_marker,exam.allow_leave_times,exam.is_auto_marking,exam.type,exam.is_anti_cheating,
+        		paper.title paper_name,submit_duration
+        from
+            exam_schedule exam
+            left join exam_paper paper on exam.paper_id = paper.id
+        where
+            exam.id = #{examId}
+    </select>
+    
+    <resultMap type="com.jftt.wifi.bean.exam.vo.OfficialExamListItemVo" id="officialExamListItemVoMap">
+        <id property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="duration" column="duration"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="isAnswerPublic" column="is_answer_public"/>
+		<result property="allowTimes" column="allow_times"/>
+		<result property="totalScore" column="total_score"/>
+		<result property="passScorePercent" column="pass_score_percent"/>
+		<result property="createTime" column="create_time"/>
+		<result property="isPublished" column="is_published"/>
+		<result property="type" column="type"/>
+    </resultMap>
+    <!--获取正式考试列表 zhangchen modify 2015-10-30  -->
+    <select id="getOfficialVoList" resultMap="officialExamListItemVoMap">
+		select exam.*,paper.total_score
+		from(
+			select
+			    id, title, paper_id,duration, DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time,
+			    DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time, is_answer_public, allow_times,
+			    pass_score_percent, DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%S') create_time,
+			    is_published, type
+			from
+			    exam_schedule <include refid="searchOptionWhereClause" />
+		   ) exam
+	    left join 
+	    exam_paper paper 
+	    on exam.paper_id = paper.id
+		order by exam.create_time desc
+        <include refid="limitClause" />
+    </select>
+    
+    <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+
+    <sql id="searchOptionWhereClause">
+        <where>
+        	is_deleted = 0
+            <if test="beginTimeBegin != null and beginTimeBegin != ''">and begin_time &gt;= #{beginTimeBegin}</if>
+            <if test="beginTimeEnd != null and beginTimeEnd != ''">and end_time &lt;= #{beginTimeEnd}</if>
+            <if test="createTimeBegin != null and createTimeBegin != ''">and create_time &gt;= #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd != ''">and create_time &lt;= #{createTimeEnd}</if>
+            <if test="examState != null and examState.intValue != 0">
+                <if test="examState.intValue == 1">
+                    and (is_published is null or is_published != 1)
+                </if>
+                <if test="examState.intValue == 2">
+                    and is_published = 1
+                </if>
+                <if test="examState.intValue == 3">
+                    and is_published = 1
+                    and begin_time &gt; now()
+                </if>
+                <if test="examState.intValue == 4">
+                    and is_published = 1
+                    and begin_time &lt;= now()
+                    and now() &lt;= end_time
+                </if>
+                <if test="examState.intValue == 5">
+                    and is_published = 1
+                    and end_time &lt;= now()
+                </if>
+            </if>
+            <if test="title != null and title != ''">and title like concat('%', #{title},'%')</if>
+            <if test="type != null">and type = #{type}</if>
+            <if test="subCompanyId != null">and sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null">and company_id = #{companyId}</if>
+            <if test="idListStr != null and idListStr != ''">and id in (${idListStr})</if>
+        </where>
+    </sql>
+
+    <resultMap type="com.jftt.wifi.bean.exam.vo.SimExamListItemVo" id="simExamListItemVoMap">
+	    <id property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="duration" column="duration"/>
+		<result property="createTime" column="create_time"/>
+		<result property="isPublished" column="is_published"/>
+		<result property="displayMode" column="display_mode"/>
+		<result property="paperName" column="paper_name"/>
+		<result property="totalScore" column="total_score"/>
+		<result property="type" column="type"/>
+    </resultMap>
+    <!--获取模拟考试列表 zhangchen modify 2015-10-30   -->
+    <select id="getSimVoList" resultMap="simExamListItemVoMap">
+        select exam.*,paper.title paper_name,paper.total_score
+        from (
+        	 select
+	            id,title, paper_id, duration, display_mode,
+	            DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%S') create_time, is_published,type
+        	from exam_schedule <include refid="searchOptionWhereClause" />
+        ) exam
+        left join exam_paper paper on exam.paper_id = paper.id
+        order by exam.create_time desc
+        <include refid="limitClause" />
+    </select>
+    
+    <select id="getTotalCount" resultType="Integer">
+        select count(1)
+        from exam_schedule exam 
+        <!-- left join exam_paper paper on exam.paper_id = paper.id -->
+        <include refid="searchOptionWhereClause" />
+    </select>
+    
+    <sql id="where_specify_exam_id_in_exam_assign_info">
+        and relation_type = 1
+        and relation_id = es.id
+    </sql>
+    
+    <sql id="where_getMarkVoList">
+        <where>
+        	and find_in_set(#{userId},score_marker)
+            and es.is_published = 1
+            and es.end_time &lt;= now()
+            <if test="title != null and title != ''">and es.title like concat('%', #{title}, '%')</if>
+            <if test="beginTimeBegin != null and beginTimeBegin !=''">
+            	and DATE_FORMAT(es.begin_time,'%Y-%m-%d %H:%i') &gt;= #{beginTimeBegin}
+            </if>
+            
+            <if test="beginTimeEnd != null and beginTimeEnd !=''"> 
+            	and DATE_FORMAT(es.begin_time,'%Y-%m-%d %H:%i') &lt;= #{beginTimeEnd}
+            	</if>
+            and es.type = 1
+            <if test="subCompanyId != null and subCompanyId !=''">and es.sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null and companyId !=''">and es.company_id = #{companyId}</if>
+            <if test="examId != null and examId !=''" >and es.id = #{examId}</if>
+        </where>
+    </sql>
+    
+    <select id="getMarkVoList" resultType="com.jftt.wifi.bean.exam.vo.MarkExamListItemVo">
+		select
+		    es.id examId,
+		    es.title,
+		    es.begin_time beginTime,
+		    es.end_time endTime,
+		    es.create_time createTime,
+		    es.is_score_public isScorePublic,
+		    es.is_marked isMarked,
+		    es.is_score_published isScorePublished,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            and exam_status > 2
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) attendCount,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            and is_passed = 1
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) passCount,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) assignCount,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            and is_marked = 1
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) markCount
+		from exam_schedule es
+		
+        <include refid="where_getMarkVoList"></include>
+		order by es.create_time desc
+        <include refid="limitClause" />
+    </select>
+    
+    <select id="getMarkTotalCount" resultType="Integer">
+        select
+            count(0)
+        from exam_schedule es
+        <include refid="where_getMarkVoList"></include>
+    </select>
+    
+    <update id="publishScore">
+        update exam_schedule
+        set is_score_published = 1
+        where id = #{examId}
+    </update>
+    
+    <update id="updateIsMarkedState">
+        update exam_schedule
+        set is_marked = 1
+        where id = #{examId}
+    </update>
+    <!-- wangyifeng end -->
+
+
+	<!--zhangchen start  -->
+	<resultMap id="examScheduleVo" type="com.jftt.wifi.bean.vo.ExamScheduleVo">
+		<id property="id" column="id"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="duration" column="duration"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="passScorePercent" column="pass_score_percent"/>
+		<result property="displayMode" column="display_mode"/>
+		<result property="randomOrderMode" column="random_order_mode"/>
+		<association property="totalScore" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperDaoMapper.selectTotalScoreById"/>
+		<!-- <association property="totalQuestionNum" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperQuestionDaoMapper.selectPaperQuestionNum"/> -->
+		<association property="paperBean" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperDaoMapper.selectById"/>
+	</resultMap>
+	
+	<!--查询一场考试试卷内容  -->
+	<select id="selectExamScheduleVo" resultMap="examScheduleVo" parameterType="int">
+		select id,paper_id,title,DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time,duration,pass_score_percent,
+				display_mode,random_order_mode,allow_times allowTimes,is_auto_marking isAutoMarking
+		from exam_schedule
+		where id = #{id}
+	</select>
+	
+	
+	<resultMap id="examScheduleVoNew" type="com.jftt.wifi.bean.vo.ExamScheduleVo">
+		<id property="id" column="id"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="duration" column="duration"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="passScorePercent" column="pass_score_percent"/>
+		<result property="displayMode" column="display_mode"/>
+		<result property="randomOrderMode" column="random_order_mode"/>
+		<result property="paperName" column="paper_name"/>
+		<result property="organizingMode" column="organizing_mode"/>
+		<result property="totalScore" column="total_score"/>
+	</resultMap>
+	<!--查询一场考试试卷内容  2015-10-13-->
+	<select id="selectExamScheduleVoNew" resultMap="examScheduleVoNew" parameterType="int">
+		select a.id,a.paper_id,a.title,DATE_FORMAT(a.begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') end_time,a.duration,a.pass_score_percent,
+				a.display_mode,a.random_order_mode,b.title paper_name,b.organizing_mode,b.total_score
+		from (select * from exam_schedule where id = #{id} )a
+		left join exam_paper b
+		on a.paper_id = b.id
+	</select>
+	
+	<resultMap id="examScheduleVo2" type="com.jftt.wifi.bean.vo.ExamScheduleVo">
+		<id property="id" column="id"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="duration" column="duration"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="passScorePercent" column="pass_score_percent"/>
+		<result property="displayMode" column="display_mode"/>
+		<result property="randomOrderMode" column="random_order_mode"/>
+		<association property="totalScore" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperDaoMapper.selectTotalScoreById"/>
+		<!-- <association property="totalQuestionNum" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperQuestionDaoMapper.selectPaperQuestionNum"/> -->
+	</resultMap>
+	
+	<select id="selectExamScheduleInfo2" resultMap="examScheduleVo2" parameterType="int">
+		select id,paper_id,title,duration,pass_score_percent
+		from exam_schedule
+		where id = #{id}
+	</select>
+	
+	<!--查询一场考试的基本信息，不包括试题-赛程考试专用  -->
+	<select id="selectExamScheduleInfo" resultType="com.jftt.wifi.bean.vo.ExamScheduleVo" parameterType="int">
+		select a.*,b.title paperName from(
+			select id,paper_id paperId,title,DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') beginTime,DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') endTime,
+					duration,pass_score_percent passScorePercent,display_mode displayMode,allow_times allowTimes,
+					is_answer_public isAnswerPublic,random_order_mode randomOrderMode,score_marker scoreMarker,
+					is_auto_marking isAutoMarking,is_anti_cheating isAntiCheating,notice,allow_leave_times allowLeaveTimes
+			from exam_schedule
+			where id = #{id}
+		) a
+		left join exam_paper b
+		on a.paperId = b.id  
+	</select>
+	
+	
+	<resultMap id="examInfo" type="com.jftt.wifi.bean.vo.ExamScheduleVo">
+		<id property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="duration" column="duration"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="allowTimes" column="allow_times"/>
+		<result property="passScorePercent" column="pass_score_percent"/>
+		<result property="displayMode" column="display_mode"/>
+		<result property="notice" column="notice"/>
+		<association property="totalScore" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperDaoMapper.selectTotalScoreById"/>
+	</resultMap>
+	
+	<!--我的考试-进入考试  -->
+	<select id="selectExamInfo" resultMap="examInfo" parameterType="int">
+		select t.*,ep.title paperName 
+		from (
+			select id,paper_id,title,DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time,
+			DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time,duration,pass_score_percent,
+			display_mode,notice,allow_times,is_auto_marking isAutoMarking
+			from exam_schedule where id = #{id}
+		) t
+		left join exam_paper ep
+		on t.paper_id=ep.id
+	</select>
+	<!--查询考试名称  -->
+	<select id="selectExamTitle" resultType="String" parameterType="int">
+		select title from exam_schedule where id = #{id}
+	</select>
+	<!--验证考试名称唯一性  -->
+	<select id="selectTitleCount" resultType="int" parameterType="com.jftt.wifi.bean.exam.ExamScheduleBean">
+		select count(1) from exam_schedule
+		where title = #{title} and is_deleted = 0
+		<if test=" id != null ">
+			and id != #{id}
+		</if>
+		<if test="companyId != null and companyId !=''">and company_id = #{companyId}</if>
+        <if test="subCompanyId != null and subCompanyId !=''" >and sub_company_id = #{subCompanyId}</if>
+	</select>
+	<!--通过考试ID查询确大赛考试信息  -->
+	<select id="selectInfoById" parameterType="java.util.HashMap" resultType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select a.id exam_assign_id,b.id,b.display_mode,b.type exam_type,b.is_auto_marking,b.duration,b.is_score_public,
+				DATE_FORMAT(b.begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(b.end_time, '%Y-%m-%d %H:%i') end_time,b.is_anti_cheating,
+				c.id paper_id,c.organizing_mode,b.allow_leave_times,a.id exam_assign_id
+		from (
+			select * from exam_schedule where id = #{id}
+		) b
+		left join exam_paper c
+		on b.paper_id = c.id
+		left join (
+			select id,relation_id,user_id from exam_assign_info where user_id = #{userId}
+		) a
+		on a.relation_id = b.id
+	</select>
+	
+	<!--发布考试时 查询考试基本信息 -->
+	<select id="selectExamInfoById" parameterType="int" resultType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select b.id,b.title,b.display_mode,b.type exam_type,b.is_auto_marking,b.duration,b.is_score_public,
+				DATE_FORMAT(b.begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(b.end_time, '%Y-%m-%d %H:%i') end_time,b.is_anti_cheating,
+				c.id paper_id,c.organizing_mode,b.allow_leave_times
+		from (
+			select * from exam_schedule where id = #{id}
+		) b
+		left join exam_paper c
+		on b.paper_id = c.id
+	</select>
+	
+	<!--通过考试ID查询试卷组卷类型  -->
+	<select id="selectOrganizingModeById" parameterType="int" resultType="com.jftt.wifi.bean.vo.ExamScheduleVo">
+		select c.id paperId,c.organizing_mode organizingMode,c.total_score totalScore,b.pass_score_percent passScorePercent,
+				b.duration,b.title,b.type examType
+		from (
+			select * from exam_schedule where id = #{id}
+		) b
+		left join exam_paper c
+		on b.paper_id = c.id
+	</select>
+	
+	<!--zhangchen end  -->
+	
+	  <!-- chenrui start -->      
+		<insert id="save2ExamByMatch">
+			insert into exam_schedule(title,paper_id,begin_time,end_time,duration,
+				display_mode,allow_times,random_order_mode,is_answer_public,is_score_public,pass_score_percent,
+				notice,score_marker,is_published,is_marked,is_score_published,is_anti_cheating,
+				allow_leave_times,is_auto_marking,create_user_id,create_time,is_deleted,sub_company_id,company_id,type)
+			values(#{matchName},#{paperId},#{startTime},#{endTime},#{duration},#{displayModel},
+				#{times},#{randomModel},#{isPublic},1,#{passScorePercent},#{notice},#{checkPeoples},1,0,0,1,
+				#{allowLeaveTimes},#{isAutoMarking},#{userId},now(),0,#{subCompanyId},#{companyId},2)
+				<selectKey keyProperty="examId" resultType="int">
+					select LAST_INSERT_ID();
+				</selectKey>
+		</insert>
+		
+		<update id="update2ExamByMatch">
+			update exam_schedule set title=#{matchName},paper_id=#{paperId},begin_time=#{startTime},
+				end_time=#{endTime},duration=#{duration},display_mode=#{displayModel},
+				allow_times=#{times},random_order_mode=#{randomModel},is_answer_public=#{isPublic},
+				pass_score_percent=#{passScorePercent},notice=#{notice},
+				score_marker=#{checkPeoples},allow_leave_times=#{allowLeaveTimes},is_auto_marking=#{isAutoMarking}
+			where id=#{examId}
+		</update>
+	  <!-- chenrui end -->
+	  
+	<!-- shenhaijun start -->
+	
+	<resultMap type="com.jftt.wifi.bean.vo.PostExamVo" id="PostExamVoMap">
+		<id property="id" column="id"/>
+		<result property="title" column="title"/>
+		<result property="passScore" column="pass_score"/>
+		<result property="thisScore" column="this_score"/>
+		<result property="isPassed" column="is_passed"/>
+	</resultMap>
+	
+	<!-- 获取学员的考试数量 -->
+	<select id="getExamCountByCompanyId" resultType="java.lang.Integer">
+	    SELECT COUNT(DISTINCT(eai.id)) 
+	      FROM exam_assign_info eai LEFT JOIN exam_schedule es ON eai.relation_id = es.id 
+	      WHERE eai.user_id = #{userId} AND es.company_id = #{companyId} AND es.sub_company_id = #{subCompanyId} 
+	        AND es.is_deleted = 0 
+	</select>
+	
+	<!-- 获取阶段测试 -->
+	<select id="getStageTest" parameterType="java.lang.Integer" resultMap="PostExamVoMap">
+		SELECT es.id,es.title,
+		    (pass_score_percent * (SELECT total_score FROM exam_paper WHERE id = es.paper_id))/100 pass_score,
+		    IFNULL((SELECT score FROM exam_assign_info WHERE relation_id = es.id AND user_id = #{userId}),0) this_score,
+		    (SELECT is_passed FROM exam_assign_info WHERE relation_id = es.id AND user_id = #{userId}) is_passed 
+		  FROM post_promotion_path_stage ppps LEFT JOIN exam_schedule es ON ppps.exam_id = es.id 
+		  WHERE ppps.id = #{stageId} 
+	</select>
+	
+	<!-- 根据条件查询id -->
+	<select id="getIdByConditions" resultType="java.lang.Integer">
+		SELECT id FROM exam_schedule 
+		  WHERE type = #{type} AND title = #{title}
+		    AND paper_id = #{examId} AND duration = #{duration} 
+		    AND allow_times = #{allowTimes} AND pass_score_percent = #{passScorePercent} 
+		    AND company_id = #{companyId} AND sub_company_id = #{subCompanyId}
+	</select>
+	
+	<!-- 根据id获取考试信息 -->
+	<select id="getById" resultMap="examScheduleMap">
+		SELECT * FROM exam_schedule WHERE id = #{id}
+	</select>
+	
+	<!-- shenhaijun end -->
+	
+</mapper>

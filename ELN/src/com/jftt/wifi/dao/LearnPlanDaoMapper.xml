@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.LearnPlanDaoMapper">
+      <resultMap id="LearnPlanBaseMap" type="com.jftt.wifi.bean.LearnPlanBean" >
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="isPublished" column="is_published"/>
+        <result property="description" column="description"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+         <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    
+        <resultMap id="LearnPlanVoMap" type="com.jftt.wifi.bean.vo.LearnPlanBeanVo" >
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="isPublished" column="is_published"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="companyId" column="company_id"/>
+         <result property="subCompanyId" column="sub_company_id"/>
+         <result property="coverImage" column="cover_image"/>
+        <result property="isDeleted" column="is_deleted"/>
+    </resultMap>
+
+    
+    <sql id="Where_Clause">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="name != null and name != '' ">
+				AND name like CONCAT('%', #{name}, '%')
+			</if>
+			<if test="beginTime != null and beginTime != '' ">
+				<![CDATA[  AND begin_time >= #{beginTime}]]> 
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[  AND end_time <= #{endTime}]]>
+			</if>
+			<if test="companyId != null">
+				AND company_id = #{companyId, jdbcType=NUMERIC}
+			</if>
+			<if test="subCompanyId != null">
+				AND sub_company_id = #{subCompanyId}
+			</if>
+			<if test="isPublished != null">
+				AND is_published = #{isPublished}
+			</if>
+			<if test="isDeleted != null">
+				AND is_deleted = #{isDeleted, jdbcType=NUMERIC}
+			</if>
+		
+		</trim>
+	</sql>
+  
+	
+	<sql id="learnPlan_protery">
+    id ,
+    name ,
+    type,
+    DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time ,
+    DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time,
+    DATE_FORMAT(create_time, '%Y-%m-%d %H:%i') create_time,
+    description,
+    cover_image,
+    is_published,
+    create_user_id,
+    update_time,
+    is_deleted,
+    company_id,
+    sub_company_id,
+    cover_image
+	</sql>
+           <!-- 根据id查询学习计划 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="LearnPlanVoMap">
+        select <include refid="learnPlan_protery"/> from learn_plan where id = #{id}
+    </select>
+    
+    <!-- zhangbocheng start -->
+      <!-- 检查重名  -->
+    <select id="checkName"  resultType="int" parameterType="java.util.Map">
+	    select count(0)
+	    from learn_plan
+   	    where name = #{name}  AND  company_id = #{companyId} AND is_deleted = 0
+   	        <if test="subCompanyId != null">
+				AND sub_company_id = #{subCompanyId}
+			</if>
+			
+   	        <if test="id != null">
+				AND id != #{id}
+			</if>
+    </select>
+    
+    <!-- 根据条件查询所有学习计划  -->
+    <select id="selectLearnPlanBeanList"  resultMap="LearnPlanBaseMap" parameterType="com.jftt.wifi.bean.LearnPlanBean">
+	    select  lp.id , lp.name ,lp.type,DATE_FORMAT(lp.begin_time, '%Y-%m-%d %H:%i') begin_time ,DATE_FORMAT(lp.end_time, '%Y-%m-%d %H:%i') end_time,lp.is_published,
+	    DATE_FORMAT(lp.create_time, '%Y-%m-%d %H:%i') create_time,lp.create_user_id,lp.is_deleted,lp.company_id,lp.sub_company_id
+	    from learn_plan lp
+
+	    WHERE lp.is_deleted = 0 
+            <if test="companyId != null and companyId != '' ">
+			    AND lp.company_id = #{companyId, jdbcType=NUMERIC}
+			</if>
+            <if test="subCompanyId != null and subCompanyId != '' ">
+			    AND lp.sub_company_id = #{subCompanyId, jdbcType=NUMERIC}
+			</if>
+           <if test="name != null and name != '' ">
+				AND lp.name like CONCAT('%', #{name}, '%')
+			</if>
+			<if test="beginTime != null and beginTime != '' ">
+				<![CDATA[  AND lp.begin_time >= #{beginTime}]]> 
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[  AND lp.end_time <= #{endTime}]]>
+			</if>
+			<if test="isPublished != null">
+				AND lp.is_published = #{isPublished}
+			</if>
+   	        ORDER BY creat_time DESC
+   		<if test="page!=null and pageSize!=null">
+			LIMIT #{page},#{pageSize}
+	   </if>
+    </select>
+        <!-- 根据条件查询所有学习计划  -->
+    <select id="selectLearnPlansByMap"  resultMap="LearnPlanVoMap" parameterType="Map">
+	    select  lp.id , lp.name ,lp.type,DATE_FORMAT(lp.begin_time, '%Y-%m-%d %H:%i') begin_time ,
+	    DATE_FORMAT(lp.end_time, '%Y-%m-%d %H:%i') end_time,lp.is_published,
+	    DATE_FORMAT(lp.create_time, '%Y-%m-%d %H:%i') create_time,lp.create_user_id,lp.company_id,
+        (SELECT IFNULL(SUM(learn_time),0) FROM learn_plan_stage lps1 WHERE lps1.plan_id = lp.id) learnTime,
+        (SELECT IFNULL(SUM(learn_score),0) FROM learn_plan_stage lps2 WHERE lps2.plan_id = lp.id) learnScore
+	    from learn_plan lp
+   	    WHERE lp.is_deleted = 0 
+   	        <if test="companyId != null and companyId != '' ">
+			    AND lp.company_id = #{companyId, jdbcType=NUMERIC}
+			</if>
+           <if test="subCompanyId != null and subCompanyId != '' ">
+			    AND lp.sub_company_id = #{subCompanyId, jdbcType=NUMERIC}
+			</if>
+           <if test="name != null and name != '' ">
+				AND lp.name like CONCAT('%', #{name}, '%')
+			</if>
+			<if test="beginTime != null and beginTime != '' ">
+				<![CDATA[  AND lp.begin_time >= #{beginTime}]]> 
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				<![CDATA[  AND lp.end_time <= #{endTime}]]>
+			</if>
+			<if test="isPublished != null">
+				AND lp.is_published = #{isPublished}
+			</if>
+     	    ORDER BY lp.create_time DESC
+   		<if test="page!=null and pageSize!=null">
+			LIMIT #{page},#{pageSize}
+	    </if>
+    </select>
+    <!-- 根据条件获得学习计划的数量 -->
+	<select id="selectLearnPlanBeanCountByMap" resultType="int" parameterType="java.util.Map">
+		select count(0) from learn_plan <include refid="Where_Clause"/> AND is_deleted = 0
+	</select>
+    <!-- 根据条件获得学习计划的数量 -->
+	<select id="selectLearnPlanBeanCount" resultType="int" parameterType="com.jftt.wifi.bean.LearnPlanBean">
+		select count(0) from learn_plan <include refid="Where_Clause"/>
+	</select>
+ 
+    
+    <delete id="deleteById" parameterType="java.lang.Integer">
+    delete from learn_plan
+    where id = #{id}
+    </delete>
+  
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.LearnPlanBean">
+    insert into learn_plan ( 
+    name,
+    type,
+    begin_time,
+    end_time,
+    description,
+    cover_image,
+    is_published,
+    create_time,
+    create_user_id,
+    is_deleted,
+    company_id,
+    sub_company_id,
+    update_time
+    )
+    values(
+     #{name}, 
+      #{type}, 
+     #{beginTime}, 
+     #{endTime},
+     #{description}, 
+     #{coverImage}, 
+     0, 
+     now(), 
+     #{createUserId}, 
+     0, 
+     #{companyId},
+     #{subCompanyId},
+     now())
+  </insert>
+  
+  <update id="updateLearnPlan" parameterType="com.jftt.wifi.bean.LearnPlanBean">
+    update learn_plan
+     set 
+      <if test="type !=null">
+      type=#{type}, 
+     </if>
+       <if test="beginTime !=null">
+      begin_time=#{beginTime}, 
+     </if>
+       <if test="endTime !=null">
+     end_time=#{endTime},
+     </if>
+       <if test="description !=null">
+     description=#{description},
+     </if>
+       <if test="coverImage !=null">
+     cover_image=#{coverImage},
+     </if>
+       <if test="isDeleted !=null">
+      is_deleted = #{isDeleted},
+     </if>
+       <if test="companyId !=null">
+      company_id = #{companyId},
+       </if>
+         <if test="subCompanyId !=null">
+      sub_company_id = #{subCompanyId},
+       </if>
+       <if test="name!=null">
+       name=#{name},
+       </if>
+       update_time = now()
+      
+     where id = #{id}
+  </update>
+  
+    <update id="publiceLearnPlan"  parameterType="java.lang.Integer">
+     update learn_plan
+     set 
+     is_published = 1
+     where id = #{id}
+    </update>
+    
+    <update id="deleteLearnPlan" parameterType="java.lang.Integer">
+    update learn_plan
+    set 
+    is_deleted = 1
+    where id = #{id}
+    </update>
+    
+    <!-- zhangbocheng end-->
+    
+</mapper>

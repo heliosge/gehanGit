@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KnowledgeContestContestDaoMapper">
+	<resultMap id="KnowledgeContestContestBean"
+		type="com.jftt.wifi.bean.KnowledgeContestContestBean">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="cover_image_for_list" property="coverImageForList"
+			jdbcType="VARCHAR" />
+		<result column="cover_image_for_detail" property="coverImageForDetail"
+			jdbcType="VARCHAR" />
+		<result column="need_approval" property="needApproval"
+			jdbcType="INTEGER" />
+		<result column="qualification" property="qualification"
+			jdbcType="VARCHAR" />
+		<result column="detail" property="detail" jdbcType="VARCHAR" />
+		<result column="process_description" property="processDescription"
+			jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="cur_match_id" property="curMatchId" jdbcType="INTEGER" />
+		<result column="is_deleted" property="isDeleted" jdbcType="INTEGER" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+		<result column="begin_time" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+		<result column="company_id" property="companyId" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<resultMap id="KnowledgeContestContestBeans"
+		type="com.jftt.wifi.bean.vo.KnowledgeContestContestVo">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="exam_id" property="examId" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="cover_image_for_list" property="coverImageForList"
+			jdbcType="VARCHAR" />
+		<result column="cover_image_for_detail" property="coverImageForDetail"
+			jdbcType="VARCHAR" />
+		<result column="need_approval" property="needApproval"
+			jdbcType="INTEGER" />
+		<result column="qualification" property="qualification"
+			jdbcType="VARCHAR" />
+		<result column="detail" property="detail" jdbcType="VARCHAR" />
+		<result column="process_description" property="processDescription"
+			jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="cur_match_id" property="curMatchId" jdbcType="INTEGER" />
+		<result column="is_deleted" property="isDeleted" jdbcType="INTEGER" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+		<result column="begin_time" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+		<result column="company_id" property="companyId" jdbcType="INTEGER" />
+		 <collection property="matchList" column="id"
+				select="com.jftt.wifi.dao.KnowledgeContestMatchDaoMapper.getMatchLists"
+				ofType="com.jftt.wifi.bean.vo.MegagameCheckReturnVo">
+		</collection>
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, name, cover_image_for_list, cover_image_for_detail,
+		need_approval,
+		qualification,
+		detail, process_description, status,
+		cur_match_id, is_deleted, create_time,
+		update_time,
+		begin_time,
+		company_id
+	</sql>
+	<select id="getById" resultMap="KnowledgeContestContestBean">
+		select
+		<include refid="Base_Column_List"></include>
+		from knowledge_contest_contest kcc
+		where kcc.id=#{id}
+	</select>
+	<!-- chenrui start -->
+
+	<update id="updateStatusByTime">
+		update knowledge_contest_contest kcc set kcc.status=2
+		where now()&gt;kcc.begin_time and kcc.status=1
+	</update>
+	<update id="getDoPublish1">
+		update knowledge_contest_contest kcc
+		set kcc.cur_match_id=#{matchId},kcc.begin_time=now(),kcc.status=1
+		where kcc.id=#{megagameId}
+	</update>
+	<!-- 获取大赛列表 -->
+	<sql id="SQL_getMegagameList">
+		right join (select distinct kcaq.contest_id from knowledge_contest_apply_qualification kcaq
+		where ((kcaq.qualification_type=1 and kcaq.qualification_id=#{deptId}) or
+		(kcaq.qualification_type=3 and kcaq.qualification_id=#{postId}) or
+		(kcaq.qualification_type=2 and kcaq.qualification_id=#{companyId}) or
+		(kcaq.qualification_type=4))) t on(t.contest_id=kcc.id)
+	</sql>
+	<sql id="where_getMegagameList">
+		where 1=1  and kcc.is_deleted=0 and kcc.status&lt;&gt;4 and kcc.company_id = #{companyId} 
+			and kcc.sub_company_id=#{subCompanyId}
+		<if test="megagameName!=null and megagameName!=''">
+			and kcc.name like CONCAT('%',#{megagameName},'%')
+		</if>
+		<if test="state!=null and state!=0">
+			and kcc.status = #{state}
+		</if>
+	</sql>
+	<select id="getMegagameList" resultType="com.jftt.wifi.bean.vo.KnowledgeContestContestVo">
+		select * from (
+			select 
+			kcm.order_num currentProcess,
+			tt.counts,
+			tt.id,
+			tt.name,
+			tt.cover_image_for_list coverImageForList,
+			tt.cover_image_for_detail coverImageForDetail,
+	 		tt.need_approval needApproval,
+	 		tt.qualification,
+	 		tt.detail,
+	 		tt.process_description processDescription,
+	 		tt.status,
+	 		tt.cur_match_id curMatchId 
+	 	from (select count(0) counts,kcc.*
+			from knowledge_contest_contest kcc
+			left join knowledge_contest_match kcm on(kcm.contest_id=kcc.id)
+			<include refid="SQL_getMegagameList"></include>
+			<include refid="where_getMegagameList"></include>
+			group by kcc.id
+			order by kcc.begin_time desc) tt
+		left join knowledge_contest_match kcm on(kcm.id=tt.cur_match_id)
+		
+		union
+		
+		select 
+			kcm.order_num currentProcess,
+			tt.counts,
+			tt.id,
+			tt.name,
+			tt.cover_image_for_list coverImageForList,
+			tt.cover_image_for_detail coverImageForDetail,
+	 		tt.need_approval needApproval,
+	 		tt.qualification,
+	 		tt.detail,
+	 		tt.process_description processDescription,
+	 		tt.status,
+	 		tt.cur_match_id curMatchId 
+	 	from (select count(0) counts,kcc.*
+			from knowledge_contest_contest kcc
+			left join knowledge_contest_match kcm on(kcm.contest_id=kcc.id)
+			right join (select distinct kcaq.contest_id from knowledge_contest_apply_qualification kcaq
+			where kcaq.qualification_type=4) t on(t.contest_id=kcc.id)
+			where 1=1  and kcc.is_deleted=0 and kcc.status&lt;&gt;1 and kcc.company_id = 1 and kcc.sub_company_id=1
+			<if test="megagameName!=null and megagameName!=''">
+				and kcc.name like CONCAT('%',#{megagameName},'%')
+			</if>
+			<if test="state!=null and state!=0">
+				and kcc.status = #{state}
+			</if>
+			group by kcc.id
+			order by kcc.begin_time desc) tt
+		left join knowledge_contest_match kcm on(kcm.id=tt.cur_match_id)
+		) tb
+		limit ${fromNum},${pageSize}
+		
+	</select>
+	<select id="getMegagameListCount" resultType="int">
+		select count(1) from (
+			select 
+			kcm.order_num currentProcess,
+			tt.counts,
+			tt.id,
+			tt.name,
+			tt.cover_image_for_list coverImageForList,
+			tt.cover_image_for_detail coverImageForDetail,
+	 		tt.need_approval needApproval,
+	 		tt.qualification,
+	 		tt.detail,
+	 		tt.process_description processDescription,
+	 		tt.status,
+	 		tt.cur_match_id curMatchId 
+	 	from (select count(0) counts,kcc.*
+			from knowledge_contest_contest kcc
+			left join knowledge_contest_match kcm on(kcm.contest_id=kcc.id)
+			<include refid="SQL_getMegagameList"></include>
+			<include refid="where_getMegagameList"></include>
+			group by kcc.id
+			order by kcc.begin_time desc) tt
+		left join knowledge_contest_match kcm on(kcm.id=tt.cur_match_id)
+		
+		union
+		
+		select 
+			kcm.order_num currentProcess,
+			tt.counts,
+			tt.id,
+			tt.name,
+			tt.cover_image_for_list coverImageForList,
+			tt.cover_image_for_detail coverImageForDetail,
+	 		tt.need_approval needApproval,
+	 		tt.qualification,
+	 		tt.detail,
+	 		tt.process_description processDescription,
+	 		tt.status,
+	 		tt.cur_match_id curMatchId 
+	 	from (select count(0) counts,kcc.*
+			from knowledge_contest_contest kcc
+			left join knowledge_contest_match kcm on(kcm.contest_id=kcc.id)
+			right join (select distinct kcaq.contest_id from knowledge_contest_apply_qualification kcaq
+			where kcaq.qualification_type=4) t on(t.contest_id=kcc.id)
+			where 1=1  and kcc.is_deleted=0 and kcc.status&lt;&gt;1 and kcc.company_id = 1 and kcc.sub_company_id=1
+			<if test="megagameName!=null and megagameName!=''">
+				and kcc.name like CONCAT('%',#{megagameName},'%')
+			</if>
+			<if test="state!=null and state!=0">
+				and kcc.status = #{state}
+			</if>
+			group by kcc.id
+			order by kcc.begin_time desc) tt
+		left join knowledge_contest_match kcm on(kcm.id=tt.cur_match_id)
+		) tb
+	</select>
+	<!-- 获取大赛批阅列表 -->
+	<sql id="where_getMegagameCheckList">
+		from knowledge_contest_contest kcc
+		left join knowledge_contest_match kcm on(kcc.id=kcm.contest_id)
+		left join exam_schedule es on(kcm.exam_id=es.id)
+		where 1=1 and kcc.is_deleted=0 
+			and kcc.company_id=#{companyId} 
+			and kcc.sub_company_id=#{subCompanyId}
+			and kcc.id in (select DISTINCT kcm2.contest_id from (select em2.id from exam_schedule em2 
+				where  FIND_IN_SET(${userId},em2.score_marker)) t
+				left join knowledge_contest_match kcm2 on(t.id=kcm2.exam_id)
+			)
+		<if test="megagameName!=null and megagameName!=''">
+			and kcc.name like CONCAT('%',#{megagameName},'%')
+		</if>
+		<if test="startTime!=null and startTime!=''">
+			and DATE_FORMAT(es.begin_time, '%Y-%m-%d %H:%i')&gt;#{startTime}
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and DATE_FORMAT(es.end_time, '%Y-%m-%d %H:%i')&lt;#{endTime}
+		</if>
+		<if test="status!=null and status!=0">
+			and kcc.status = #{status}
+		</if>
+	</sql>
+	<select id="getMegagameCheckList" resultMap="KnowledgeContestContestBeans" parameterType="com.jftt.wifi.bean.vo.SearchMegagameCheckParamVo">
+		select DISTINCT kcc.id,
+			kcc.`name`,
+			kcc.cover_image_for_list,
+			kcc.cover_image_for_detail,
+			kcc.need_approval,
+			kcc.qualification,
+			kcc.detail,
+			kcc.process_description,
+			kcc.`status`,
+			kcc.cur_match_id,
+			kcc.is_deleted,
+			kcc.create_time,
+			kcc.update_time,
+			kcc.begin_time,
+			kcc.sub_company_id,
+			kcc.company_id,
+			kcc.is_spread
+		<include refid="where_getMegagameCheckList"></include>
+		order by kcc.create_time desc
+		limit ${page},${pageSize}
+	</select>
+	<select id="getMegagameCheckListCount" resultType="int" parameterType="com.jftt.wifi.bean.vo.SearchMegagameCheckParamVo">
+		select count(1) from (
+		select DISTINCT kcc.*
+		<include refid="where_getMegagameCheckList"></include>
+		) t
+	</select>
+	<!-- 新增大赛 -->
+	<insert id="addMegagame">
+		insert into knowledge_contest_contest(name,cover_image_for_list,cover_image_for_detail,
+			need_approval,qualification,detail,process_description,status,is_deleted,company_id,sub_company_id,is_spread,create_time)
+			values(#{megagameName},#{competitionImgPath},#{competitionImgPath},#{needApproval},#{qualification},
+			#{detail},#{processDescription},4,0,#{companyId},#{subCompanyId},0,now())
+		<selectKey resultType="int" keyProperty="id">
+				select LAST_INSERT_ID()
+		</selectKey>
+	</insert>
+	<!-- 修改/更新大赛 -->
+	<update id="updateMegagame">
+		update knowledge_contest_contest set name=#{megagameName},cover_image_for_list=#{competitionImgPath},
+			cover_image_for_detail=#{competitionImgPath},need_approval=#{needApproval},
+			qualification=#{qualification},detail=#{detail},process_description=#{processDescription}
+			where id=#{id}
+	</update>
+	
+	<!-- 验证大赛名称唯一性 -->
+	<select id="checkMegagameNameIsOnly" resultType="int">
+		select count(0) from  knowledge_contest_contest kcc
+		where kcc.name=#{name} and kcc.company_id = #{companyId} 
+			and kcc.sub_company_id=#{subCompanyId} and kcc.is_deleted=0 and kcc.id &lt;&gt;#{megagameId}
+	</select>
+	<!-- 获取大赛开始时间 -->
+	<select id="getContestStartTime" resultType="Date">
+		select es.begin_time from exam_schedule es
+		right join (select kcm.exam_id from knowledge_contest_match kcm
+  		where contest_id=#{megagameId} and order_num=1) t on(t.exam_id=es.id)
+	</select>
+	<!-- 获取大赛结束时间 -->
+	<select id="getContestEndTime" resultType="Date">
+		select es.end_time from exam_schedule es
+		right join (select kcm.exam_id from knowledge_contest_match kcm
+  		where kcm.contest_id=#{megagameId} and kcm.order_num=
+  			(select MAX(kcm2.order_num) from knowledge_contest_match kcm2 where kcm.contest_id=#{megagameId})
+  			) t on(t.exam_id=es.id)
+	</select>
+	<!-- chenrui end -->
+
+	<!-- wangyifeng begin -->
+	<insert id="addContest" useGeneratedKeys="true" keyProperty="id">
+	   insert into knowledge_contest_contest
+	   (name, cover_image_for_list, cover_image_for_detail,
+	   need_approval, qualification, detail, process_description,
+	   status, cur_match_id, is_deleted, create_time, update_time,
+	   begin_time, sub_company_id, company_id, is_spread)
+	   values
+	   (#{name}, #{coverImageForList}, #{coverImageForDetail},
+	   #{needApproval}, #{qualification}, #{detail}, #{processDescription},
+	   1, null, 0, now(), now(),
+	   null, #{subCompanyId}, #{companyId}, 0)
+	</insert>
+	
+	<update id="deleteContest">
+	   update knowledge_contest_contest
+	   set is_deleted = 1
+	   where id = #{id}
+	</update>
+	
+	<update id="modifyContest">
+	   update knowledge_contest_contest
+	   <set>
+		<!-- skip id -->
+		<if test="name != null">name = #{name},</if>
+		<if test="coverImageForList != null">cover_image_for_list = #{coverImageForList},</if>
+		<if test="coverImageForDetail != null">cover_image_for_detail = #{coverImageForDetail},</if>
+		<if test="needApproval != null">need_approval = #{needApproval},</if>
+		<if test="qualification != null">qualification = #{qualification},</if>
+		<if test="detail != null">detail = #{detail},</if>
+		<if test="processDescription != null">process_description = #{processDescription},</if>
+		<!-- skip status -->
+		<!-- skip cur_match_id -->
+        <!-- skip is_deleted -->
+        <!-- skip create_time -->
+        <!-- skip update_time -->
+        <!-- skip begin_time -->
+        <!-- skip sub_company_id -->
+        <!-- skip company_id -->
+        <!-- skip is_spread -->
+	   </set>
+	   where id = #{id}
+	</update>
+	
+	<update id="publishContest">
+	   update knowledge_contest_contest
+	   set status = 1
+	   where id = #{id}
+	</update>
+	
+	<update id="startFirstMatch">
+       update knowledge_contest_contest
+       <set>
+           status = 2,
+           cur_match_id = (
+	        select id
+	        from knowledge_contest_match
+	        where order_num = 1
+	        and contest_id = #{id}
+           ),
+           begin_time = now(),
+       </set>
+       where id = #{id}
+	</update>
+	
+	<update id="startNextMatch">
+	   update knowledge_contest_contest
+	   set cur_match_id = (
+		select id
+		from knowledge_contest_match
+		where order_num = #{curMatchOrderNum} + 1
+		and contest_id = #{contestId}
+	   )
+	   where id = #{contestId}
+	</update>
+	
+	<update id="finishLastMatch">
+	   update knowledge_contest_contest
+	   <set>
+	       status = 3,
+	       cur_match_id = null,
+	   </set>
+	   where id = #{id}
+	</update>
+	
+	<resultMap type="com.jftt.wifi.bean.knowledge_contest.ContestBean" id="contestBeanMap">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="coverImageForList" column="cover_image_for_list"/>
+		<result property="coverImageForDetail" column="cover_image_for_detail"/>
+		<result property="needApproval" column="need_approval"/>
+		<result property="qualification" column="qualification"/>
+		<result property="detail" column="detail"/>
+		<result property="processDescription" column="process_description"/>
+		<result property="status" column="status"/>
+		<result property="curMatchId" column="cur_match_id"/>
+		<result property="isDeleted" column="is_deleted"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="subCompanyId" column="sub_company_id"/>
+		<result property="companyId" column="company_id"/>
+		<result property="isSpread" column="is_spread"/>
+	</resultMap>
+	
+	<select id="getContest" resultMap="contestBeanMap">
+	   select *
+	   from knowledge_contest_contest
+	   where id = #{id}
+	</select>
+
+    <resultMap type="com.jftt.wifi.bean.knowledge_contest.ContestListItemVo" id="contestListItemVoMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="coverImageForList" column="cover_image_for_list"/>
+        <result property="status" column="status"/>
+        <result property="matchCounts" column="match_count"/>
+        <result property="curMatchOrderNum" column="cur_match_order_num"/>
+        <result property="isSpread" column="is_spread"/>
+    </resultMap>
+    
+    <sql id="where_getManageContestList">
+      <where>
+        <if test="megagameName!=null and megagameName!=''">and kcc.name like concat('%', #{megagameName}, '%')</if>
+        <if test="state != null and state != ''">
+        	and kcc.status in (${state})
+        </if>
+        and kcc.company_id = #{companyId} and kcc.sub_company_id=#{subCompanyId} and kcc.is_deleted=0
+      </where>
+    </sql>
+    
+    <sql id="limit_pagination">
+      <if test="offset != null and pageSize != null">
+        limit #{offset}, #{pageSize}
+      </if>
+    </sql>
+
+	<select id="getManageContestVoList" resultType="com.jftt.wifi.bean.vo.KnowledgeContestContestVo">
+	 	select kcm.order_num currentProcess,t.counts,t.id,t.name,t.cover_image_for_list coverImageForList,t.cover_image_for_detail coverImageForDetail,
+	 	t.need_approval needApproval,t.qualification,t.detail,t.process_description processDescription,
+	 	t.status,t.cur_match_id curMatchId,t.is_spread isSpread from (select count(0) counts,kcc.* from knowledge_contest_contest kcc
+		left join knowledge_contest_match kcm on(kcm.contest_id=kcc.id)
+		<include refid="where_getManageContestList"></include>
+		group by kcc.id order by kcc.create_time desc) t
+		left join knowledge_contest_match kcm on(kcm.id=t.cur_match_id)
+		limit ${fromNum},${pageSize}
+	</select>
+
+	<select id="getManageContestTotalCount" resultType="int">
+      	select count(1) from knowledge_contest_contest kcc
+      <include refid="where_getManageContestList"></include>
+	</select>
+	
+	<!-- wangyifeng end -->
+	
+	<!--zhangchen start  -->
+	
+	<select id="getContestNmaeById" resultType="String" parameterType="int">
+		select name
+		from knowledge_contest_contest 
+		where id=#{id}
+	</select>
+	<!--zhangchen end  -->
+</mapper>

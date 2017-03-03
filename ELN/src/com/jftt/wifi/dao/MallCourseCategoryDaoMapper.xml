@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MallCourseCategoryDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.MallCourseCategoryBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="parent_id" property="parentId" jdbcType="INTEGER" />
+    <result column="descr" property="descr" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="update_user_id" property="updateUserId" jdbcType="INTEGER" />
+    <result column="order_num" property="orderNum" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+  </resultMap>
+  
+    <resultMap id="MallCourseCategoryVoMap" type="com.jftt.wifi.bean.vo.MallCourseCategoryVo" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="parent_id" property="parentId" jdbcType="INTEGER" />
+    <result column="descr" property="descr" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="update_user_id" property="updateUserId" jdbcType="INTEGER" />
+    <result column="order_num" property="orderNum" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    id, name, parent_id, descr, create_time, create_user_id, update_time, update_user_id, 
+    is_delete,order_num
+  </sql>
+  <!-- chenrui start -->
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from mall_course_category
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  
+  <!-- 根据父id获取子分类 -->
+  <select id="getByParentId" resultMap="BaseResultMap">
+  	select * from mall_course_category where parent_id=#{parentId}
+  </select>
+  
+  <!-- 获取分类 -->
+  <select id="getMallCourseCategory" resultMap="BaseResultMap">
+  	select * from mall_course_category where is_delete = 0
+  </select>
+  
+  <!--  -->
+  <select id="getChildsByParentId" resultMap="BaseResultMap">
+  		select * from mall_course_category  where is_delete = 0 and parent_id=#{id}
+  </select>
+  
+  <!-- chenrui end -->
+    
+    <!-- zhangbocheng start -->
+    
+ <!-- 根据id查询商品分类 -->
+  <select id="getById" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from mall_course_category
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+    <select id="checkName" parameterType="com.jftt.wifi.bean.MallCourseCategoryBean" resultType="java.lang.Integer">
+        select count(0) from mall_course_category where 
+        name=#{name}  and is_delete = 0
+        <if test="parentId !=null">
+        and parent_id = #{parentId}</if>
+         <if test="parentId ==null">
+        and parent_id is null</if>
+        <if test="id!=null">
+        and id != #{id} 
+        </if>
+       
+    </select>
+    <!-- 删除 -->
+   	<update id="deleteMallCourseCategory" parameterType="java.lang.Integer">
+   	update mall_course_category set is_delete = 1 where id = #{id}
+   	</update>
+   	<update id="updateMallCourseCategory" parameterType="com.jftt.wifi.bean.MallCourseCategoryBean">
+   		update mall_course_category set 
+   		<if test="name!=null">
+   		name = #{name}, 
+   		</if>
+   		<if test="descr!=null">
+   		descr = #{descr}, 
+   		</if>
+   		<if test="orderNum!=null">
+   		order_num = #{orderNum}, 
+   		</if>
+   		update_time=now()  where id =#{id}
+   	</update>
+   	
+   	<insert id="insertMallCourseCategory" parameterType="com.jftt.wifi.bean.MallCourseCategoryBean">
+   		insert into mall_course_category(name, parent_id, descr, create_user_id,create_time,update_user_id,update_time,is_delete,order_num)
+   		values(#{name}, #{parentId}, #{descr}, #{createUserId},now(), #{createUserId},now(),0,#{orderNum})
+   	</insert>
+    
+    
+    <!-- 查询商品分类一级 -->
+    <select id="getMallCourseCategorys" resultMap="MallCourseCategoryVoMap">
+        SELECT * 
+          FROM mall_course_category 
+          WHERE is_delete = 0  AND ISNULL(parent_id) 
+          order by order_num ASC
+    </select>
+    
+    <!-- 获取商品分类的子分类 -->
+    <select id="getChildCategorys" parameterType="java.lang.Integer" resultMap="MallCourseCategoryVoMap">
+    	SELECT * 
+    	  FROM mall_course_category 
+    	  WHERE parent_id = #{categoryId}   and is_delete = 0
+    	  order by order_num ASC
+    </select>
+    
+    <!-- 获取上一级的所有商品分类 -->
+    <select id="getUpCategorys" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    	SELECT a.* FROM mall_course_category a
+    	  WHERE a.parent_id = 
+    	  (SELECT parent_id FROM mall_course_category WHERE id = #{categoryId}) and a.is_delete = 0 
+    </select>
+    <!-- 查询课程分类下是否有课程 -->
+     <select id="hasCourse" resultType="Integer">
+  
+      select count(0) from mall_course where is_delete = 0 and category_id = #{id}
+     </select>
+    
+     <!-- 获取最大的排序字段 -->
+    <select id="getMaxOrderNum" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+    	SELECT max(a.order_num) FROM mall_course_category a
+    	  WHERE   <if test="parentId!=null">
+    	  a.parent_id = #{parentId} 
+    	  </if>
+    	  <if test="parentId==null">
+    	  a.parent_id is null
+    	  </if> 
+    	   and a.is_delete = 0 
+    </select>
+    <!-- 获取上一级的商品分类 -->
+    <select id="getUpCategory" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    	SELECT a.* FROM mall_course_category a
+    	  WHERE 
+    	    <if test="parentId!=null">
+    	  a.parent_id = #{parentId} 
+    	  </if>
+    	  <if test="parentId==null">
+    	  a.parent_id is null
+    	  </if>
+    	  and a.order_num  = (select max(order_num) FROM mall_course_category where 
+    	    <if test="parentId!=null">
+    	  parent_id = #{parentId} 
+    	  </if>
+    	  <if test="parentId==null">
+    	  parent_id is null
+    	  </if>
+    	   and #{orderNum} > order_num and is_delete = 0   )
+    	   and a.is_delete = 0 
+    </select>
+     <!-- 获取下一级的商品分类 -->
+    <select id="getDownCategory" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    	SELECT a.* FROM mall_course_category a
+    	  WHERE 
+    	  <if test="parentId!=null">
+    	  a.parent_id = #{parentId} 
+    	  </if>
+    	  <if test="parentId==null">
+    	  a.parent_id is null
+    	  </if>
+    	  and a.order_num  = (select min(order_num) FROM mall_course_category where 
+    	     <if test="parentId!=null">
+    	  parent_id = #{parentId} 
+    	  </if>
+    	  <if test="parentId==null">
+    	  parent_id is null
+    	  </if>
+    	  and order_num > #{orderNum} and is_delete = 0 )
+    	   and a.is_delete = 0 
+    </select>
+    <!-- zhangbocheng end -->
+  
+</mapper>

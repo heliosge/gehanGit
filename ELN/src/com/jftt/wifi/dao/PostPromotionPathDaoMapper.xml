@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.PostPromotionPathDaoMapper">
+	
+	<resultMap type="com.jftt.wifi.bean.PostPromotionPathBean" id="PostPromotionPathBeanMap">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="description" column="description"/>
+		<result property="isDisabled" column="is_disabled"/>
+		<result property="isDeleted" column="is_deleted"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="companyId" column="company_id"/>
+		<result property="subCompanyId" column="sub_company_id"/>
+	</resultMap>
+	
+	<resultMap type="com.jftt.wifi.bean.vo.MyPostPromotionPathVo" id="MyPostPromotionPathVoMap">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="isDisabled" column="is_disabled"/>
+		<result property="promotionState" column="promotion_state"/>
+		<result property="currentStageId" column="current_stage_id"/>
+	</resultMap>
+	
+	<resultMap type="com.jftt.wifi.bean.vo.PromotionPathStageVo" id="PromotionPathStageVoMap">
+		<id property="id" column="id"/>
+		<result property="postId" column="post_id"/>
+		<result property="postName" column="post_name"/>
+		<result property="orderNum" column="order_num"/>
+	</resultMap>
+	
+	<resultMap type="com.jftt.wifi.bean.vo.PromotionPathDetailVo" id="PromotionPathDetailVoMap">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="promotionState" column="promotion_state"/>
+		<result property="orderNum" column="order_num"/>
+		<result property="promotionPercent" column="promotion_percent"/>
+		<result property="stageId" column="stage_id"/>
+	</resultMap>
+	
+	<!-- 根据id查询晋升路径  -->
+	<select id="getById" parameterType="java.lang.Integer" resultMap="PostPromotionPathBeanMap">
+		SELECT ppp.id,ppp.name,ppp.description,ppp.is_disabled,
+		    ppp.is_deleted,ppp.update_time,ppp.company_id,ppp.sub_company_id 
+		  FROM post_promotion_path ppp 
+		  WHERE ppp.id = #{id}
+	</select>
+	
+	<!-- 获取我的所有晋升路径的数量 -->
+	<select id="getMyPromotionPathCount" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(ppp.id)) 
+		  FROM post_promotion_state pps LEFT JOIN post_promotion_path_stage ppps ON pps.promotion_stage_id = ppps.id 
+		    LEFT JOIN post_promotion_path ppp ON ppps.promotion_path_id = ppp.id 
+		  WHERE pps.user_id = #{userId} AND ppps.is_deleted = 0 
+		    AND ppp.company_id = #{companyId} AND ppp.sub_company_id = #{subCompanyId} AND ppp.is_deleted = 0 
+	</select>
+	
+	<!-- 获取我的所有晋升路径 -->
+	<select id="getMyPromotionPath" resultMap="MyPostPromotionPathVoMap">
+		SELECT ppp.id,ppp.name,ppp.is_disabled,ppps.id current_stage_id, 
+		    ROUND(IFNULL((((SELECT COUNT(id) FROM post_promotion_path_stage WHERE order_num &lt;= ppps.order_num AND promotion_path_id = ppp.id AND is_deleted = 0)  
+		    /(SELECT COUNT(id) FROM post_promotion_path_stage WHERE promotion_path_id = ppp.id AND is_deleted = 0))*100),0)) promotion_state 
+		  FROM post_promotion_state pps LEFT JOIN post_promotion_path_stage ppps ON pps.promotion_stage_id = ppps.id 
+		    LEFT JOIN post_promotion_path ppp ON ppps.promotion_path_id = ppp.id 
+		  WHERE pps.user_id = #{userId} AND ppps.is_deleted = 0 
+		    AND ppp.company_id = #{companyId} AND ppp.sub_company_id = #{subCompanyId} AND ppp.is_deleted = 0 
+		  LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 获取该路径所有阶段 -->
+	<select id="getPathStages" parameterType="java.lang.Integer" resultMap="PromotionPathStageVoMap">
+		SELECT DISTINCT ppps.id,ppps.post_id,mp.name post_name,ppps.order_num 
+		  FROM post_promotion_path_stage ppps LEFT JOIN manage_post mp ON ppps.post_id = mp.id 
+		  WHERE ppps.promotion_path_id = #{promotionPathId} AND ppps.is_deleted = 0 
+		  ORDER BY ppps.order_num ASC 
+	</select>
+	
+	<!-- 获取晋升路径详细数量 -->
+	<select id="getRoadDetailsCount" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(ppp.id)) 
+		  FROM post_promotion_state pps LEFT JOIN post_promotion_path_stage ppps ON pps.promotion_stage_id = ppps.id 
+		    LEFT JOIN post_promotion_path ppp ON ppps.promotion_path_id = ppp.id 
+		  WHERE pps.user_id = #{userId} AND pps.promotion_status = #{promotionStatusContinue} 
+		  <trim>
+		    <if test="searchContent != null and searchContent != '' ">
+		    	AND ppp.name like CONCAT('%',#{searchContent},'%') 
+		    </if>
+		  </trim>
+	</select>
+	
+	<!-- 获取晋升路径详细 -->
+	<select id="getRoadDetails" resultMap="PromotionPathDetailVoMap">
+		SELECT ppp.id,ppp.name,ppps.order_num,ppps.id stage_id,
+		   ROUND(IFNULL((((SELECT COUNT(id) FROM post_promotion_path_stage WHERE order_num &lt;= ppps.order_num AND promotion_path_id = ppp.id AND is_deleted = 0)  
+		   /(SELECT COUNT(id) FROM post_promotion_path_stage WHERE promotion_path_id = ppp.id AND is_deleted = 0))*100),0)) promotion_percent 
+		  FROM post_promotion_state pps LEFT JOIN post_promotion_path_stage ppps ON pps.promotion_stage_id = ppps.id 
+		    LEFT JOIN post_promotion_path ppp ON ppps.promotion_path_id = ppp.id 
+		  WHERE pps.user_id = #{userId} AND pps.promotion_status = 2 
+		  <trim>
+		    <if test="searchContent != null and searchContent != '' ">
+		    	AND ppp.name like CONCAT('%',#{searchContent},'%') 
+		    </if>
+		  </trim>
+		  LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 查出当前阶段对应的岗位id -->
+	<select id="getPostIdByStageId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT post_id FROM post_promotion_path_stage WHERE id = #{stageId} 
+	</select>
+	
+</mapper>

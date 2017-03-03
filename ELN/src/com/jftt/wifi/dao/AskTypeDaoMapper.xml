@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.AskTypeDaoMapper">
+	<resultMap type="com.jftt.wifi.bean.ask.AskTypeBean" id="AskTypeBeanMap">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="description" column="description"/>
+		<result property="parentId" column="parent_id"/>
+		<result property="createTime" column="create_time"/>
+		<result property="companyId" column="company_id"/>
+		<result property="subCompanyId" column="sub_company_id"/>
+		<result property="isDelete" column="is_delete"/>
+	</resultMap>
+	
+	<!-- 编辑框问问分类 -->
+	<resultMap type="com.jftt.wifi.bean.ask.EditAskTypeVo" id="EditAskTypeVoMap">
+		<id property="typeId" column="type_id"/>
+		<result property="typeName" column="type_name"/>
+		<result property="description" column="description"/>
+		<result property="parentTypeId" column="parent_type_id"/>
+		<result property="parentTypeName" column="parent_type_name"/>
+	</resultMap>
+	
+	<sql id="askTypeAll">
+		at.id, at.name, at.description, at.parent_id, at.create_time, at.is_delete, 
+		at.company_id, at.sub_company_id  
+	</sql>
+	
+	<!-- 根据id查询问问分类  -->
+	<select id="getById" parameterType="java.lang.Integer" resultMap="AskTypeBeanMap">
+		SELECT  <include refid="askTypeAll"/>
+		  FROM ask_type at 
+		  WHERE at.id = #{id} 
+	</select>
+	
+	<!-- 获取问问分类编辑框内容 -->
+	<select id="getEditAskType" parameterType="java.lang.Integer" resultMap="EditAskTypeVoMap">
+		SELECT at.id type_id,at.name type_name, at.description,at.parent_id parent_type_id, 
+		    (SELECT name FROM ask_type WHERE id = at.parent_id) parent_type_name 
+		  FROM ask_type at 
+		  WHERE at.id = #{searchTypeId} 
+	</select>
+	
+	<!-- 分类查询条件 -->
+	<sql id="typeWhere">
+		<trim>
+			<if test="id != null and id != '' ">
+				AND at.id = #{id} 
+			</if>
+			<if test="name != null and name != '' ">
+				AND at.name = #{name}
+			</if>
+			<if test="parentId != null and parentId != '' ">
+				AND at.parent_id = #{parentId}
+			</if>
+		</trim>
+	</sql>
+	
+	<!-- 查询问问分类 -->
+	<select id="selectAskType" parameterType="HashMap" resultMap="AskTypeBeanMap">
+		SELECT <include refid="askTypeAll"/> 
+		  FROM ask_type at 
+		  WHERE at.is_delete = 2 AND at.company_id = #{companyId} AND at.sub_company_id = #{subCompanyId} 
+		  <include refid="typeWhere"/>
+	</select>
+	
+	<!-- 添加一个分类 -->
+	<insert id="addAskType" parameterType="com.jftt.wifi.bean.ask.AskTypeBean" useGeneratedKeys="true" keyColumn="id">
+		INSERT INTO ask_type(name,description,parent_id,create_time,company_id,sub_company_id,is_delete,update_time) 
+		  VALUES(#{name},#{description},#{parentId},#{createTime},#{companyId},#{subCompanyId},2,now())
+	</insert>
+	
+	<!-- 修改一个问问分类 -->
+	<update id="updateAskType" parameterType="com.jftt.wifi.bean.ask.AskTypeBean">
+		UPDATE ask_type 
+		  SET name = #{name}, description = #{description} 
+		  WHERE id = #{id} 
+	</update>
+	
+	<!-- 删除一个问问分类 -->
+	<update id="deleteAskType" parameterType="java.lang.Integer">
+		UPDATE ask_type SET is_delete = 1 WHERE id = #{id} 
+	</update>
+	
+	<!-- 查询根问题分类 -->
+	<select id="getRootTypes" resultMap="AskTypeBeanMap">
+		SELECT <include refid="askTypeAll"/>
+		FROM ask_type at 
+		WHERE at.company_id = #{companyId} AND at.sub_company_id = #{subCompanyId} 
+		  AND at.parent_id is null AND at.is_delete = 2 
+	</select>
+	
+	<!-- 获取该分类下的直接子分类 -->
+	<select id="getChildTypes" resultMap="AskTypeBeanMap">
+		SELECT <include refid="askTypeAll"/>
+		FROM ask_type at 
+		WHERE at.parent_id = #{typeId} AND at.is_delete = 2 
+	</select>
+	
+	<!--zhangchen add  -->
+	<!--获取问卷分类列表  -->
+    <select id="getAskTypeList" resultMap="AskTypeBeanMap">
+        select *
+        from ask_type
+        <where>
+            <if test="subCompanyId != null">
+                sub_company_id=#{subCompanyId}
+            </if>
+        	<if test="companyId != null">
+        		and company_id=#{companyId}
+        	</if>
+          	and (is_delete is null or is_delete != 1)
+        </where>
+        order by create_time
+    </select>
+    
+    <!--根据分类ID获取分类名称  -->
+    <select id="getTypeName" resultType="String" parameterType="int">
+    	select name from ask_type where id=#{id}
+    </select>
+    
+    <!--zhangchen end  -->
+	
+</mapper>

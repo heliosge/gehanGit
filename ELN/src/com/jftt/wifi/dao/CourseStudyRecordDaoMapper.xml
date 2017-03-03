@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseStudyRecordDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.CourseStudyRecordBean" id="CourseStudyRecordBeanMap">
+        <id property="id" column="id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="companyId" column="company_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="learnProcess" column="learn_process"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="thisLearnTime" column="this_learn_time"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+    </resultMap>
+    
+    <!-- 根据id查询学习记录 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="CourseStudyRecordBeanMap">
+        select * from course_study_record where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据条件查询课程学习记录id -->
+    <select id="getIdByConditions" resultType="java.lang.Integer">
+        SELECT id 
+          FROM course_study_record 
+          WHERE course_id = #{courseId} AND user_id = #{userId}  
+    </select>
+    
+    <!-- 添加一条课程学习记录 -->
+    <insert id="addCourseStudyRecordBean" parameterType="com.jftt.wifi.bean.CourseStudyRecordBean" useGeneratedKeys="true" keyProperty="id">
+       INSERT INTO course_study_record(course_id,company_id,user_id,learn_process,start_time,end_time,this_learn_time,sub_company_id) 
+         VALUES(#{courseId},#{companyId},#{userId},#{learnProcess},#{startTime},#{endTime},#{thisLearnTime},#{subCompanyId})
+    </insert>
+    
+    <!-- 更新一条学习记录 -->
+    <update id="updateCourseStudyRecordBean" parameterType="com.jftt.wifi.bean.CourseStudyRecordBean">
+        UPDATE course_study_record 
+          <set>
+              <if test="courseId != null">
+                  course_id = #{courseId},
+              </if>
+              <if test="companyId != null">
+                  company_id = #{companyId},
+              </if>
+              <if test="userId != null">
+                  user_id = #{userId},
+              </if>
+              <if test="learnProcess != null">
+                  learn_process = #{learnProcess},
+              </if>
+              <if test="startTime != null">
+                  start_time = #{startTime},
+              </if>
+              <if test="endTime != null">
+                  end_time = #{endTime},
+              </if>
+              <if test="thisLearnTime != null">
+                  this_learn_time = #{thisLearnTime},
+              </if>
+              <if test="subCompanyId != null">
+              	  sub_company_id = #{subCompanyId}, 
+              </if>
+          </set>
+          WHERE id = #{id}
+    </update>
+    
+    <!-- 删除一条课程学习记录 -->
+    <delete id="deleteRecord">
+    	DELETE FROM course_study_record 
+    	WHERE id = (SELECT a.id FROM (SELECT id FROM course_study_record WHERE course_id = #{courseId} AND user_id = #{userId}) a) 
+    </delete>
+    
+    <!-- shenhaijun end -->
+    
+    <!-- luyunlong start -->
+     <resultMap id="BaseResultMap" type = "com.jftt.wifi.bean.CourseStudyRecordBean" extends="CourseStudyRecordBeanMap">
+  		<association property="course" column="course_id" select="com.jftt.wifi.dao.ResCourseDaoMapper.selectCourseById"/>
+  	</resultMap>
+  
+    <select id="selectCourseStudyByMap" resultMap="BaseResultMap">
+    	select * from course_study_record where user_id = #{userId}
+    	and EXISTS (select * from res_course where id = course_id)
+    	<if test="courseId != null and courseId != ''">
+          	  AND	course_id = #{courseId}
+        </if>
+    	<if test="learnProcess != null and learnProcess != ''">
+          	  AND	learn_process = #{learnProcess}
+        </if>
+        <if test="pageSize != null and pageSize != ''">
+	    	limit ${fromNum},${pageSize}
+        </if>
+    </select>
+    
+     <select id="selectCourseStudyCountByMap" resultType="int">
+    	select count(*) from course_study_record where user_id = #{userId}
+    	and EXISTS (select * from res_course where id = course_id)
+    	<if test="learnProcess != null and learnProcess != ''">
+              AND	learn_process = #{learnProcess}
+        </if>
+    </select>
+    
+    <!-- luyunlong end -->
+    
+</mapper>

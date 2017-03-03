@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamUserAnswerDaoMapper">
+
+<!-- wangyifeng begin -->
+    <update id="updateScore">
+        update exam_user_answer
+        <set>
+            get_score = #{getScore},
+            <if test="evaluation != null and evaluation != ''">evaluation = #{evaluation}</if>
+        </set>
+        where id = #{id}
+    </update>
+    
+    <select id="getAnswerList" resultMap="userAnswerMap">
+		select
+		  *
+		from
+		  exam_user_answer
+		where
+		  exam_assign_id = #{examAssignId}
+		order by
+		  order_num,
+		  sub_order_num
+    </select>
+<!-- wangyifeng end -->
+	
+<!--zhangchen start  -->
+	<resultMap id="userAnswerMap" type="com.jftt.wifi.bean.exam.ExamUserAnswerBean">
+		<id property="id" column="id"/>
+		<result property="examAssignId" column="exam_assign_id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="answer" column="answer"/>
+		<result property="orderNum" column="order_num"/>
+		<result property="subOrderNum" column="sub_order_num"/>
+        <result property="score" column="score"/>
+		<result property="getScore" column="get_score"/>
+		<result property="evaluation" column="evaluation"/>
+		<result property="isFavorated" column="is_favorated"/>
+		<result property="updateTime" column="update_time"/>
+	</resultMap>
+	
+	<!--查询单选题或多选题答案  -->
+	<select id="selectChoiceAnswer" resultType="String" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		<!-- select a.exam_assign_id,a.question_id,a.answer,a.order_num,a.sub_order_num,a.get_score,a.score,a.evaluation
+		from exam_user_answer a
+		where a.exam_assign_id = #{exam_assign_id} -->
+		<!-- select GROUP_CONCAT(b.order_num) 
+		from(
+			select * from exam_user_answer
+			where question_id = #{question_id} 
+			and exam_assign_id = #{exam_assign_id}
+			) a
+		left join exam_question_option b
+		on a.question_id = b.question_id
+		where b.id in( ${option_id} ) -->
+		
+		select GROUP_CONCAT(b.order_num) 
+		from exam_question_option b
+		where b.question_id = #{question_id}  
+		and b.id in( ${option_id} )
+		<!-- GROUP BY a.question_id -->
+	</select>
+	
+	<!--查询题目正确答案，不包含组合题    暂时未用到此方法，已被废除-->
+	<select id="selectExamCorrectAnswer" resultType="String" parameterType="int">
+		select is_true answer from exam_question where type=4 and id = #{id}
+		UNION
+		select ( case when (f.type=1 or f.type=5) then GROUP_CONCAT(f.content)
+					  when (f.type=2 or f.type=3) then GROUP_CONCAT(f.order_num)
+					  else '-' end		
+			) answer
+		from(
+			select d.question_id,d.order_num,d.is_answer,e.type,d.content
+			from (select question_id,order_num,is_answer,content from exam_question_option
+						where is_answer = 1 and question_id = #{id}
+				) d
+			left join exam_question e
+			on d.question_id = e.id
+		) f
+		group by f.question_id
+
+	</select>
+	
+	<!--查询题目正确答案，不包含组合题   若是多选题与单选题 ，直接取ID  暂时未用到此方法，已被废除-->
+	<select id="selectExamCorrectAnswer2" resultType="String" parameterType="int">
+		select answer_keys answer from exam_question where (type=1 or type=5) and id = #{id}
+		UNION
+		select is_true answer from exam_question where type=4 and id = #{id}
+		UNION
+		select  GROUP_CONCAT(f.id) answer
+		from(
+			select d.id,d.question_id,d.order_num,d.is_answer,e.type,d.content
+			from (select id,question_id,order_num,is_answer,content from exam_question_option
+						where is_answer = 1 and question_id = #{id}
+				) d
+			left join exam_question e
+			on d.question_id = e.id
+		) f
+		where f.type = 2 or f.type = 3
+		group by f.question_id
+	</select>
+	
+	<!--通过ID与类型查询正确答案 ID 2015-10-13  -->
+	<select id="selectCorrectAnswer2" resultType="String" parameterType="java.util.HashMap">
+		<if test="type == 1 or type == 5">
+			select answer_keys answer from exam_question where id = #{id}
+		</if>
+		<if test="type == 4">
+			select is_true answer from exam_question where id = #{id}
+		</if>
+		<if test="type == 2 or type == 3">
+			select  GROUP_CONCAT(f.id) answer
+			from(
+				select id,question_id,order_num,is_answer,content 
+				from exam_question_option
+				where is_answer = 1 and question_id = #{id}
+			) f
+		</if>
+	</select>
+	
+	<!--通过ID与类型查询正确答案  2015-10-13  -->
+	<select id="selectCorrectAnswer" resultType="String" parameterType="java.util.HashMap">
+		<if test="type == 1 or type == 5">
+			select GROUP_CONCAT(f.content) answer
+			from(
+				select question_id,order_num,is_answer,content from exam_question_option
+				where question_id = #{id}
+			) f
+			group by f.question_id
+		</if>
+		<if test="type == 4">
+			select is_true answer from exam_question where id = #{id}
+		</if>
+		<if test="type == 2 or type == 3">
+			select  GROUP_CONCAT(f.order_num) answer
+			from(
+				select question_id,order_num,is_answer,content 
+				from exam_question_option
+				where is_answer = 1 and question_id = #{id}
+			) f
+		</if>
+	</select>
+	
+	<!--插入用户答案  -->
+	<insert id="insertUserAnswer" parameterType="com.jftt.wifi.bean.exam.ExamUserAnswerBean">
+		insert exam_user_answer(exam_assign_id,question_id,answer,order_num,sub_order_num,get_score,score,evaluation,is_favorated)
+		values(#{examAssignId},#{questionId},#{answer},#{orderNum},#{subOrderNum},#{getScore},#{score},#{evaluation},#{isFavorated})
+	</insert>
+	
+	<!--删除一次考试记录的用户答案  -->
+	<delete id="deleteUserAnswer" parameterType="int">
+		delete from exam_user_answer where exam_assign_id = #{exam_assign_id}
+	</delete>
+	
+	
+	<resultMap id="answerQuestionMap" type="com.jftt.wifi.bean.exam.ExamUserAnswerBean">
+		<id property="id" column="id"/>
+		<result property="examAssignId" column="exam_assign_id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="answer" column="answer"/>
+		<result property="orderNum" column="order_num"/>
+		<result property="subOrderNum" column="sub_order_num"/>
+        <result property="score" column="score"/>
+		<result property="getScore" column="get_score"/>
+		<result property="evaluation" column="evaluation"/>
+		<result property="isFavorated" column="is_favorated"/>
+		<result property="updateTime" column="update_time"/>
+		<!-- <association property="questionIdList" column="question_id"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.ExamQuestionDaoMapper.selectQuestionIdListById"/> -->
+		<association property="question" column="question_id"
+		        javaType="com.jftt.wifi.bean.exam.QuestionBean"
+			    select="com.jftt.wifi.dao.ExamQuestionDaoMapper.selectQuestionById"/>
+		<!-- <association property="correctAnswer" column="question_id"
+		        javaType="String"
+			    select="selectExamCorrectAnswer"/> -->
+		<!-- <association property="correctAnswer2" column="question_id"
+		        javaType="String"
+			    select="selectExamCorrectAnswer2"/> -->
+	</resultMap>
+	
+	<!--查询试卷的试题详情 ， 随机试卷每进一次都会变化，所以要从用户答案表入手 -->
+	<select id="selectExamQuestionDetail" resultMap="answerQuestionMap" parameterType="int">
+		select id,exam_assign_id,question_id,order_num,sub_order_num,answer,get_score,score,is_favorated
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and sub_order_num = 0
+		order by order_num
+	</select>
+	
+	<!--通过assign_id与order_num查询子试题的答题详情  -->
+	<select id="selectQuestionDetailByOrderNum" resultMap="answerQuestionMap" parameterType="java.util.HashMap">
+		select id,exam_assign_id,question_id,order_num,sub_order_num,answer,get_score,score,is_favorated
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and order_num = #{order_num}
+		and sub_order_num != 0
+		order by sub_order_num
+	</select>
+	
+	<!--通过assign_id与question_id查询子试题的答题详情  -->
+	<select id="selectQuestionDetailByQuestionId" resultMap="answerQuestionMap" parameterType="java.util.HashMap">
+		select id,exam_assign_id,question_id,order_num,sub_order_num,answer,get_score,score,is_favorated
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and question_id = #{question_id}
+	</select>
+	
+	<resultMap id="userAnswerMap2" type="com.jftt.wifi.bean.exam.ExamUserAnswerBean">
+		<id property="id" column="id"/>
+		<result property="examAssignId" column="exam_assign_id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="answer" column="answer"/>
+		<result property="orderNum" column="order_num"/>
+		<result property="subOrderNum" column="sub_order_num"/>
+        <result property="score" column="score"/>
+		<result property="getScore" column="get_score"/>
+		<result property="evaluation" column="evaluation"/>
+		<result property="isFavorated" column="is_favorated"/>
+		<result property="updateTime" column="update_time"/>
+		<association property="questionIdList" column="question_id"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.ExamQuestionDaoMapper.selectQuestionIdListById"/>
+	</resultMap>
+	
+	<!--查询试卷的试题详情 ， 随机试卷每进一次都会变化，所以要从用户答案表入手  2015-10-13-->
+	<select id="selectQuestionGetScore" resultMap="userAnswerMap" parameterType="int">
+		select id,exam_assign_id,question_id,get_score,order_num
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and sub_order_num = 0
+		order by order_num
+	</select>
+	
+	
+	<!--通过assign_id与order_num查询子试题的答题详情  2015-10-13 -->
+	<select id="selectQuestionGetScoreByOrderNum" resultMap="userAnswerMap" parameterType="java.util.HashMap">
+		select id,exam_assign_id,get_score,order_num
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and order_num = #{order_num}
+		and sub_order_num != 0
+		order by sub_order_num
+	</select>
+	
+	<!--通过assign_id与QuestionId查询子试题的答题详情  2015-10-29 -->
+	<select id="selectQuestionGetScoreByQuestionId" resultMap="userAnswerMap" parameterType="java.util.HashMap">
+		select id,exam_assign_id,get_score,order_num
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and question_id = #{question_id}
+	</select>
+	
+	<!--通过 assign_id与question_id,查询单个试题详情 -->
+	<select id="selectOneExamQuestionDetail" resultMap="answerQuestionMap" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select id,exam_assign_id,question_id,order_num,sub_order_num,answer,get_score,score,is_favorated
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and question_id = #{question_id}
+		order by order_num,sub_order_num
+	</select>
+	
+	<!--查询答卷详情页面的得分总览  -->
+	<select id="selectExamGetScore" resultType="com.jftt.wifi.bean.vo.ExamGetScoreVo" parameterType="int">
+		select b.type,
+				sum(case when a.get_score = a.score then 1 else 0 end) correctNum,
+				sum(case when a.sget_score &gt; a.sscore then 1 else 0 end) wrongNum,
+				sum(case when a.sanswer = '-' and a.stype != 6 then 1 else 0 end) unwriteNum,
+				sum(get_score) score
+		from (
+			select id,exam_assign_id,question_id,order_num,sub_order_num,answer,get_score,score
+				from exam_user_answer
+				where exam_assign_id = #{exam_assign_id} and sub_order_num = 0
+				order by order_num ) a
+		left join exam_question b
+		on a.question_id = b.id
+		group by b.type
+	</select>
+	
+	<!--更新答案是否收藏在错题集  -->
+	<update id="updateFavorated" parameterType="java.util.HashMap">
+        update exam_user_answer
+        set is_favorated = #{isFavorated}
+        where id = #{id}
+    </update>
+    
+    <!-- 通过 assign_id与question_id,查询单个试题答案-->
+    <select id="selectAnswerByAssignIdAndQuestionId" resultType="String" parameterType="java.util.HashMap">
+    	select answer
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and question_id = #{question_id}
+    </select>
+    
+     <!-- 通过 assign_id与question_id用户答案ID-->
+    <select id="selectAnswerIdByAssignIdAndQuestionId" resultType="int" parameterType="java.util.HashMap">
+    	select id
+		from exam_user_answer
+		where exam_assign_id = #{exam_assign_id} and question_id = #{question_id}
+    </select>
+    
+    <!--通过assign_id查询有无答案记录  -->
+    <select id="selectCountByassignId" resultType="int" parameterType="int">
+    	select count(1) from exam_user_answer where exam_assign_id = #{exam_assign_id}
+    </select>
+	
+<!--zhangchen end  -->
+	
+</mapper>

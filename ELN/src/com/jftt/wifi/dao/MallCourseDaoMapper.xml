@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MallCourseDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.MallCourseBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="course_id" property="courseId" jdbcType="INTEGER" />
+    <result column="category_id" property="categoryId" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="cheap_price" property="cheapPrice" jdbcType="DECIMAL" />
+    <result column="discount" property="discount" jdbcType="INTEGER" />
+    <result column="putaway_time" property="putawayTime" jdbcType="TIMESTAMP" />
+    <result column="putaway_user_id" property="putawayUserId" jdbcType="INTEGER" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="is_copy" property="isCopy" jdbcType="INTEGER" />
+    <result column="copy_course_id" property="copyCourseId" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+    <result column="courseName" property="courseName"/>
+     <result column="courseImage" property="courseImage"/>
+  </resultMap>
+    
+    <resultMap id="CourseVoMap" type="com.jftt.wifi.bean.vo.MallCourseVo" >
+	    <id column="id" property="id" jdbcType="INTEGER" />
+	    <result column="course_id" property="courseId" jdbcType="INTEGER" />
+	    <result column="category_id" property="categoryId" jdbcType="INTEGER" />
+	    <result column="price" property="price" jdbcType="DECIMAL" />
+	    <result column="cheap_price" property="cheapPrice" jdbcType="DECIMAL" />
+	    <result column="discount" property="discount" jdbcType="INTEGER" />
+	    <result column="putaway_time" property="putawayTime" jdbcType="TIMESTAMP" />
+	    <result column="putaway_user_id" property="putawayUserId" jdbcType="INTEGER" />
+	    <result column="status" property="status" jdbcType="INTEGER" />
+	    <result column="is_copy" property="isCopy" jdbcType="INTEGER" />
+	    <result column="copy_course_id" property="copyCourseId" jdbcType="INTEGER" />
+	    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+  	</resultMap>
+  	
+  	<resultMap id="CourseDetailsPageVo" type="com.jftt.wifi.bean.vo.CourseDetailsPageVo" >
+	    <id column="id" property="id" />
+	    <result column="name" property="name" />
+	    <result column="details" property="details" />
+	    <collection property="sectionList" column="id" ofType="com.jftt.wifi.bean.vo.ResSectionBeanVo"
+	    	select="com.jftt.wifi.dao.ResSectionDaoMapper.getByCourseId"></collection>
+  	</resultMap>
+  
+  <sql id="Base_Column_List" >
+    id, course_id, category_id, price, cheap_price, discount, putaway_time, putaway_user_id, 
+    status, is_copy, copy_course_id, is_delete
+  </sql>
+  
+   <!-- chenrui start -->
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select mc.*,rc.name courseName,rc.front_image courseImage
+    from mall_course mc
+    left join res_course rc on(mc.course_id=rc.id)
+    where mc.id = #{id}
+  </select>
+
+    <!-- 获取课程信息 -->
+    <select id="getDetailsByCourseId" resultMap="CourseDetailsPageVo">
+    	select rc.id,rc.name,outline details from res_course rc where rc.id = #{courseId}
+    </select>
+  
+  <!-- 
+  		精品、免费、最新课程   type[1:精品2：免费]
+  		业务规则：精品课程按上架时间倒叙显示最新上架的四个收费课程；免费课程按上架时间倒叙显示最新上架的四个免费课程；最新课程按上架时间倒叙显示最近上架的四门课程
+  -->
+  <select id="getBoutiqueCourse" resultType="com.jftt.wifi.bean.vo.MallCoursePageVo">
+	  select t.id,t.price,t.cheapprice,t.name,t.img ,sum(ce.score)/count(ce.id) avgScore,count(ce.id) evaluateNum from (
+			select mc.id,mc.course_id,mc.price,mc.cheap_price cheapPrice,rc.name,rc.front_image img,mc.putaway_time
+			from mall_course mc 
+			left join res_course rc on(mc.course_id=rc.id)
+			where mc.is_delete=0 and mc.status=1 
+			<if test="type==1">
+				and mc.price&gt;0
+			</if>
+			<if test="type==2">
+				and mc.price=0
+			</if>
+		) t
+		left join course_evaluation ce on(t.course_id=ce.course_id)
+		<!-- left join (
+		select ce.id,ce.score,ce.course_id from course_evaluation ce
+		right join (select mo.user_id,mor.relate_id from mall_order mo 
+		left join mall_order_relate mor on(mor.order_id=mo.id)
+		where mor.commodity_type=1 and mo.status=3) tb2 on(tb2.user_id=ce.user_id)
+		) t2 on(t.course_id=t2.course_id) -->
+		group by t.course_id
+		order by putaway_time desc
+		limit 4
+  
+  </select>
+  <!-- 获取专题下的课程 -->
+  <select id="getCoursesByTopicId" resultType="com.jftt.wifi.bean.vo.MallCoursePageVo">
+  	select t.id,t.price,t.cheapprice,t.name,t.descr,t.img ,sum(ce.score)/count(ce.id) avgScore,count(ce.id) evaluateNum from (
+		select tb1.*,rc.name,rc.outline descr,rc.front_image img from (
+			select mtc.mall_course_id,mtc.price topicCoursePrice,mc.id,mc.course_id,mc.price,mc.cheap_price cheapPrice 
+			from mall_topic_course mtc
+			left join mall_course mc on(mtc.mall_course_id=mc.id)
+			where mtc.topic_id=#{id}
+		) tb1
+		left join res_course rc on(tb1.course_id=rc.id)
+	) t
+	left join course_evaluation ce on(t.course_id=ce.course_id)
+	group by t.course_id
+  </select>
+  
+  <!-- 获取课程详情 -->
+  <select id="getMailCourseDetailById" resultType="com.jftt.wifi.bean.vo.MallCoursePageVo">
+  	select t.id,t.code,t.course_id courseId,t.price,t.cheapprice,t.name,t.descr,t.img ,sum(ce.score)/count(ce.id) avgScore,
+  	count(ce.id) evaluateNum,mcc.name categroyName from (
+			select mc.id,mc.course_id,mc.category_id,mc.price,mc.cheap_price cheapPrice,rc.name,rc.code,rc.outline descr,rc.front_image img
+			from mall_course mc 
+			left join res_course rc on(mc.course_id=rc.id)
+			where mc.id=#{id}
+	) t
+	left join mall_course_category mcc on(t.category_id=mcc.id)
+	left join course_evaluation ce on(t.course_id=ce.course_id)
+	group by t.course_id
+  </select>
+  
+  <!-- 商城课程类别页面 start -->
+  
+  <sql id="commonWhere_s">
+ 	where mc.is_delete=0 and mc.status=1 
+ 	<if test="childCategoryIds != '' and childCategoryIds != null">
+	 	and find_in_set(mc.category_id,#{childCategoryIds})
+  	</if>
+  	<if test="name != '' and name != null">
+	  	and rc.name like CONCAT('%',#{name},'%')
+  	</if>
+  	<if test="showFree == 1">
+  		and mc.price=0
+  	</if>
+  	<if test="isBuy == 1">
+  		<!-- 从订单表中获取销售记录 -->
+	  	and mc.id not in(select mor.relate_id from mall_order_relate mor 
+							left join mall_order mo on(mor.order_id=mo.id)
+							where mo.is_delete=0 and mo.commodity_type=1 and mo.user_id=#{userId} and mo.status in(1,2,3) 
+						)
+  	</if>
+  </sql>
+  <!-- 类目页商品数量 -->
+  <select id="getCourseByCategoryCount" resultType="int">
+		select count(0)
+		from mall_course mc 
+		left join res_course rc on(mc.course_id=rc.id)
+		<include refid="commonWhere_s"></include>
+  </select>
+  
+  <!-- 按默认 上架时间排序 -->
+  <select id="getCourseByCategoryOrderDefault" resultType="com.jftt.wifi.bean.vo.MallCoursePageVo">
+  		select t.id,t.price,t.cheapprice,t.name,t.img ,sum(ce.score)/count(ce.id) avgScore,count(ce.id) evaluateNum from (
+			select mc.id,mc.course_id,mc.price,mc.cheap_price cheapPrice,rc.name,rc.front_image img,mc.putaway_time
+			from mall_course mc 
+			left join res_course rc on(mc.course_id=rc.id)
+			<include refid="commonWhere_s"></include>
+		) t
+		left join course_evaluation ce on(t.course_id=ce.course_id)
+		group by t.course_id
+		order by putaway_time ${orderRule}
+		limit ${fromNum},${pageSize}
+  </select>
+  <!-- 按销量 -->
+   <select id="getCourseByCategoryOrderSaleNum" resultType="com.jftt.wifi.bean.vo.MallCoursePageVo">
+  		select t.id,t.price,t.cheapprice,t.name,t.img ,t.salesNum,sum(ce.score)/count(ce.id) avgScore,count(ce.id) evaluateNum from (
+			select mc.id,mc.course_id,mc.price,mc.cheap_price cheapPrice,rc.name,rc.front_image img,mc.putaway_time,count(2t.relate_id) salesNum
+			from mall_course mc 
+			left join res_course rc on(mc.course_id=rc.id)
+			left join (
+				<!-- 从订单表中获取销售记录 -->
+				select mor.relate_id from mall_order_relate mor 
+				left join mall_order mo on(mor.order_id=mo.id)
+				where mo.is_delete=0 and mo.commodity_type=1 and mo.status in(1,2,3)
+			) 2t on(2t.relate_id=mc.id)
+			<include refid="commonWhere_s"></include>
+			group by mc.id 
+		) t
+		left join course_evaluation ce on(t.course_id=ce.course_id)
+		group by t.course_id
+		order by salesNum ${orderRule}
+		limit ${fromNum},${pageSize}
+  </select>
+  
+  <!-- 按评价排序 -->
+  <select id="getCourseByCategoryOrderEvaluate" resultType="com.jftt.wifi.bean.vo.MallCoursePageVo">
+  		select t.id,t.price,t.cheapprice,t.name,t.img ,sum(ce.score)/count(ce.id) avgScore,count(ce.id) evaluateNum from (
+			select mc.id,mc.course_id,mc.price,mc.cheap_price cheapPrice,rc.name,rc.front_image img,mc.putaway_time
+			from mall_course mc 
+			left join res_course rc on(mc.course_id=rc.id)
+			<include refid="commonWhere_s"></include>
+		) t
+		left join course_evaluation ce on(t.course_id=ce.course_id)
+		group by t.course_id
+		order by avgScore ${orderRule}
+		limit ${fromNum},${pageSize}
+  </select>
+  <!-- 商城课程类别页面 end -->
+  
+  <!-- 获取用户购物车信息   包括专题及课程-->
+  <select id="getShoppingCartInfo" resultType="com.jftt.wifi.bean.vo.MallCoursePageVo">
+  		<if test="productType==1">
+  			select sc.id,mc.id productId,mc.price,mc.cheap_price cheapPrice,rc.name,rc.code,rc.front_image img,
+	  		rc.company_id companyId,rc.sub_company_id subCompanyId,sc.type productType,(case when mc.status=1 then 1 else 0 end) isEffective
+			from shopping_cart sc
+			join mall_course mc on(sc.product_id=mc.id and sc.type=1)
+			left join res_course rc on(mc.course_id=rc.id)
+			where sc.user_id=#{userId} 
+			<if test="searchName != '' and searchName != null">
+				and rc.name like CONCAT('%',#{searchName},'%')
+			</if>
+			order by subCompanyId
+  		</if>
+  		<if test="productType==2">
+  			select sc.id,mt.id productId,mt.price,mt.cheap_price cheapPrice,mt.name,mt.code,mt.cover_image img,1 companyId,1 subCompanyId,
+					sc.type productType,(case when mt.status=1 then 1 else 0 end) isEffective from shopping_cart sc
+			join mall_topic mt on(sc.product_id=mt.id and sc.type=2)
+			where sc.user_id=#{userId}
+			<if test="searchName != '' and searchName != null">
+				and mt.name like CONCAT('%',#{searchName},'%')
+			</if>
+			order by subCompanyId
+  		</if>
+  		<!-- select * from (
+  			select sc.id,mc.id productId,mc.price,mc.cheap_price cheapPrice,rc.name,rc.code,rc.front_image img,
+	  		rc.company_id companyId,rc.sub_company_id subCompanyId,sc.type productType,(case when mc.status=1 then 1 else 0 end) isEffective
+			from shopping_cart sc
+			join mall_course mc on(sc.product_id=mc.id and sc.type=1)
+			left join res_course rc on(mc.course_id=rc.id)
+			where sc.user_id=#{userId} 
+			<if test="searchName != '' and searchName != null">
+				and rc.name like CONCAT('%',#{searchName},'%')
+			</if>
+			UNION
+			select sc.id,mt.id productId,mt.price,mt.cheap_price cheapPrice,mt.name,mt.code,mt.cover_image img,1 companyId,1 subCompanyId,
+					sc.type productType,(case when mt.status=1 then 1 else 0 end) isEffective from shopping_cart sc
+			join mall_topic mt on(sc.product_id=mt.id and sc.type=2)
+			where sc.user_id=#{userId}
+			<if test="searchName != '' and searchName != null">
+				and mt.name like CONCAT('%',#{searchName},'%')
+			</if>
+  		) ty order by subCompanyId -->
+  </select>
+  
+  
+  <select id="getProductInfoByIds" resultType="HashMap">
+  		<if test="type==1"><!-- 查课程 -->
+		  	select mc.id,mc.price,mc.cheap_price cheapPrice,rc.name
+		    from mall_course mc
+		    left join res_course rc on(mc.course_id=rc.id)
+		    where find_in_set(mc.id,#{ids})
+  		</if>
+  		<if test="type==2"><!-- 查专题 -->
+		  	select mt.id,mt.price,mt.cheap_price cheapPrice,mt.name
+		    from mall_topic mt
+		    where find_in_set(mt.id,#{ids})
+  		</if>
+  </select>
+  <!-- check  当前课程是否已购买 -->
+  <select id="checkCourseIsBuyed" resultType="int">
+  		select count(0) from mall_sell_record msr 
+  		where msr.buy_user_id = #{userId} and msr.course_id=#{mallCourseId}
+  </select>
+  
+  <!-- check 当前课程集团公司是否已购买过 -->
+  <select id="checkBuyByCompany" resultType="int">
+  	select count(0) from mall_sell_record msr
+  	where msr.sub_company_id = #{comId} and msr.course_id=#{mallCourseId}
+  </select>
+  
+  <!-- chenrui end -->
+  
+   <!-- zhangbocheng start -->
+   
+   
+       <sql id="whereConditions">
+        <trim>
+           <if test="companyId !=null and companyId!='' ">
+              AND c.company_id = #{companyId}
+             
+            </if>
+            <if test="subCompanyId!=null and subCompanyId!=''">
+              AND c.sub_company_id = #{subCompanyId}
+            </if>
+            
+            <if test="code != null and code != '' ">
+            	  AND c.code like CONCAT('%', #{code}, '%')
+            </if>
+            <if test="name != null and name != '' ">
+            	  AND c.name like CONCAT('%', #{name}, '%')
+            </if>
+            <if test="beginTime != null and beginTime!=''  ">
+            	  AND a.putaway_time >= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != '' ">
+                <![CDATA[  AND a.putaway_time <= #{endTime}]]>
+            	  
+            </if>
+  
+           <if test="status!= null  ">
+            	  AND a.status = #{status} 
+            </if>
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+              <if test="categoryIds != null and categoryIds != ''">
+            	and a.category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+        </trim>
+    </sql>
+    
+    
+    <select id="getById" resultMap="BaseResultMap">
+    select * from mall_course where id = #{id}
+    </select>
+    <select id="getDetailById"  resultMap="CourseVoMap">
+    select a.id,a.course_id,a.category_id,a.price,a.cheap_price,a.discount,a.status,a.putaway_user_id,
+           DATE_FORMAT(a.putaway_time, '%Y-%m-%d %H:%i') putaway_time,a.is_copy,a.copy_course_id,a.is_delete,
+           c.code,c.name,c.front_image frontImage,c.outline,c.company_id companyId,c.sub_company_id subCompanyId,
+           DATE_FORMAT(c.create_time, '%Y-%m-%d %H:%i') createTime ,
+           b.name categoryName
+     from mall_course a
+     left join mall_course_category b on a.category_id = b.id
+     left join res_course c on c.id = a.course_id
+      where a.id = #{id}
+    </select>
+    
+    <!-- 检查商品编号是否重复 -->
+    <select id="getCopyId"  resultType="java.lang.Integer">
+    select id from mall_course where is_delete = 0 and is_copy = 1 and copy_course_id = #{id}
+    
+    </select>
+    <!-- 检查商品编号是否重复 -->
+    <select id="checkCode" parameterType="com.jftt.wifi.bean.vo.MallCourseVo"  resultType="java.lang.Integer">
+    select count(0) from mall_course a 
+    left join res_course b on a.course_id = b.id
+     where b.code=#{code}  and a.is_delete = 0
+    <if test="id!=null">
+    and a.id != #{id}
+    </if>
+    <if test="isCopy!=null and isCopy !=0 and copyCourseId!=null">
+     and a.id!= #{copyCourseId}
+    </if>
+    </select>
+      <!-- 新增商城课程 -->
+     <insert id="insertMallCourse" parameterType="com.jftt.wifi.bean.MallCourseBean" useGeneratedKeys="true" keyProperty="id">
+     	insert into mall_course(
+     		 course_id,category_id,price,cheap_price,discount,status,is_copy,is_delete,copy_course_id
+     	)values(
+     		#{courseId},#{categoryId},#{price},#{cheapPrice},#{discount},
+             #{status},#{isCopy},0,#{copyCourseId}
+     	)
+     </insert>
+     
+     <!-- 修改商城课程 -->
+     <update id="updateMallCourse" parameterType="com.jftt.wifi.bean.MallCourseBean">
+     	update mall_course
+     	set
+     	<if test="courseId!=null">
+     	course_id =#{courseId},
+     	</if>
+     	<if test="categoryId!=null">
+     	category_id =#{categoryId},
+     	</if>
+     	<if test="price!=null">
+     	price =#{price},
+     	</if>
+     	<if test="cheapPrice!=null">
+     	cheap_price =#{cheapPrice},
+     	</if>
+     	<if test="discount!=null">
+     	discount =#{discount},
+     	</if>
+     	<if test="status!=null">
+     	status =#{status},
+     	</if>
+     	<if test="isCopy!=null">
+     	is_copy=#{isCopy},
+     	</if>
+     	is_delete = 0
+     	    
+     	where id = #{id}
+     </update>
+     
+       <!-- 删除 -->
+     <update id="deleteMallCourse" >
+     	update mall_course
+     	set is_delete = 1
+     	where id = #{id} and status in (0,2,4)
+     </update>
+       <!-- 删除 -->
+     <update id="deleteMallCourseUnCheck" >
+     	update mall_course
+     	set is_delete = 1
+     	where id = #{id} 
+     </update>
+     
+     
+     <!-- 查询 -->
+     <select id="selectMallCourseList" parameterType="com.jftt.wifi.bean.vo.MallCourseVo" resultMap="CourseVoMap">
+      select a.id,a.course_id,a.category_id,a.price,a.cheap_price,a.discount,a.status,a.putaway_user_id,
+           DATE_FORMAT(a.putaway_time, '%Y-%m-%d %H:%i') putaway_time,a.is_copy,a.copy_course_id,a.is_delete,
+           c.code,c.name,c.front_image frontImage,c.outline,c.company_id companyId,c.sub_company_id subCompanyId,
+             DATE_FORMAT(c.create_time, '%Y-%m-%d %H:%i') createTime,
+             b.name categoryName,
+              (select count(0) from mall_sell_record d where d.course_id = a.id  ) sellCount  
+       from mall_course a
+       left join mall_course_category b on a.category_id = b.id
+       left join res_course c on c.id = a.course_id
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      group by a.id
+      order by a.id desc
+      <if test="pageIndex!=null and pageSize!=null">
+      limit #{pageIndex},#{pageSize}
+      </if>
+     </select>
+     
+     
+      <select id="selectMallCourseCount" parameterType="com.jftt.wifi.bean.vo.MallCourseVo" resultType="Integer">
+      select count(0)
+       from mall_course a  
+      left join res_course c on c.id = a.course_id
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      
+     </select>
+     
+      <!-- 查询企业课程列表 -->
+     <select id="selectCompanyMallCourseList" parameterType="com.jftt.wifi.bean.vo.MallCourseVo" resultMap="CourseVoMap">
+      select a.id,a.course_id,a.category_id,a.price,a.cheap_price,a.discount,a.status,a.putaway_user_id,
+           DATE_FORMAT(a.putaway_time, '%Y-%m-%d %H:%i') putaway_time,a.is_copy,a.copy_course_id,a.is_delete,
+           c.code,c.name,c.front_image frontImage,c.outline,c.company_id companyId,c.sub_company_id subCompanyId,
+             DATE_FORMAT(c.create_time, '%Y-%m-%d %H:%i') createTime,
+             b.name categoryName, (select count(0) from mall_sell_record d where d.course_id = a.id  ) sellCount    
+       from mall_course a
+       left join mall_course_category b on a.category_id = b.id
+       left join res_course c on c.id = a.course_id
+      where a.is_delete = 0 and (a.status = 0 or a.status = 1 ) and c.company_id !=1
+      <include refid="whereConditions"/>
+      group by a.id
+      order by a.id desc
+      <if test="pageIndex!=null and pageSize!=null">
+      limit #{pageIndex},#{pageSize}
+      </if>
+     </select>
+     
+     
+      <select id="selectCompanyMallCourseCount" parameterType="com.jftt.wifi.bean.vo.MallCourseVo" resultType="Integer">
+      select count(0)
+       from mall_course a  
+      left join res_course c on c.id = a.course_id
+      where a.is_delete = 0 and (a.status = 0 or a.status = 1 ) and c.company_id !=1
+      <include refid="whereConditions"/>
+      
+     </select>
+     
+     
+     <update id="deleteCompanyCourse">
+        update mall_course 
+        set status = 2
+        where id = #{id}
+     </update>
+     
+     <!-- 上架 -->
+     <update id="putawayById">
+        update mall_course
+     	set status = 1 ,
+     	putaway_time=now(),
+     	putaway_user_id =#{putawayUserId}
+     	where id = #{id}
+     </update>
+       <!-- 设置课程提交审核状态 -->
+     <update id="setCourseStatus">
+        update mall_course
+     	set status = #{status} 
+     	where id = #{id}
+     </update>
+   
+     <!-- 下架 -->
+      <update id="putoutById">
+        update mall_course
+     	set status = 0
+     	where id = #{id}
+     </update>
+     
+     
+     
+       <!-- 查询课程是否上架或者审核状态 -->
+   <select id="checkCourseIsOn" resultType="Integer">
+   select count(0)  from mall_course 
+    where id = #{id} and status in (1,3) 
+   </select> 
+    <!-- 查询课程关联的专题是否都下架 -->
+   <select id="isInTopic" resultType="Integer">
+   select count(0)  from mall_topic_course a left join mall_topic b on a.topic_id=b.id
+    where a.mall_course_id = #{id} and b.status != 0 and b.is_delete =0
+   </select> 
+   
+   <!-- 查询课程关联的专题id -->
+   <select id="getRelateTopicIdList" resultType="Integer">
+   select a.topic_id from mall_topic_course a left join mall_topic b on a.topic_id=b.id
+     where mall_course_id = #{id}  and b.is_delete =0
+   </select>
+   <!-- zhangbocheng end -->
+  
+</mapper>

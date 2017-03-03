@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamPaperCategoryDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.exam.PaperCategoryBean" id="paperCategoryMap">
+        <id property="id" column="id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    
+    <select id="getPaperCategoryList" resultMap="paperCategoryMap">
+        select
+            *
+        from exam_paper_category
+        <where>
+            <if test="subCompanyId != null">
+                sub_company_id=#{subCompanyId}
+            </if>
+        	<if test="companyId != null">
+        		and company_id=#{companyId}
+        	</if>
+          	and (is_deleted is null or is_deleted != 1)
+        </where>
+        order by create_time
+    </select>
+    
+    <select id="getCategory" resultMap="paperCategoryMap">
+        select * from exam_paper_category
+        where id=#{categoryId}
+    </select>
+    
+    <update id="deleteCategory">
+    	update exam_paper_category
+    	set is_deleted=1
+    	where id=#{categoryId}
+    </update>
+    
+    <update id="modifyCategory">
+    	update exam_paper_category
+    	<set>
+    		<if test="name != null and name != ''">name=#{name},</if>
+    		<if test="description != null and description != ''">description=#{description}</if>
+    	</set>
+    	where id=#{id}
+    </update>
+    
+    <insert id="addCategory">
+    	insert into exam_paper_category
+    	(parent_id, name, description, create_user_id, create_time, update_time, is_deleted, sub_company_id, company_id)
+    	values (#{parentId}, #{name}, #{description}, #{createUserId}, now(), now(), 0, #{subCompanyId}, #{companyId})
+    </insert>
+    
+    <select id="hasSubCategory" resultType="Boolean">
+    	select count(1) from exam_paper_category
+    	where parent_id=#{categoryId}
+    	  and (is_deleted is null or is_deleted != 1)
+    </select>
+    
+    <select id="hasPaper" resultType="Boolean">
+    	select count(1) from exam_paper
+    	where category_id=#{categoryId}
+    	  and (is_deleted is null or is_deleted != 1)
+    </select>
+    
+    <select id="getCategoryFamilyTree" resultType="String">
+        select get_paper_category_family_tree(#{categoryId}, #{subCompanyId})
+    </select>
+    
+    <!-- chenrui start -->
+    <select id="getCategoryByParentId" resultMap="paperCategoryMap">
+    	select epc.id,epc.parent_id, epc.name, epc.description, epc.create_user_id, 
+    	epc.create_time, epc.update_time, epc.is_deleted, epc.sub_company_id, epc.company_id
+    	from exam_paper_category epc where epc.parent_id=#{categoryId} and epc.is_deleted = 0
+    </select>
+    <!-- chenrui end -->
+</mapper>

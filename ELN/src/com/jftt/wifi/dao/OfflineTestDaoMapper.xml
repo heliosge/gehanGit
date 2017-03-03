@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.OfflineTestDaoMapper">
+
+	<resultMap id="OfflineTestBean" type="com.jftt.wifi.bean.OfflineTestBean">
+		<id column="id" property="id" />
+	    <result column="name" property="name" />
+		<result column="start_time" property="start_time" />
+		<result column="end_time" property="end_time" />
+		<result column="total_score" property="total_score" />
+		<result column="pass_score" property="pass_score" />
+		<result column="create_time" property="create_time" />
+		<result column="update_time" property="update_time" />
+		<result column="is_delete" property="is_delete" />
+		<result column="sub_company_id" property="sub_company_id" />
+	</resultMap>
+	
+	<sql id="OfflineTestBean_where">
+		<where>
+			<if test="id != null ">
+				AND id = #{id, jdbcType=INTEGER}
+			</if>
+			<if test="name != null and name !='' ">
+				AND name like CONCAT('%', #{name}, '%')
+			</if>
+			<if test="start_time != null and start_time !='' ">
+				AND #{start_time, jdbcType=VARCHAR} <![CDATA[ <= ]]> end_time
+			</if>
+			<if test="end_time != null and end_time !='' ">
+				AND #{end_time, jdbcType=VARCHAR} <![CDATA[ >= ]]> start_time
+			</if>
+			<if test="sub_company_id != null ">
+				AND sub_company_id = #{sub_company_id, jdbcType=INTEGER}
+			</if>
+			<if test="is_delete != null ">
+				AND is_delete = #{is_delete, jdbcType=INTEGER}
+			</if>
+		</where>
+	</sql>
+	
+	<sql id="OfflineTestBean_property">
+		id,
+		name,
+		start_time,
+		end_time,
+		total_score,
+		pass_score,
+		create_time,
+		update_time,
+		is_delete,
+		sub_company_id
+	</sql>
+	
+	<!-- 增加 -->
+  	<insert id="addOfflineTest" parameterType="com.jftt.wifi.bean.OfflineTestBean" useGeneratedKeys="true" keyProperty="id" >
+    	insert into offline_test (name, start_time, end_time, total_score, pass_score, create_time, update_time, is_delete, sub_company_id)
+    	values (#{name, jdbcType=VARCHAR}, #{start_time, jdbcType=VARCHAR}, #{end_time, jdbcType=VARCHAR}, #{total_score, jdbcType=INTEGER}, 
+    			#{pass_score, jdbcType=INTEGER}, (select now()), (select now()), #{is_delete, jdbcType=INTEGER}, #{sub_company_id, jdbcType=INTEGER})
+  	</insert>
+	
+	<!-- 修改 -->
+	<update id="updateOfflineTest" parameterType="com.jftt.wifi.bean.OfflineTestBean" >
+		update offline_test
+		<set>
+			<if test="name !=null ">
+				name = #{name, jdbcType=VARCHAR},
+			</if>
+			<if test="start_time !=null ">
+				start_time = #{start_time, jdbcType=VARCHAR},
+			</if>
+			<if test="end_time !=null ">
+				end_time = #{end_time, jdbcType=VARCHAR},
+			</if>
+			<if test="total_score !=null ">
+				total_score = #{total_score, jdbcType=VARCHAR},
+			</if>
+			<if test="pass_score !=null ">
+				pass_score = #{pass_score, jdbcType=VARCHAR},
+			</if>
+			<if test="is_delete !=null ">
+				is_delete = #{is_delete, jdbcType=INTEGER},
+			</if>
+			update_time = (select now())
+		</set>
+		where id = #{id, jdbcType=BIGINT}
+	</update>
+	
+	<!-- 查询 -->
+	<select id="getOfflineTestNum" parameterType="com.jftt.wifi.bean.OfflineTestBean" resultType="int" >
+		select COUNT(*) from offline_test
+		<include refid="OfflineTestBean_where" />
+	</select>
+	
+	<!-- 查询 -->
+	<select id="getOfflineTest" parameterType="com.jftt.wifi.bean.OfflineTestBean" resultMap="OfflineTestBean" >
+		select 
+		<include refid="OfflineTestBean_property" />
+		from offline_test
+		<include refid="OfflineTestBean_where" />
+		order by create_time desc
+		<if test="fromNum != null and pageSize !=null and pageSize !=0 ">
+			limit #{fromNum}, #{pageSize}
+		</if>
+	</select>
+	
+</mapper>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManageLogDaoMapper">
+
+	<resultMap id="ManageLogBean" type="com.jftt.wifi.bean.ManageLogBean">
+		<id property="id" column="id"/>
+		<result property="type" column="type"/>
+		<result property="operateId" column="operate_id"/>
+		<result property="operateTime" column="operate_time"/>
+		<result property="content" column="content"/>
+		<result property="operateName" column="operate_name"/>
+	</resultMap>
+	
+	
+	<sql id="manageLog_where">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="operateId != null and operateId != 0 ">
+				AND operate_id = #{operateId, jdbcType=NUMERIC}
+			</if>
+			<if test="operateTime != null and operateTime != '' ">
+				AND operate_time <![CDATA[ >= ]]> #{operateTime}
+			</if>
+			<if test="operateTimeEnd != null and operateTimeEnd != '' ">
+				AND operate_time <![CDATA[ <= ]]> #{operateTimeEnd}
+			</if>
+		</trim>
+	</sql>
+	
+	<sql id="manageLog_protery">
+		id,
+		type,
+		operate_id,
+		(select name from nh_manage_user where id = operate_id) operate_name,
+		operate_time,
+		content
+	</sql>
+	
+	<insert id="addManageLog" parameterType="com.jftt.wifi.bean.ManageLogBean" useGeneratedKeys="true" keyProperty="id" >
+		insert into nh_manage_log(type, operate_id, operate_time, content, operate_table, operate_data_id)
+		values(#{type, jdbcType=NUMERIC}, #{operateId, jdbcType=NUMERIC}, #{operateTime, jdbcType=VARCHAR},
+			   #{content, jdbcType=VARCHAR}, #{operateTable, jdbcType=VARCHAR}, #{operateDataId, jdbcType=VARCHAR})
+	</insert>
+	
+	<select id="getManageLogCount" parameterType="com.jftt.wifi.bean.ManageLogBean" resultType="long">
+		select COUNT(id) from nh_manage_log <include refid="manageLog_where"/>
+	</select>
+	
+	<select id="getManageLog" parameterType="com.jftt.wifi.bean.ManageLogBean" resultMap="ManageLogBean">
+		select 
+			<include refid="manageLog_protery"/> 
+		from nh_manage_log 
+			<include refid="manageLog_where"/>
+			order by id desc
+			<if test="fromNum != null">
+				limit ${fromNum}, ${pageSize}
+			</if>
+	</select>
+	
+</mapper>

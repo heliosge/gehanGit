@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KnowledgeContestAwardDaoMapper" >
+  <resultMap id="KnowledgeContestAwardBean" type="com.jftt.wifi.bean.KnowledgeContestAwardBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="contest_id" property="contestId" jdbcType="INTEGER" />
+    <result column="award_name" property="awardName" jdbcType="VARCHAR" />
+    <result column="total_count" property="totalCount" jdbcType="INTEGER" />
+    <result column="prize_name" property="prizeName" jdbcType="VARCHAR" />
+    <result column="cover_image" property="coverImage" jdbcType="VARCHAR" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="order_num" property="orderNum" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, contest_id, award_name, total_count, prize_name, cover_image, update_time
+  </sql>
+  <select id="getById" resultMap="KnowledgeContestAwardBean">
+  	select 
+  	<include refid="Base_Column_List"></include>
+  	from knowledge_contest_award kca
+  	where kca.id=#{id}
+  </select>
+    <!-- chenrui start -->
+ 
+  <!-- 根据大赛获取对应奖项设置 -->
+  <select id="getAwardsSetting" resultMap="KnowledgeContestAwardBean">
+  	select * from knowledge_contest_award kca where kca.contest_id=#{megagameId}
+  </select>
+  <!-- 根据大赛id清空奖项 -->
+  <delete id="cleanRecord">
+  	delete from knowledge_contest_award
+  	where contest_id=#{megagameId}
+  </delete>
+  
+  <!-- chenrui end -->
+  
+  <!-- wangyifeng begin -->
+  <insert id="addAward" useGeneratedKeys="true" keyProperty="id">
+	insert into knowledge_contest_award
+	(contest_id, award_name, total_count, prize_name,
+    cover_image, order_num, update_time)
+	values
+	(#{contestId}, #{awardName}, #{totalCount}, #{prizeName},
+	#{coverImage}, #{orderNum}, now())
+  </insert>
+  
+  <delete id="realDeleteAwards">
+    delete from knowledge_contest_award
+    where contest_id = #{contestId}
+  </delete>
+
+  <select id="getAwardList" resultMap="KnowledgeContestAwardBean">
+    select *
+    from knowledge_contest_award
+    where contest_id = #{contestId}
+    order by order_num
+  </select>
+  <!-- wangyifeng end -->
+</mapper>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.PoliciesRulesDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.PoliciesRulesBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="category" property="category" jdbcType="INTEGER" />
+     <result column="categoryName" property="categoryName" jdbcType="INTEGER" />
+    <result column="publish_enterprise" property="publishEnterprise" jdbcType="VARCHAR" />
+    <result column="publish_time" property="publishTime" jdbcType="TIMESTAMP" />
+    <result column="execute_time" property="executeTime" jdbcType="TIMESTAMP" />
+    <result column="reference_number" property="referenceNumber" jdbcType="VARCHAR" />
+    <result column="key_words" property="keyWords" jdbcType="VARCHAR" />
+    <result column="is_publish" property="isPublish" jdbcType="INTEGER" />
+    <result column="timeliness" property="timeliness" jdbcType="INTEGER" />
+    <result column="file_name" property="fileName" jdbcType="VARCHAR" />
+    <result column="file_size" property="fileSize" jdbcType="VARCHAR" />
+    <result column="file_path" property="filePath" jdbcType="VARCHAR" />
+    <result column="extend_name" property="extendName" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, name,category, publish_enterprise, publish_time, execute_time, reference_number, key_words, 
+    is_publish, timeliness, file_name, file_size, file_path, extend_name, create_time, 
+    update_time, is_delete
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+    select 
+	   pr.id,pr.name,pr.category,prc.name categoryName,pr.publish_enterprise,pr.publish_time,pr.execute_time,pr.reference_number,pr.key_words,
+	   pr.is_publish,pr.timeliness,pr.file_name,pr.file_size,pr.file_path,pr.extend_name,pr.create_time,pr.update_time,
+	   pr.is_delete
+	   from policies_rules pr
+	   left join policies_rules_categroy prc on(pr.category = prc.id)
+    where pr.id = #{id}
+  </select>
+  
+  <!-- 管理端  start -->
+  
+  <!-- 新增 -->
+  <insert id="add" useGeneratedKeys="true" keyProperty="id">
+  	insert into policies_rules(
+	  	name, category,publish_enterprise, publish_time, execute_time, reference_number, key_words, 
+	    is_publish, timeliness, file_name, file_size, file_path, extend_name, create_time
+  	)
+  	values(
+  		#{name},#{category},#{publishEnterprise},#{publishTimeStr},#{executeTimeStr},#{referenceNumber},
+  		#{keyWords},1,#{timeliness},#{fileName},#{fileSize},#{filePath},
+  		#{extendName},now()
+  	)
+  </insert>
+  <!-- 修改 -->
+  <update id="updateById">
+  	update policies_rules
+  	<set>
+	  	<if test="name !=null and name !=''">
+	  		name = #{name},
+	  	</if>
+	  	<if test="category !=null and category !=''">
+	  		category = #{category},
+	  	</if>
+	  	<if test="publishEnterprise !=null and publishEnterprise !=''">
+	  		publish_enterprise = #{publishEnterprise},
+	  	</if>
+	  	<if test="publishTimeStr !=null and publishTimeStr !=''">
+	  		publish_time = #{publishTimeStr},
+	  	</if>
+	  	<if test="executeTimeStr !=null and executeTimeStr !=''">
+	  		execute_time = #{executeTimeStr},
+	  	</if>
+	  	<if test="referenceNumber !=null and referenceNumber !=''">
+	  		reference_number = #{referenceNumber},
+	  	</if>
+	  	<if test="keyWords !=null and keyWords !=''">
+	  		key_words = #{keyWords},
+	  	</if>
+	  	<if test="timeliness !=null and timeliness !=''">
+	  		timeliness = #{timeliness},
+	  	</if>
+	  	<if test="fileName !=null and fileName !=''">
+	  		file_name = #{fileName},
+	  	</if>
+	  	<if test="fileSize !=null and fileSize !=''">
+	  		file_size = #{fileSize},
+	  	</if>
+	  	<if test="filePath !=null and filePath !=''">
+	  		file_path = #{filePath},
+	  	</if>
+	  	<if test="extendName !=null and extendName !=''">
+	  		extend_name = #{extendName},
+	  	</if>
+  	</set>
+  	where id=#{id}
+  	
+  </update>
+  <sql id="where_getPoliciesRulesList">
+  	where 1=1 and pr.is_delete=0
+  	<if test="name!=null and name!=''">
+  		and pr.name like CONCAT('%',#{name},'%')
+  	</if>
+  	<if test="category!=null and category!=''">
+  		and find_in_set(pr.category,#{category})
+  	</if>
+  	<if test="publishStartTime!=null and publishStartTime!=''">
+  		and DATE_FORMAT(pr.publish_time,'%Y-%m-%d') &gt;=#{publishStartTime}
+  	</if>
+  	<if test="publishEndTime!=null and publishEndTime!=''">
+  		and DATE_FORMAT(pr.publish_time,'%Y-%m-%d') &lt;=#{publishEndTime}
+  	</if>
+  	<if test="referenceNumber!=null and referenceNumber!=''">
+  		and pr.reference_number like CONCAT('%',#{referenceNumber},'%')
+  	</if>
+  	<if test="executeStartTime!=null and executeStartTime!=''">
+  		and DATE_FORMAT(pr.execute_time,'%Y-%m-%d') &gt;=#{executeStartTime}
+  	</if>
+  	<if test="executeStartTime!=null and executeStartTime!=''">
+  		and DATE_FORMAT(pr.execute_time,'%Y-%m-%d') &lt;=#{executeStartTime}
+  	</if>
+  	<if test="timeliness!=null and timeliness!=''">
+  		and find_in_set(timeliness,#{timeliness})
+  	</if>
+  	<if test="keyWords!=null and keyWords!=''">
+  		and pr.key_words like CONCAT('%',#{keyWords},'%')
+  	</if>
+  	<if test="publishCompany !=null and publishCompany !=''">
+  		and pr.publish_enterprise like CONCAT('%',#{publishCompany},'%')
+  	</if>
+  	<if test="idsStr !=null and idsStr !=''">
+  		and find_in_set(pr.id,#{idsStr})
+  	</if>
+  	
+  </sql>
+  <!-- 管理端 - 获取政策法规列表 -->
+  <select id="getPoliciesRulesList" resultMap="BaseResultMap">
+  	select
+	   pr.id,pr.name,pr.category,prc.name categoryName,pr.publish_enterprise,pr.publish_time,pr.execute_time,pr.reference_number,pr.key_words,
+	   pr.is_publish,pr.timeliness,pr.file_name,pr.file_size,pr.file_path,pr.extend_name,pr.create_time,pr.update_time,pr.is_delete
+	from policies_rules pr
+	left join policies_rules_categroy prc on(pr.category = prc.id)
+  	<include refid="where_getPoliciesRulesList"></include>
+  	order by pr.create_time desc,pr.id desc
+  	limit ${fromNum},${pageSize}
+  </select>
+  
+  <select id="getPoliciesRulesListCount" resultType="int">
+  	select count(0)
+  	from policies_rules pr 
+  	<include refid="where_getPoliciesRulesList"></include>
+  </select>
+  <!-- 发布-->
+  <update id="doPublish">
+  	update policies_rules set is_publish=1
+  	where id=#{id}
+  </update>
+  
+  <!-- 废止 -->
+  <update id="doAbolish">
+  	update policies_rules set timeliness=2
+  	where id=#{id}
+  </update>
+  
+  <!-- 删除 -->
+  <update id="deleteByIds">
+  	update policies_rules set is_delete=1
+	where id in(
+	<foreach collection="ids" item="id" separator=",">
+		#{id}
+	</foreach>
+	)
+  </update>
+  <!-- 管理端  end -->
+  
+  <!-- 学员端  start-->
+  <!-- 获取 文献列表-->
+  <select id="stu_getPoliciesRulesList" resultMap="BaseResultMap">
+  	select <include refid="Base_Column_List"></include>
+  	from policies_rules pr 
+  	<include refid="where_getPoliciesRulesList"></include>
+  	and is_publish=1
+  	order by pr.publish_time desc
+  	limit ${fromNum},${pageSize}
+  </select>
+  <select id="stu_getPoliciesRulesListCount" resultType="int">
+	select count(0)
+	from policies_rules pr 
+	<include refid="where_getPoliciesRulesList"></include>
+	and is_publish=1
+  </select>
+  
+  <!-- 学员端  end-->
+  
+  <select id="getAllByElastisearch" resultMap="BaseResultMap">
+  	select * from policies_rules pr  where pr.is_delete=0
+  </select>
+</mapper>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.QuestionnaireDaoMapper">
+	<!-- zhangchen begin -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.QuestionnaireBean" id="QuestionnaireMap">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    
+    <!-- <resultMap type="com.jftt.wifi.bean.exam.vo.PaperListItemVo" id="paperListItemMap">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap> -->
+    
+	<!--新增问卷  -->
+    <insert id="addQuestionnaire" useGeneratedKeys="true" keyProperty="id">
+        insert into questionnaire
+        (category_id, name,description, create_user_id, create_time, is_deleted, is_enabled,sub_company_id, company_id)
+        values(#{categoryId}, #{name},#{description},#{createUserId}, now(),
+        	#{isDeleted},#{isEnabled}, #{subCompanyId}, #{companyId})
+    </insert>
+    
+    <!--通过ID获取问卷  -->
+    <select id="getQuestionnaire" resultMap="QuestionnaireMap">
+        select * from questionnaire where id = #{id}
+    </select>
+    
+    <!--删除问卷  -->
+    <update id="deleteQuestionnaire">
+        update questionnaire set is_deleted = 1 where id = #{id}
+    </update>
+    
+    <!--更新问卷  -->
+    <update id="modifyQuestionnaire">
+        update questionnaire
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            update_time = (select now())
+        </set>
+        where id = #{id}
+    </update>
+    
+    <sql id="where_getVoList">
+        <where>
+            <if test="subCompanyId != null">sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null">and company_id = #{companyId}</if>
+            <if test="createUserId != null">and create_user_id = #{createUserId}</if>
+            <if test="isEnabled != null">and is_enabled = #{isEnabled}</if>
+            <if test="name != null and name != ''">and name like CONCAT('%', #{name}, '%')</if>
+            <if test="categoryId != null">and category_id = #{categoryId}</if>
+            <if test="categoryIdListStr != null and categoryIdListStr != ''">and category_id in (${categoryIdListStr})</if>
+            and (is_deleted is null or is_deleted != 1)
+        </where>
+    </sql>
+    
+    <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <!--获取问卷列表  -->
+    <select id="getVoList" resultMap="QuestionnaireMap">
+        select id, name, category_id, DATE_FORMAT(update_time,'%Y-%m-%d %H:%I:%S') update_time,is_enabled
+        from questionnaire
+        <include refid="where_getVoList"></include>
+        order by update_time desc
+        <include refid="limitClause"></include>
+    </select>
+    
+    <!--获取问卷列表条数  -->
+    <select id="getTotalCount" resultType="Integer">
+        select count(1)
+        from questionnaire
+        <include refid="where_getVoList"></include>
+    </select>
+    
+    <!--检查问卷是否被引用  -->
+    <select id="checkQuestionnaireReference" resultType="Boolean">
+        select ( (select count(1) from investigation where questionnaire_id = #{questionnaireId} and is_published = 1) ) > 0 
+        from dual
+    </select>
+    
+    <!--禁用问卷  -->
+    <update id="disableQuestionnaire">
+        update questionnaire
+        set is_enabled=0
+        where id=#{id}
+    </update>
+    
+</mapper>

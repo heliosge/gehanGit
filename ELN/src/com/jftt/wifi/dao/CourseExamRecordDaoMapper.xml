@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseExamRecordDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.CourseExamRecordBean" id="CourseExamRecordBeanMap">
+        <id property="id" column="id"/>
+        <result property="recordId" column="record_id"/>
+        <result property="companyId" column="company_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="sectionId" column="section_id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="totalTestDuration" column="total_test_duration"/>
+        <result property="thisTestDuration" column="this_test_duration"/>
+        <result property="testTimes" column="test_times"/>
+        <result property="passTimes" column="pass_times"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="maxScore" column="max_score"/>
+        <result property="passScorePercent" column="pass_score_percent"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <!-- 根据id查询章节测试记录  -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="CourseExamRecordBeanMap">
+        select * from course_exam_record where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据条件查询测试记录id -->
+    <select id="getIdByConditions" resultType="java.lang.Integer">
+        SELECT id 
+          FROM course_exam_record 
+          WHERE section_id = #{sectionId} AND exam_id = #{examId} 
+            AND user_id = #{userId} 
+    </select>
+    
+    <!-- 添加一条章节测试记录 -->
+    <insert id="addCourseExamRecordBean" parameterType="com.jftt.wifi.bean.CourseExamRecordBean" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO course_exam_record(record_id,company_id,course_id,section_id,exam_id,user_id,total_test_duration,this_test_duration,test_times,pass_times,sub_company_id,max_score,pass_score_percent,total_score,update_time) 
+          VALUES(#{recordId},#{companyId},#{courseId},#{sectionId},#{examId},#{userId},#{totalTestDuration},#{thisTestDuration},#{testTimes},#{passTimes},#{subCompanyId},#{maxScore},#{passScorePercent},#{totalScore},#{updateTime}) 
+    </insert>
+    
+    <!-- 更新一条章节测试记录 -->
+    <update id="updateCourseExamRecordBean" parameterType="com.jftt.wifi.bean.CourseExamRecordBean">
+       UPDATE  course_exam_record 
+         <set>
+             <if test="recordId != null">
+                 record_id = #{recordId},
+             </if>
+             <if test="companyId != null">
+                 company_id = #{companyId},
+             </if>
+             <if test="courseId != null">
+                 course_id = #{courseId},
+             </if>
+             <if test="sectionId != null">
+                 section_id = #{sectionId},
+             </if>
+             <if test="examId != null">
+                 exam_id = #{examId},
+             </if>
+             <if test="userId != null">
+                 user_id = #{userId},
+             </if>
+             <if test="totalTestDuration != null">
+                 total_test_duration = #{totalTestDuration},
+             </if>
+             <if test="thisTestDuration != null">
+                 this_test_duration = #{thisTestDuration},
+             </if>
+             <if test="testTimes != null">
+                 test_times = #{testTimes},
+             </if>
+             <if test="passTimes != null">
+             	 pass_times = #{passTimes},
+             </if>
+             <if test="subCompanyId != null">
+             	sub_company_id = #{subCompanyId},
+             </if>
+             <if test="maxScore != null">
+             	max_score = #{maxScore},
+             </if>
+             <if test="passScorePercent != null">
+             	pass_score_percent = #{passScorePercent},
+             </if>
+             <if test="totalScore != null">
+             	total_score = #{totalScore},
+             </if>
+             <if test="updateTime != null">
+             	update_time = #{updateTime},
+             </if>
+         </set>
+         WHERE id = #{id}
+    </update>
+    
+    <!-- 根据课程记录id查询相关的测试记录  -->
+    <select id="getExamRecordsByCourseRecordId" parameterType="java.lang.Integer" resultMap="CourseExamRecordBeanMap">
+    	SELECT * FROM course_exam_record WHERE record_id = #{courseRecordId} 
+    </select>
+    
+    <!-- 根据课程id和用户id查询所有测试记录 -->
+    <select id="getExamRecordsByCourseIdUserId" resultMap="CourseExamRecordBeanMap">
+    	SELECT cer.* 
+    	  FROM res_section rs LEFT JOIN res_section_exam rse ON rs.id = rse.section_id 
+    	    LEFT JOIN (SELECT * FROM course_exam_record WHERE user_id = #{userId}) cer ON rse.exam_id = cer.exam_id 
+    	  WHERE rs.course_id = #{courseId} 
+    </select>
+    
+    <!-- 删除学员该课程的测试记录 -->
+    <delete id="deleteRecord">
+    	DELETE FROM course_exam_record 
+    	WHERE id IN (SELECT a.id FROM (SELECT cer.id FROM course_exam_record cer WHERE cer.course_id = #{courseId} AND cer.user_id = #{userId}) a)
+    </delete>
+    
+    <!-- shenhaijun end -->
+    
+</mapper>

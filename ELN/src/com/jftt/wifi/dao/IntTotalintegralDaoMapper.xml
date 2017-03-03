@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.IntTotalintegralDaoMapper">
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据用户id查询用户总积分 -->
+    <select id="getMyPoint" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT total_integral 
+          FROM int_totalintegral 
+          WHERE user_id = #{userId} 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+</mapper>

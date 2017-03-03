@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.IntegralCommodityDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.IntegralCommodityBean" id="IntegralCommodityBeanMap">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="integral" column="integral"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="showImage" column="show_image"/>
+        <result property="stock" column="stock"/>
+        <result property="sellCount" column="sell_count"/>
+        <result property="descr" column="descr"/>
+        <result property="updateUserId" column="update_user_id"/>
+        <result property="putawayUserId" column="putaway_user_id"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="putawayTime" column="putaway_time"/>
+        <result property="status" column="status"/>
+    </resultMap>
+    
+      <resultMap type="com.jftt.wifi.bean.vo.IntegralCommodityVo" id="IntegralCommodityVoMap">
+           <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="integral" column="integral"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="showImage" column="show_image"/>
+        <result property="stock" column="stock"/>
+        <result property="sellCount" column="sell_count"/>
+        <result property="descr" column="descr"/>
+        <result property="updateUserId" column="update_user_id"/>
+        <result property="putawayUserId" column="putaway_user_id"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="putawayTime" column="putaway_time"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_Time"/>
+        <result property="updateTime" column="update_Time"/>
+    </resultMap>
+
+    
+    <!-- zhangbocheng start -->
+    
+       <sql id="whereConditions">
+        <trim>
+          
+            
+            
+            <if test="code != null and code != '' ">
+            	  AND code like CONCAT('%', #{code}, '%')
+            </if>
+            <if test="name != null and name != '' ">
+            	  AND name like CONCAT('%', #{name}, '%')
+            </if>
+            <if test="beginIntegral != null  ">
+            	  AND integral >= #{beginIntegral}
+            </if>
+            <if test="endIntegral != null ">
+                <![CDATA[  AND integral <= #{endIntegral}]]>
+            	  
+            </if>
+  
+           <if test="status!= null  ">
+            	  AND status = #{status} 
+            </if>
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+              <if test="categoryIds != null and categoryIds != ''">
+            	and category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+        </trim>
+    </sql>
+    
+    
+    <select id="getById" resultMap="IntegralCommodityBeanMap">
+    select * from integral_commodity where id = #{id}
+    </select>
+    <select id="getDetailById" resultMap="IntegralCommodityVoMap">
+    select a.id,a.code,a.name,a.category_id,a.integral,a.cover_image,a.show_image,a.stock,
+    a.sell_count,a.descr,
+             DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i') create_time,a.create_user_id,
+             DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i') update_time,
+             DATE_FORMAT(a.putaway_time, '%Y-%m-%d %H:%i') putaway_time,
+             a.putaway_user_id,a.status,b.name categoryName
+     from integral_commodity a
+     left join integral_commodity_category b on a.category_id = b.id
+      where a.id = #{id}
+    </select>
+    
+    <!-- 检查商品编号是否重复 -->
+    <select id="checkCode" parameterType="com.jftt.wifi.bean.IntegralCommodityBean" resultType="java.lang.Integer">
+    select count(0) from integral_commodity where code=#{code} and is_delete = 0
+    <if test="id!=null">
+    and id != #{id}
+    </if>
+    </select>
+      <!-- 新增积分商品 -->
+     <insert id="insertIntegralCommodity" parameterType="com.jftt.wifi.bean.IntegralCommodityBean" useGeneratedKeys="true" keyProperty="id">
+     	insert into integral_commodity(
+     		 code,name,category_id,integral,cover_image,show_image,stock,sell_count,descr,
+              create_time,create_user_id,update_user_id,
+             update_time,status,is_delete
+     	)values(
+     		#{code},#{name},#{categoryId},#{integral},#{coverImage},#{showImage},
+     		 #{stock},0,#{descr},
+             now(),#{createUserId},#{updateUserId},
+              now(),0,0
+     	)
+     </insert>
+     
+     <!-- 修改积分商品 -->
+     <update id="updateIntegralCommodity" parameterType="com.jftt.wifi.bean.IntegralCommodityBean">
+     	update integral_commodity
+     	set
+     	<if test="code!=null">
+     	code =#{code},
+     	</if>
+     	<if test="name!=null">
+     	 name =#{name},
+     	</if>
+     	<if test="categoryId!=null">
+     	category_id =#{categoryId},
+     	</if>
+     	<if test="integral!=null">
+     	integral =#{integral},
+     	</if>
+     	<if test="coverImage!=null">
+     	cover_image =#{coverImage},
+     	</if>
+     	<if test="showImage!=null">
+     	show_image =#{showImage},
+     	</if>
+     	<if test="stock!=null">
+     	stock =#{stock},
+     	</if>
+     	<if test="sellCount!=null">
+     	sell_count=#{sellCount},
+     	</if>
+     	
+     	<if test="descr!=null">
+     	descr =#{descr},
+     	</if>
+     	<if test="status!=null">
+     	status =#{status},
+     	</if>
+     	update_time =now(),
+     	update_user_id =#{updateUserId}
+     	    
+     	where id = #{id}
+     </update>
+     
+       <!-- 删除积分商品 -->
+     <update id="deleteIntegralCommodity" >
+     	update integral_commodity
+     	set is_delete = 1
+     	where id = #{id} and status = 0
+     </update>
+     
+     <select id="selectIntegralCommodityList" parameterType="com.jftt.wifi.bean.vo.IntegralCommodityVo" resultMap="IntegralCommodityVoMap">
+      select id,code,name,category_id,integral,cover_image,show_image,stock,sell_count,descr,
+             DATE_FORMAT(create_time, '%Y-%m-%d %H:%i') create_time,create_user_id,
+             DATE_FORMAT(update_time, '%Y-%m-%d %H:%i') update_time,
+             DATE_FORMAT(putaway_time, '%Y-%m-%d %H:%i') putaway_time,
+             putaway_user_id,status
+       from integral_commodity 
+      where is_delete = 0 
+      <include refid="whereConditions"/>
+      order by id desc
+      <if test="pageIndex!=null and pageSize!=null">
+      limit #{pageIndex},#{pageSize}
+      </if>
+     </select>
+     
+     
+      <select id="selectIntegralCommodityCount" parameterType="com.jftt.wifi.bean.vo.IntegralCommodityVo" resultType="Integer">
+      select count(0)
+       from integral_commodity 
+      where is_delete = 0 
+      <include refid="whereConditions"/>
+      order by id desc
+      
+     </select>
+     
+     <!-- 上架 -->
+     <update id="putawayById">
+        update integral_commodity
+     	set status = 1 ,
+     	putaway_time=now(),
+     	putaway_user_id =#{putawayUserId}
+     	where id = #{id}
+     </update>
+     <!-- 下架 -->
+      <update id="putoutById">
+        update integral_commodity
+     	set status = 0
+     	where id = #{id}
+     </update>
+
+    
+    <!-- zhangbocheng end -->
+    
+    
+    <!-- chenrui start  -->
+    
+    <sql id="wher_getProductsByCategory">
+    	where ic.is_delete = 0 and ic.status =1
+    	<if test="childCategoryIds != null and childCategoryIds != ''">
+    		and find_in_set(ic.category_id,#{childCategoryIds})
+    	</if>
+    	<if test="name != null and name != ''">
+    		and ic.name like CONCAT('%',#{name},'%') 
+    	</if>
+    	<if test="isHaveQualification == 1">
+    	<!-- 只显示我能兑换的 -->
+    		and ic.integral &lt;=(select IFNULL((select total_integral from int_totalintegral where user_id=#{userId}),0) from DUAL)
+    	</if>
+    </sql>
+    <!-- 查询数量 -->
+    <select id="getProductsByCategoryCount" resultType="int">
+    	select count(0) from integral_commodity ic
+    	<include refid="wher_getProductsByCategory"></include>
+    </select>
+    
+    <!-- 默认排序 库存排序 -->
+    <select id="getProductsByCategory" resultMap="IntegralCommodityBeanMap">
+    	select * from integral_commodity ic
+    	<include refid="wher_getProductsByCategory"></include>
+    	order by ic.stock desc
+    	limit ${fromNum},${pageSize}
+    </select>
+    
+    <!-- 按积分排序 -->
+    
+    <select id="getProductsByCategoryOrderByIntegral" resultMap="IntegralCommodityBeanMap">
+    	select ic.* from integral_commodity ic
+    	<include refid="wher_getProductsByCategory"></include>
+    	order by ic.integral ${orderRule}
+    	limit ${fromNum},${pageSize}
+    </select>
+    
+    <!-- 按热门排序 -->
+    
+    <select id="getProductsByCategoryOrderByHot" resultMap="IntegralCommodityBeanMap">
+    	select ic.* from integral_commodity ic
+    	left join integral_commodity_order ico on(ico.commodity_id=ic.id)
+    	<include refid="wher_getProductsByCategory"></include>
+    	group by ic.id
+    	order by sum(ico.commodity_count) ${orderRule}
+    	limit ${fromNum},${pageSize}
+    </select>
+    
+    <!-- 获取兑你喜欢的数据 -->
+    <select id="getYourLike" resultMap="IntegralCommodityBeanMap">
+    	select ic.* from integral_commodity ic
+    	left join integral_commodity_order ico on(ico.commodity_id=ic.id)
+    	where ic.is_delete = 0 and ic.status=1
+    	group by ic.id
+    	order by sum(ico.commodity_count) desc
+    	limit 10
+    </select>
+    <!-- 更新库存和销量 -->
+    <update id="updateStock">
+    	update integral_commodity set stock=(stock-${cocount}),sell_count=(sell_count+${cocount})
+    	where id=#{coid}
+    </update>
+    
+    
+    <select id="getArea" resultType="HashMap">
+	  	select * from manage_city 
+	  	where 1=1
+	  	<if test="id != null and id != '' ">
+			AND id = #{id}
+		</if>
+		<if test="parentId != null and parentId != '' ">
+			AND parent_id = #{parentId}
+		</if>
+	  </select>
+	  <!-- 获取当前用户总积分 -->
+	  <select id="getCurrentUserIntegral" resultType="java.util.HashMap">
+	  
+	  	select * from int_totalintegral it where user_id=#{userId}
+	  	
+	  </select>
+	  
+	  <!-- 扣除用户积分 -->
+	  <update id="updateUserIntegral">
+	  	update int_totalintegral set total_integral = (total_integral-${allIntegral}) where user_id = #{userId}
+	  </update>
+	  
+    <!-- chenrui end  -->
+</mapper>

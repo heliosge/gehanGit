@@ -1,0 +1,696 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ApproveManageDaoMapper">
+    <!-- 审核路线bean -->
+    <resultMap type="com.jftt.wifi.bean.ApproveBean" id="ApproveBean">
+        <result property="wayId" column="way_id"/>
+        <result property="wayType" column="way_type"/>
+        <result property="isApprove" column="is_approve"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    <!-- 审核步骤bean -->
+     <resultMap type="com.jftt.wifi.bean.ApproveStepBean" id="ApproveStepBean">
+        <result property="stepId" column="step_id"/>
+        <result property="wayId" column="way_id"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="approverType" column="approver_type"/>
+        <result property="approverId" column="approver_id"/>
+        <result property="showName" column="show_name"/>
+    </resultMap>
+    
+    <!-- 知识bean -->
+	<resultMap id="KnowledgeBean" type="com.jftt.wifi.bean.KnowledgeBean">
+		<result column="knowledge_id" property="knowledgeId"/>
+		<result column="knowledge_name" property="knowledgeName"/>
+		<result column="category_id" property="categoryId"/>
+		<result column="company_id" property="companyId"/>
+		<result column="is_open" property="isOpen"/>
+		<result column="is_download" property="isDownload"/>
+		<result column="is_recommend" property="isRecommend"/>
+		<result column="share_status" property="shareStatus"/>
+		<result column="share_time" property="shareTime"/>
+		<result column="is_publish" property="isPublish"/>
+		<result column="upload_type" property="uploadType"/>
+		<result column="status" property="status"/>
+		<result column="tags" property="tags"/>
+		<result column="knowledge_desc" property="knowledgeDesc"/>
+		<result column="refuse_memo" property="refuseMemo"/>
+		<result column="audit_time" property="auditTime"/>
+		<result column="is_delete" property="isDelete"/>
+		<result column="file_name" property="fileName"/>
+		<result column="file_size" property="fileSize"/>
+		<result column="file_path" property="filePath"/>
+		<result column="extend_name" property="extendName"/>
+		<result column="resource_type" property="resourceType"/>
+		<result column="knowledge_text" property="knowledgeText"/>
+		<result column="create_user_id" property="createUserId"/>
+		<result column="create_time" property="createTime"/>
+		<result column="update_user_id" property="updateUserId"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="category_name" property="categoryName"/>
+		<result column="sub_company_id" property="subCompanyId"/>
+		
+	</resultMap>
+	
+	    
+    <resultMap type="com.jftt.wifi.bean.ResCourseBean" id="ResCourseBeanMap">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="learnTime" column="learn_time"/>
+        <result property="learnScore" column="learn_score"/>
+        <result property="tags" column="tags"/>
+        <result property="crowd" column="crowd"/>
+        <result property="frontImage" column="front_image"/>
+        <result property="outline" column="outline"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="companyId" column="company_id"/>
+          <result property="subCompanyId" column="sub_company_id"/>
+         <result column="share_status" property="shareStatus" />
+    	<result column="share_time" property="shareTime" />
+    </resultMap>
+    
+   <resultMap id="OamTopicBean" type="com.jftt.wifi.bean.OamTopicBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="no" property="no" jdbcType="VARCHAR" />
+     <result column="descr" property="descr" jdbcType="VARCHAR" />
+    <result column="cover_image" property="coverImage" jdbcType="VARCHAR" />
+     <result column="is_spread" property="isSpread" jdbcType="INTEGER" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+     <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="company_id" property="companyId" jdbcType="INTEGER" />
+    <result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+    <result column="share_status" property="shareStatus" />
+    <result column="share_time" property="shareTime" />
+  </resultMap>
+  
+    <!-- 共享记录bean -->
+     <resultMap type="com.jftt.wifi.bean.ShareRecordBean" id="ShareRecordBean">
+        <result property="shareTime" column="share_time"/>
+        <result property="industryName" column="industry_name"/>
+        <result property="companyName" column="company_name"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        
+    </resultMap>
+    <sql id="t_protery">
+		description
+	</sql>
+	
+	<!-- 查询子公司列表 -->
+	<select id="querySubCompanyList" resultType="java.util.Map">
+		select name,id from manage_department where is_sub_company=1 and company_id=#{companyId}
+	</select>
+	<!-- 查询公司列表 -->
+	<select id="queryCompanyList" resultType="java.util.Map">
+ 		select  id ,name  ,1 parentId  from manage_company
+ 	</select>
+	
+	<!-- 查询审核路线信息 -->
+	<select id="queryApproveWay" resultMap="ApproveBean">
+		select * from ap_approveway where company_id =#{companyId} and way_type =#{wayType} and is_delete!=1
+	</select>
+	
+	<!-- 查询审核路线信息 -->
+	<select id="queryApproveWayList" resultMap="ApproveBean">
+		select * from ap_approveway where company_id =#{companyId} and is_delete!=1
+	</select>
+	
+	<!-- 查询审核步骤信息 -->
+	<select id="queryApproveStep" resultMap="ApproveStepBean">
+		select * from ap_approvestep where way_id =#{wayId}
+	</select>
+	<!-- 应用部门信息 -->
+	<select id="queryApproveDept" resultType="int">
+		select dept_id from ap_approvedept where way_id =#{wayId}
+	</select>
+	
+    <!-- 插入审批路径表 -->
+    <insert id="insertApproveWay" useGeneratedKeys="true" keyProperty="wayId">
+    	insert into ap_approveway
+    		(way_type,
+	    	is_approve,
+	    	company_id,
+	    	create_user_id,
+			create_time,
+			update_user_id,
+			update_time,
+			is_delete)
+		values(#{wayType},
+			  #{isApprove},
+			  #{companyId},
+			  #{userId},
+			  now(),
+			  #{userId},
+			  now(),
+			  0)
+    </insert> 
+    
+    <!-- 插入审批步骤表 -->
+    <insert id="insertApproveStep">
+     	insert into ap_approvestep(
+     		way_id,
+			order_num, 
+			approver_type,
+			approver_id,
+			show_name
+     	)
+     	values(
+     		#{wayId},
+	     	#{orderNum},
+	     	#{approverType},
+	     	#{approverId},
+	     	#{showName}
+     	)
+    </insert>
+    
+    <!-- 审批步骤应用的部门表 -->
+    <insert id="insertApprovDept">
+    	insert into ap_approvedept(way_id,dept_id)
+    		values(#{wayId},#{deptId})		
+    </insert>
+    <!-- 更新审批路线表信息 -->
+    <update id="updateApproveWay">
+    	update ap_approveway
+    	set is_delete=1,
+    		update_user_id=#{userId},
+			update_time=now()
+		where company_id =#{companyId} and way_type =#{wayType}
+    </update>
+    
+    <!--  删除审批步骤和审批部门表 -->
+    <delete id="deleteApproveStep">
+    	delete from ap_approvestep where way_id=#{wayId}
+    </delete>
+    <delete id="deleteApproveDept">
+    	delete from ap_approvedept where way_id=#{wayId}
+    </delete>
+    
+    <!--  查询知识待审批以及审核通过的内容 -->
+    <select id="queryKnowledge" resultMap="KnowledgeBean">
+    	select * from  ( select  kl.knowledge_id,kl.knowledge_name, klc.category_name,share_status,share_time,kl.sub_company_id  from kl_knowledge kl 
+	  	 left join kl_knowledgecategory klc  on  kl.category_id=klc.category_id
+	  	 where kl.is_delete!=1 and kl.company_id=#{companyId} and  kl.share_status>=3  and kl.sub_company_id!=#{companyId}
+		union all
+		select klk.knowledge_id,klk.knowledge_name, (select category_name from kl_knowledgecategory where category_id=  klk.category_id) category_name,klk.share_status,klk.share_time,klk.sub_company_id 
+		 from ap_approverecord apr left join kl_knowledge klk on apr.object_id = klk.knowledge_id
+		where klk.is_delete!=1 and apr.status =1 and apr.way_type=2 and klk.company_id=#{companyId}  and  ((next_approve_id =#{userId} and next_approve_type=1) or (next_approve_id =#{postId} and next_approve_type=2)
+		or (next_approve_id =#{postId} and next_approve_type=3) or   (next_approve_id   in( select role_id from manage_user_role where user_id=#{userId}) and next_approve_type=4) )
+		) t  
+		where 1=1
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id = #{subCompanyId}
+		</if> 
+			<if test="knowledgeName!=null and knowledgeName!=''">
+			and knowledge_name like CONCAT('%',#{knowledgeName},'%')     
+		</if>
+		<if test="categoryName!=null and categoryName!=''">
+			and category_name like CONCAT('%',#{categoryName},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status in (${shareStatus})
+		</if>  
+		 order by share_time desc 
+ 		limit #{fromNum},#{page}
+    </select>
+    <select id="queryKnowledgeCount" resultType="int">
+   	 select count(1) from ( select  kl.knowledge_id,kl.knowledge_name, klc.category_name,share_status,share_time,kl.sub_company_id  from kl_knowledge kl 
+	  	 left join kl_knowledgecategory klc  on  kl.category_id=klc.category_id
+	  	 where kl.is_delete!=1  and kl.company_id=#{companyId} and  kl.share_status>=3  and kl.sub_company_id!=#{companyId}
+		union all
+		select klk.knowledge_id,klk.knowledge_name, (select category_name from kl_knowledgecategory where category_id=  klk.category_id) category_name,klk.share_status,klk.share_time,klk.sub_company_id 
+		 from ap_approverecord apr left join kl_knowledge klk on apr.object_id = klk.knowledge_id
+		where klk.is_delete!=1 and apr.status =1 and apr.way_type=2 and klk.company_id=#{companyId} and  ((next_approve_id =#{userId} and next_approve_type=1) or (next_approve_id =#{postId} and next_approve_type=2)
+		or (next_approve_id =#{postId} and next_approve_type=3) or   (next_approve_id   in( select role_id from manage_user_role where user_id=#{userId}) and next_approve_type=4))
+		) t 
+		where 1=1
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id = #{subCompanyId}
+		</if> 
+		<if test="knowledgeName!=null and knowledgeName!=''">
+			and knowledge_name like CONCAT('%',#{knowledgeName},'%')     
+		</if>
+		<if test="categoryName!=null and categoryName!=''">
+			and category_name like CONCAT('%',#{categoryName},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status in (${shareStatus})
+		</if> 
+    </select>
+    
+    <!-- 查询课程待审批以及审核通过的内容  -->
+    <select id="queryApproveCourseCount" resultType="int">
+    	
+    	select count(1) from  ( select  kl.id,kl.name, klc.name category_name,share_status,share_time,kl.sub_company_id  from res_course kl 
+	  	 left join res_course_category klc  on  kl.category_id=klc.id
+	  	 where kl.status=2 and kl.company_id=#{companyId} and  kl.share_status>=3  and kl.sub_company_id!=#{companyId}
+		union all
+		
+		select klk.id,klk.name, (select name  from res_course_category  where id=  klk.category_id) category_name,klk.share_status,klk.share_time,klk.sub_company_id 
+		 from ap_approverecord apr left join res_course  klk on apr.object_id = klk.id
+		where klk.status=2 and  apr.status =1 and apr.way_type=1 and klk.company_id=#{companyId}  and   ((next_approve_id =#{userId} and next_approve_type=1) or (next_approve_id =#{postId} and next_approve_type=2)
+		or (next_approve_id =#{postId} and next_approve_type=3) or   (next_approve_id   in( select role_id from manage_user_role where user_id=#{userId}) and next_approve_type=4)) 
+		) t  
+		where 1=1 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id = #{subCompanyId}
+		</if> 
+			<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="code!=null and code!=''">
+			and code like CONCAT('%',#{code},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status in (${shareStatus})
+		</if> 
+    
+    </select>
+     <select id="queryApproveCourseList" resultMap="ResCourseBeanMap">
+    	
+   		select * from  ( select  kl.id,kl.name, klc.name category_name,share_status,share_time,kl.sub_company_id,kl.code  from res_course kl 
+	  	 left join res_course_category klc  on  kl.category_id=klc.id
+	  	 where kl.status=2 and  kl.company_id=#{companyId} and  kl.share_status>=3 and kl.sub_company_id!=#{companyId}
+		union all
+		
+		select klk.id,klk.name, (select name  from res_course_category  where id=  klk.category_id) category_name,klk.share_status,klk.share_time,klk.sub_company_id,klk.code 
+		 from ap_approverecord apr left join res_course  klk on apr.object_id = klk.id
+		where klk.status=2 and apr.status =1 and apr.way_type=1 and klk.company_id=#{companyId}  and   ((next_approve_id =#{userId} and next_approve_type=1) or (next_approve_id =#{postId} and next_approve_type=2)
+		or (next_approve_id =#{postId} and next_approve_type=3) or   (next_approve_id   in( select role_id from manage_user_role where user_id=#{userId}) and next_approve_type=4) )
+		) t  
+		where 1=1 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id = #{subCompanyId}
+		</if> 
+			<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="code!=null and code!=''">
+			and code like CONCAT('%',#{code},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status in (${shareStatus})
+		</if>  
+		 order by share_time desc 
+ 		limit #{fromNum},#{page}
+    </select>   
+    
+    <!-- 查询专题待审核以及审核过的列表 -->
+    
+    <select id="queryApproveTopicCount" resultType="int">
+    select count(1) from  ( select  kl.id,kl.name, kl.no ,share_status,share_time,kl.sub_company_id  from oam_topic  kl 
+	  	 where kl.status!=3 and  kl.company_id=#{companyId} and  kl.share_status>=3 and kl.sub_company_id!=#{companyId}
+		union all
+		select klk.id,klk.name, klk.no,klk.share_status,klk.share_time,klk.sub_company_id 
+		 from ap_approverecord apr left join oam_topic  klk on apr.object_id = klk.id
+		where klk.status!=3 and  apr.status =1 and apr.way_type=3  and klk.company_id=#{companyId}  and  ( (next_approve_id =#{userId} and next_approve_type=1) or (next_approve_id =#{postId} and next_approve_type=2)
+		or (next_approve_id =#{postId} and next_approve_type=3) or   (next_approve_id   in( select role_id from manage_user_role where user_id=#{userId}) and next_approve_type=4) )
+		) t  
+		where 1=1 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id = #{subCompanyId}
+		</if> 
+			<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="no!=null and no!=''">
+			and no like CONCAT('%',#{no},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status in (${shareStatus})
+		</if>  
+    </select>
+     <select id="queryApproveTopicList" resultMap="OamTopicBean">
+    	
+    	select * from  ( select  kl.id,kl.name, kl.no ,share_status,share_time,kl.sub_company_id  from oam_topic  kl 
+	  	 where kl.status!=3 and  kl.company_id=#{companyId} and  kl.share_status>=3 and kl.sub_company_id!=#{companyId}
+		union all
+		select klk.id,klk.name, klk.no,klk.share_status,klk.share_time,klk.sub_company_id 
+		 from ap_approverecord apr left join oam_topic  klk on apr.object_id = klk.id
+		where klk.status!=3 and  apr.status =1 and apr.way_type=3  and klk.company_id=#{companyId}  and   ((next_approve_id =#{userId} and next_approve_type=1) or (next_approve_id =#{postId} and next_approve_type=2)
+		or (next_approve_id =#{postId} and next_approve_type=3) or   (next_approve_id   in( select role_id from manage_user_role where user_id=#{userId}) and next_approve_type=4)) 
+		) t  
+		where 1=1 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id = #{subCompanyId}
+		</if> 
+			<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="no!=null and no!=''">
+			and no like CONCAT('%',#{no},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status in (${shareStatus})
+		</if>  
+		 order by share_time desc 
+ 		limit #{fromNum},#{page}
+    </select>
+    
+    
+    
+    
+    <!-- 先更新审核记录表的状态 -->
+    <select id="queryApproverecordId" resultType="int">
+    	select id from ap_approverecord  
+    	where object_id = #{objectId} and way_type=#{wayType} and status=1
+    </select>
+    <select id="queryParentPostId" resultType="String">
+		select parent_id  from manage_post where id=#{postId}    
+    </select>
+    
+    <update id="updateRecordStatus">
+    	update ap_approverecord set status = #{status}
+    	where id = #{id}    	
+    	<!-- update ap_approverecord set status = 2
+    	where object_id = #{objectId} and way_type=#{wayType} and   status=1 -->
+    </update>
+    
+    <select id="queryCurrStepInfo" resultMap="ApproveStepBean">
+   	 select aas.* from ap_approvestep aas inner join ap_approverecord aar 
+   	 	on aas.way_id= aar.way_id and aas.order_num =(aar.current_order_num+1)
+   	 	where aar.id=#{id}
+    </select>
+     <select id="queryNextStepInfo" resultMap="ApproveStepBean">
+   		select aas.* from ap_approvestep aas inner join ap_approverecord aar 
+   	 	on aas.way_id= aar.way_id and aas.order_num =(aar.current_order_num+${count})
+   	 	where aar.id=#{id}
+    </select>
+    
+    
+    <!-- 更新课程知识专题状态  当isupdatesharetime为1时，需要进行更新 -->
+    <update id="updateCourseStatus">
+    	update res_course  set share_status =#{shareStatus}
+    	<if test="isUpdateShareTime==1">
+    	,share_time=now()
+    	</if>
+    	where id=#{objectId}					
+    </update>
+     <update id="updateKnowledgeStatus">
+    	update kl_knowledge  set share_status =#{shareStatus}
+    	<if test="isUpdateShareTime==1">
+    	,share_time=now()
+    	</if>
+    	where knowledge_id=#{objectId}					
+    </update>
+     <update id="updateTopicStatus">
+    	update oam_topic  set share_status =#{shareStatus}
+    	<if test="isUpdateShareTime==1">
+    	,share_time=now()
+    	</if>
+    	where id=#{objectId}					
+    </update>
+    
+    <!-- 审核记录的插入 -->
+    <insert id="insertApproveRecord">
+    	insert into ap_approverecord(user_id,next_approve_type,next_approve_id,status,is_pass,reason,approve_time,way_id,way_type,
+    	current_step_id,current_order_num,object_id,object_user_id,object_create_time)
+    	values(#{userId},#{nextApproveType},#{nextApproveId},#{status},#{isPass},#{reason},now(),#{wayId},#{wayType},#{currentStepId},#{currentOrderNum},
+    	#{objectId},#{objectUserId},#{objectCreateTime})
+    </insert>
+    
+    
+    <!-- 查询待共享的列表和总数 -->
+     <sql id="t_shareStatus">
+		<if test="shareStatus!=null and shareStatus!=''">
+    	 and share_status >= #{shareStatus}
+    	</if>
+	</sql>
+    <select id="queryShareKLCount" resultType="int">
+    	select count(1) from kl_knowledge klk inner join kl_knowledgecategory klc 
+    	on klk.category_id = klc.category_id 
+    	where klk.company_id=#{companyId}  and klk.status =2 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and klk.sub_company_id=#{subCompanyId}
+		</if>
+		<if test="knowledgeName!=null and knowledgeName!=''">
+			and knowledge_name like CONCAT('%',#{knowledgeName},'%')     
+		</if>
+		<if test="categoryName!=null and categoryName!=''">
+			and klc.category_name like CONCAT('%',#{categoryName},'%')     
+		</if>
+		<include refid="t_shareStatus"/>
+    </select>
+    <select id="queryShareKL" resultMap="KnowledgeBean">
+    	select klk.*,klc.category_name from kl_knowledge klk inner join kl_knowledgecategory klc 
+    	on klk.category_id = klc.category_id 
+    	where klk.company_id=#{companyId}  and klk.status =2 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and klk.sub_company_id=#{subCompanyId}
+		</if>
+		<if test="knowledgeName!=null and knowledgeName!=''">
+			and knowledge_name like CONCAT('%',#{knowledgeName},'%')     
+		</if>
+		<if test="categoryName!=null and categoryName!=''">
+			and klc.category_name like CONCAT('%',#{categoryName},'%')     
+		</if>
+		<include refid="t_shareStatus"/>
+		order by klk.create_time desc
+		limit #{fromNum},#{page}
+    </select>
+    
+    <!-- 查询课程总数和课程列表信息 -->
+    <select id="queryShareCourseCount" resultType="int">
+    	select count(1) from res_course   
+    	where company_id=#{companyId}  and status =2 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id=#{subCompanyId}
+		</if>
+		<if test="code!=null and code!=''">
+			and code like CONCAT('%',#{code},'%')     
+		</if>
+		<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+		<include refid="t_shareStatus"/>
+     </select>
+    <select id="queryShareCourse" resultMap="ResCourseBeanMap">
+	   select *, tcc.name category_name from res_course t 
+	   left join res_course_category tcc on tcc.id=t.category_id  
+	    	where t.company_id=#{companyId}  and t.status = 2 
+			<if test="subCompanyId!=null and subCompanyId!=0">
+				and t.sub_company_id=#{subCompanyId}
+			</if>
+			<if test="code!=null and code!=''">
+				and t.code like CONCAT('%',#{code},'%')     
+			</if>
+			<if test="name!=null and name!=''">
+			and t.name like CONCAT('%',#{name},'%')     
+		</if>
+		<include refid="t_shareStatus"/>
+		order by t.create_time desc
+		limit #{fromNum},#{page}
+	 </select>
+	 
+	 <!-- 查询共享的专题列表 -->
+	 <select id="queryShareTopicCount" resultType="int">
+	 	select count(1) from oam_topic   
+    	where company_id=#{companyId}  and status !=3 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id=#{subCompanyId}
+		</if>
+		<if test="no!=null and no!=''">
+			and no like CONCAT('%',#{no},'%')     
+		</if>
+		<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+				<include refid="t_shareStatus"/>
+	 </select>
+	 <select id="queryShareTopic" resultMap="OamTopicBean">
+		 select * from oam_topic   
+    		where company_id=#{companyId}  and status !=3 
+		<if test="subCompanyId!=null and subCompanyId!=0">
+			and sub_company_id=#{subCompanyId}
+		</if>
+		<if test="no!=null and no!=''">
+			and no like CONCAT('%',#{no},'%')     
+		</if>
+		<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+				<include refid="t_shareStatus"/>
+	 	order by create_time desc
+		limit #{fromNum},#{page}
+	 </select>
+	 
+	 <!-- 查询公司名称 -->
+	 <select id="queryComapnyName" resultType="String">
+	 	 select name  from manage_company  where id=#{companyId}
+	 </select>
+	 <select id="querySubComapnyName"	resultType="String">
+		select name from manage_department where company_id=#{companyId} 
+		and id=#{subCompanyId} and is_sub_company='1'
+	 </select>
+	 
+	 
+	 <!-- begin 查询普连用户的审核列表 -->
+	 <select id="queryKnowledgeByPL" resultMap="KnowledgeBean">
+		select  kl.knowledge_id,kl.knowledge_name, klc.category_name,share_status,share_time,kl.sub_company_id  from kl_knowledge kl 
+	  	 left join kl_knowledgecategory klc  on  kl.category_id=klc.category_id
+	  	 where kl.is_delete!=1 and  kl.share_status>=5  and kl.is_publish =2 and kl.company_id != 1
+	  	 <if test="companyId!=null and companyId!=0">
+				and kl.company_id = #{companyId}
+			</if>
+		<if test="knowledgeName!=null and knowledgeName!=''">
+			and knowledge_name like CONCAT('%',#{knowledgeName},'%')     
+		</if>
+		<if test="categoryName!=null and categoryName!=''">
+			and category_name like CONCAT('%',#{categoryName},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status  =#{shareStatus}
+		</if>  
+		 order by share_time desc 
+ 		limit #{fromNum},#{page}
+	 </select>
+	 <select id="queryKnowledgeCountByPL" resultType="int">
+		 select count(1) from (
+		 	select  kl.knowledge_id,kl.knowledge_name, klc.category_name,share_status,share_time,kl.sub_company_id  from kl_knowledge kl 
+		  	 left join kl_knowledgecategory klc  on  kl.category_id=klc.category_id
+		  	 where kl.is_delete!=1 and  kl.share_status>=5 and kl.is_publish =2 and kl.company_id != 1
+		  	 <if test="companyId!=null and companyId!=0">
+				and kl.company_id= #{companyId}
+			</if>
+			<if test="knowledgeName!=null and knowledgeName!=''">
+				and knowledge_name like CONCAT('%',#{knowledgeName},'%')     
+			</if>
+			<if test="categoryName!=null and categoryName!=''">
+				and category_name like CONCAT('%',#{categoryName},'%')     
+			</if>
+			<if test="shareStatus!=null and shareStatus!=''">
+				and share_status  =#{shareStatus}
+			</if>  
+		 ) aa
+	 </select>
+	 
+	 <select id="queryApproveCourseListByPL"  resultMap="ResCourseBeanMap">
+		 select  kl.id,kl.name, klc.name category_name,share_status,share_time,kl.sub_company_id,kl.code  from res_course kl 
+	  	 left join res_course_category klc  on  kl.category_id=klc.id 
+	  	 where kl.status=2  and  kl.share_status>=5 and kl.company_id != 1
+		 <if test="companyId!=null and companyId!=0">
+			and kl.company_id = #{companyId}
+		</if> 
+			<if test="name!=null and name!=''">
+			and kl.name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="code!=null and code!=''">
+			and kl.code like CONCAT('%',#{code},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and kl.share_status  =#{shareStatus}
+		</if>  
+		 order by share_time desc 
+ 		limit #{fromNum},#{page}
+	 </select>
+	 
+	 <select id="queryApproveCourseCountByPL" resultType="int">
+	 	 select count(1)  from res_course kl 
+	  	 left join res_course_category klc  on  kl.category_id=klc.id
+	  	 where kl.status=2  and  kl.share_status>=5 and kl.company_id != 1
+		 <if test="companyId!=null and companyId!=0">
+			and kl.company_id= #{companyId}
+		</if> 
+			<if test="name!=null and name!=''">
+			and kl.name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="code!=null and code!=''">
+			and kl.code like CONCAT('%',#{code},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and kl.share_status =#{shareStatus}
+		</if>  
+	 </select>
+	 
+	 <select id="queryApproveTopicListByPL" resultMap="OamTopicBean">
+	 	select  kl.id,kl.name, kl.no ,share_status,share_time,kl.sub_company_id  from oam_topic kl 
+	  	 where kl.status!=3  and  kl.share_status>=5 and kl.company_id !=1
+		  <if test="companyId!=null and companyId!=0">
+			and company_id = #{companyId}
+			</if> 
+			<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="no!=null and no!=''">
+			and no like CONCAT('%',#{no},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status  =#{shareStatus}
+		</if>  
+		 order by share_time desc 
+ 		limit #{fromNum},#{page}
+	 </select>
+	 <select id="queryApproveTopicCountByPL" resultType="int">
+	 	select  count(1)  from oam_topic  kl 
+	  	 where kl.status!=3  and  kl.share_status>=5 and kl.company_id != 1
+		  <if test="companyId!=null and companyId!=0">
+			and company_id = #{companyId}
+			</if> 
+			<if test="name!=null and name!=''">
+			and name like CONCAT('%',#{name},'%')     
+		</if>
+		<if test="no!=null and no!=''">
+			and no like CONCAT('%',#{no},'%')     
+		</if>
+		<if test="shareStatus!=null and shareStatus!=''">
+			and share_status  =#{shareStatus}
+		</if>  
+	 </select>
+	 
+	 <!-- 查询共享记录 -->
+	 <select id="queryShareRecordKLCount" resultType="int">
+	 	select count(1)
+			 from ap_approverecord aa left join kl_knowledge kk on aa.object_id =kk. knowledge_id
+			left join manage_company mc on kk.company_id =mc.id
+			 left join manage_industry_category mic on mc.industry = mic.id 
+			where aa.object_id =#{objectId} and aa.way_type=#{wayType}  and aa.current_order_num=-1
+	 </select>
+	 <select id="queryShareRecordKLList" resultMap="ShareRecordBean">
+	 	select aa.approve_time share_time,mc.name company_name,mic.name industry_name,kk.company_id,kk.sub_company_id
+		 from ap_approverecord aa left join kl_knowledge kk on aa.object_id =kk. knowledge_id
+		left join manage_company mc on kk.company_id =mc.id
+		 left join manage_industry_category mic on mc.industry = mic.id 
+		where aa.object_id =#{objectId} and aa.way_type=#{wayType}  and aa.current_order_num=-1
+		order by aa.approve_time desc
+		limit #{fromNum},#{page}
+	 </select>
+	 <select id="queryShareRecordCourseCount" resultType="int">
+	 	select count(1)
+		 from ap_approverecord aa left join res_course  kk on aa.object_id =kk. id
+		left join manage_company mc on kk.company_id =mc.id
+		 left join manage_industry_category mic on mc.industry = mic.id 
+  		where aa.object_id =#{objectId} and aa.way_type=#{wayType}  and aa.current_order_num=-1
+	 </select>
+	 
+	  <select id="queryShareRecordCourseList" resultMap="ShareRecordBean">
+	  	select aa.approve_time share_time,mc.name company_name,mic.name industry_name,kk.company_id,kk.sub_company_id
+		 from ap_approverecord aa left join res_course  kk on aa.object_id =kk. id
+		left join manage_company mc on kk.company_id =mc.id
+		 left join manage_industry_category mic on mc.industry = mic.id 
+  		where aa.object_id =#{objectId} and aa.way_type=#{wayType}  and aa.current_order_num=-1
+  		order by aa.approve_time desc
+  		limit #{fromNum},#{page}
+	 </select>
+	  <select id="queryShareRecordTopicCount" resultType="int">
+	  	select count(1)
+		 from ap_approverecord aa left join oam_topic  kk on aa.object_id =kk. id
+		left join manage_company mc on kk.company_id =mc.id
+		 left join manage_industry_category mic on mc.industry = mic.id 
+ 		where aa.object_id =#{objectId} and aa.way_type=#{wayType}  and aa.current_order_num=-1
+	 </select>
+	  <select id="queryShareRecordTopicList" resultMap="ShareRecordBean">
+		select aa.approve_time share_time,mc.name company_name,mic.name industry_name,kk.company_id,kk.sub_company_id
+		 from ap_approverecord aa left join oam_topic  kk on aa.object_id =kk. id
+		left join manage_company mc on kk.company_id =mc.id
+		 left join manage_industry_category mic on mc.industry = mic.id 
+ 		where aa.object_id =#{objectId} and aa.way_type=#{wayType}  and aa.current_order_num=-1
+ 		order by aa.approve_time desc
+ 		limit #{fromNum},#{page}
+	 </select>
+</mapper>

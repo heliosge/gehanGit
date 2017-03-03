@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.TrainConfigDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainConfigBean" >
+    <id column="id" property="id" />
+    <result column="is_check" property="isCheck" />
+    <result column="check_user_id" property="checkUserId"/>
+    <result column="check_user_name" property="checkUserName"/>
+    <result column="check_advice" property="checkAdvice"/>
+    <result column="join_end_time" property="joinEndTime" />
+    <result column="is_query_join_detail" property="isQueryJoinDetail" />
+    <result column="create_time" property="createTime" />
+    <result column="update_time" property="updateTime" />
+    <result column="company_id" property="companyId" />
+    <result column="sub_company_id" property="subCompanyId" />
+    <result column="check_reason" property="checkReason" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, is_check, check_user_id, check_user_name, check_advice, join_end_time, is_query_join_detail, 
+    create_time, update_time, company_id, sub_company_id, check_reason
+  </sql>
+  <select id="selectById" resultMap="BaseResultMap" >
+    select 
+    <include refid="Base_Column_List" />
+    from train_config
+    where company_id = #{companyId} and sub_company_id = #{subCompanyId}
+  </select>
+  <delete id="deleteById" >
+    delete from train_config
+    where company_id = #{companyId} and sub_company_id = #{subCompanyId}
+  </delete>
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainConfigBean" >
+    insert into train_config (is_check, check_user_id, 
+      check_user_name, check_advice, join_end_time, 
+      is_query_join_detail, company_id, sub_company_id, check_reason
+      )
+    values (#{isCheck}, #{checkUserId}, 
+      #{checkUserName}, #{checkAdvice}, #{joinEndTime}, 
+      #{isQueryJoinDetail}, #{companyId}, #{subCompanyId}, #{checkReason}
+      )
+  </insert>
+  <update id="updateById" parameterType="com.jftt.wifi.bean.TrainConfigBean" >
+    update train_config
+    set is_check = #{isCheck},
+      check_user_id = #{checkUserId},
+      check_user_name = #{checkUserName},
+      check_advice = #{checkAdvice},
+      join_end_time = #{joinEndTime},
+      is_query_join_detail = #{isQueryJoinDetail},
+      check_reason = #{checkReason}
+   where company_id = #{companyId} and sub_company_id = #{sub_company_id}
+  </update>
+</mapper>

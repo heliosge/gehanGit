@@ -1,0 +1,1 @@
+<script type="text/javascript" src="<%=request.getContextPath() %>/js/flexPaper/js/flexpaper_flash.js"></script>

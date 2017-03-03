@@ -1,0 +1,17 @@
+@charset "utf-8";
+/* CSS Document */
+
+.sys_log{ width:1066px; padding-bottom:50px;}
+.log{ background:#d5d5d5; width:1066px; height:30px;}
+.log h4{ background:url(../img/title_7.png) no-repeat left center; height:30px; width:100px; color:#fff; text-indent:1em;line-height:30px; float:left;}
+.log a{ float:right; background:#999999; width:30px; height:20px; line-height:30px; text-align:center; padding-top:10px}
+.log_txt{ width:1064px;font-family:'微软雅黑'; border:1px solid #ccc; padding-bottom:30px; margin-bottom:20px;}
+.log_txt .control_group{ width:1066px; height:50px; line-height:50px;}
+.log_txt .control_group .ct{ float:left; width:186px; margin-right:10px; text-align:right;}
+.log_txt .control_group .ip_t{ width:870px; height:40px; line-height:40px; float:left; padding-top:10px;}
+.log_txt .control_group  input[type=text]{ width:130px; height:30px; border:1px solid #ccc;}
+.log_txt .control_group  em{ margin:0 10px;}
+.log_txt .control_group .ip_t1{ width:860px; height:40px; line-height:40px; float:left; padding-top:10px; padding-right:10px;}
+.btn_cx{ width:60px; height:30px; background:#d20001; color:#fff; line-height:30px; text-align:center; border:none; float:right;margin-top:5px;}
+.btn_dc{ width:120px; height:30px; background:#d20001; color:#fff; line-height:30px; text-align:center; border:none; margin-left:10px;float:right; margin-top:5px;}
+

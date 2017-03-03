@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ResCourseCategoryDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.ResCourseCategoryBean" id="ResCourseCategoryBeanMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="descr" column="descr"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+    </resultMap>
+    
+    <!-- 课程体系分类vo -->
+    <resultMap type="com.jftt.wifi.bean.vo.CourseTypeVo" id="CourseTypeVoMap">
+    	<id property="id" column="id"/>
+    	<result property="name" column="name"/>
+    	<result property="categoryOrType" column="category_or_type"/>
+    </resultMap>
+    
+    <!-- 二级课程体系vo -->
+    <resultMap type="com.jftt.wifi.bean.vo.CourseNextTypeVo" id="CourseNextTypeVoMap">
+    	<id property="nextId" column="next_id"/>
+    	<result property="nextName" column="next_name"/>
+    	<result property="nextCategoryOrType" column="next_category_or_type"/>
+    	<collection property="thirdTypes" ofType="com.jftt.wifi.bean.vo.CourseTypeVo" resultMap="CourseTypeVoMap">
+    		<id property="id" column="id"/>
+    		<result property="name" column="name"/>
+    		<result property="categoryOrType" column="category_or_type"/>
+    	</collection>
+    </resultMap>
+    
+    <!-- 根据id查询课程体系 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="ResCourseCategoryBeanMap">
+        select * from res_course_category where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据公司id查询课程体系 -->
+    <select id="getCourseCategorysByCompanyId" resultMap="ResCourseCategoryBeanMap">
+        SELECT id,name,parent_id,descr,create_user_id,company_id,sub_company_id 
+          FROM res_course_category 
+          WHERE company_id = #{companyId} AND sub_company_id = #{companyId} AND parent_id is null  
+    </select>
+    
+    <!-- 获取课程体系的子课程体系 -->
+    <select id="getChildCategorys" parameterType="java.lang.Integer" resultMap="ResCourseCategoryBeanMap">
+    	SELECT id,name,parent_id,descr,create_user_id,company_id,sub_company_id 
+    	  FROM res_course_category 
+    	  WHERE parent_id = #{categoryId} 
+    </select>
+    
+    <!-- 获取上一级的所有课程体系 -->
+    <select id="getUpCategorys" parameterType="java.lang.Integer" resultMap="ResCourseCategoryBeanMap">
+    	SELECT rcc.* FROM res_course_category rcc 
+    	  WHERE rcc.parent_id = 
+    	  (SELECT parent_id FROM res_course_category WHERE id = #{categoryId}) 
+    </select>
+    
+    <!-- 根据课程id查询课程体系 -->
+    <select id="getCategoryByCourseId" parameterType="java.lang.Integer" resultMap="ResCourseCategoryBeanMap">
+    	SELECT rcc.* 
+    	  FROM res_course rc LEFT JOIN res_course_category rcc ON rc.category_id = rcc.id 
+    	  WHERE rc.id = #{courseId} 
+    </select>
+    
+    <!-- 获取普联的课程体系  -->
+    <select id="getPulianCategorys" resultMap="ResCourseCategoryBeanMap">
+    	SELECT * 
+          FROM res_course_category 
+          WHERE company_id = #{companyId} AND ISNULL(parent_id) 
+    </select>
+    
+    <!-- 获取一级课程体系和分类  -->
+    <select id="getFirstTypes" resultMap="CourseTypeVoMap">
+    	SELECT rcc.id, rcc.name, 1 category_or_type 
+    	  FROM res_course_category rcc 
+    	  WHERE rcc.company_id = #{companyId} AND rcc.sub_company_id = #{companyId} AND rcc.parent_id is null 
+    	UNION ALL 
+    	SELECT rct.id, rct.name, 2 category_or_type 
+    	  FROM res_course_type rct 
+    	  WHERE rct.company_id = #{companyId} AND rct.sub_company_id = #{companyId} AND rct.parent_id is null 
+    </select>
+    
+    <!-- 获取二级课程体系和三级课程体系列表 -->
+    <select id="getNextCategorys" resultMap="CourseNextTypeVoMap">
+    	SELECT rcc.id next_id, rcc.name next_name, 1 next_category_or_type,
+    	    rcc2.id, rcc2.name, 1 category_or_type 
+    	  FROM res_course_category rcc LEFT JOIN res_course_category rcc2 ON rcc.id = rcc2.parent_id 
+    	  WHERE rcc.parent_id = #{typeId} 
+    </select>
+    
+    <!-- 获取二级课程分类和三级课程分类列表 -->
+    <select id="getNextTypes" resultMap="CourseNextTypeVoMap">
+    	SELECT rct.id next_id,rct.name next_name, 2 next_category_or_type,
+    	    rct2.id, rct2.name, 2 category_or_type 
+    	  FROM res_course_type rct LEFT JOIN res_course_type rct2 ON rct.id = rct2.parent_id 
+    	  WHERE rct.parent_id = #{typeId} 
+    </select>
+	
+	<resultMap type="com.jftt.wifi.bean.ResCourseTypeBean" id="ResCourseTypeBeanMap">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="parentId" column="parent_id"/>
+		<result property="descr" column="descr"/>
+		<result property="createUserId" column="create_user_id"/>
+		<result property="companyId" column="company_id"/>
+		<result property="subCompanyId" column="sub_company_id"/>
+	</resultMap>
+	
+	<!-- 获取分类下的所有直接子分类 -->
+	<select id="getChildTypes" resultMap="ResCourseTypeBeanMap">
+		SELECT rct.id, rct.name, rct.parent_id, rct.descr, rct.create_user_id,
+		  rct.company_id,rct.sub_company_id 
+		FROM res_course_type rct 
+		WHERE rct.parent_id = #{typeId} 
+	</select>
+	    
+    <!-- shenhaijun end -->
+    
+</mapper>

@@ -1,0 +1,48 @@
+.treeDiv1{float: left;width:210px; min-height: 305px;max-height: 305px; border: 1px solid #cdcdcd;}
+.treeDiv2{overflow:auto; min-height: 295px;max-height: 295px;}
+ 
+.ztree li ul{ margin:0; padding:0}
+.ztree li {line-height:30px;}
+.ztree li a {width:98%;height:30px;padding-top: 0px;}
+.ztree li a:hover {text-decoration:none; background-color: #E7E7E7;}
+.ztree li a span.button.switch {visibility:visible}
+.ztree.showIcon li a span.button.switch {visibility:visible;}
+.ztree li a.curSelectedNode {background-color:#D4D4D4;border:0;height:30px;}
+.ztree li span {line-height:30px;}
+.ztree li span.button {margin-top: -7px;}
+.ztree li span.button.switch {width: 16px;height: 16px;}
+
+.ztree li span.button.switch.level0 {width: 20px; height:20px}
+.ztree li span.button.switch.level1 {width: 20px; height:20px}
+.ztree li span.button.noline_open {background-position: 0 0;}
+.ztree li span.button.noline_close {background-position: -18px 0;}
+.ztree li span.button.noline_open.level0 {background-position: 0 -18px;}
+.ztree li span.button.noline_close.level0 {background-position: -18px -18px;}
+
+.ztree li span.button{	background: url("") 0 0 no-repeat;
+}
+.ztree li span.button.center_close,.ztree li span.button.root_close,.ztree li span.button.roots_close,.ztree li span.button.bottom_close  {
+	background: url(../images/img/ico_zk.png) 0 0 no-repeat;
+	vertical-align: middle;
+	margin-top: 0px;
+}
+.ztree li span.button.center_open,.ztree li span.button.root_open,.ztree li span.button.roots_open,.ztree li span.button.bottom_open{
+	background: url(../images/img/ico_sq.png) 0 0 no-repeat;
+	vertical-align: middle;
+	margin-top: 0px;
+}
+.ztree li span.button.ico_docu{
+	background: url(../images/img/ico_txt.png) 0 0 no-repeat;
+	vertical-align: middle;
+	margin-top: 0px;
+}
+
+.ztree li span.button.ico_close{
+	display: none;
+}
+.ztree li span.button.ico_open{
+	display: none;
+}
+.ztree li ul.line{
+	background: url("");
+}

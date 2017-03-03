@@ -1,0 +1,834 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.KnowledgeManagerDaoMapper">
+
+	<!-- 分类bean -->
+	<resultMap id="KLCategoryBean" type="com.jftt.wifi.bean.KLCategoryBean">
+		<result column="category_id" property="categoryId" />
+		<result column="parent_id" property="parentId" />
+		<result column="company_id" property="companyId" />
+		<result column="category_name" property="categoryName" />
+		<result column="create_user_id" property="createUserId" />
+		<result column="create_time" property="createTime" />
+		<result column="update_user_id" property="updateUserId" />
+		<result column="update_time" property="updateTime" />
+		<result column="sub_company_id" property="subCompanyId" />
+		<result column="is_accident" property="isAccident" />
+		
+		
+	</resultMap>
+	
+	<resultMap id="KLCategoryVo" type="com.jftt.wifi.bean.vo.KLCategoryVo">
+		<result column="category_id" property="categoryId" />
+		<result column="parent_id" property="parentId" />
+		<result column="company_id" property="companyId" />
+		<result column="category_name" property="categoryName" />
+		<result column="create_user_id" property="createUserId" />
+		<result column="create_time" property="createTime" />
+		<result column="update_user_id" property="updateUserId" />
+		<result column="update_time" property="updateTime" />
+		<collection property="childCategory" column="category_id"  select="getKlCategoryByParentId" 
+			 ofType="com.jftt.wifi.bean.KLCategoryBean"></collection>
+	</resultMap>
+
+	<!-- 知识bean -->
+	<resultMap id="KnowledgeBean" type="com.jftt.wifi.bean.KnowledgeBean">
+		<result column="knowledge_id" property="knowledgeId" />
+		<result column="knowledge_name" property="knowledgeName" />
+		<result column="category_id" property="categoryId" />
+		<result column="company_id" property="companyId" />
+		<result column="sub_company_id" property="subCompanyId" />
+		<result column="is_open" property="isOpen" />
+		<result column="is_download" property="isDownload" />
+		<result column="is_recommend" property="isRecommend" />
+		<result column="is_share" property="isShare" />
+		<result column="is_publish" property="isPublish" />
+		<result column="upload_type" property="uploadType" />
+		<result column="status" property="status" />
+		<result column="tags" property="tags" />
+		<result column="knowledge_desc" property="knowledgeDesc" />
+		<result column="refuse_memo" property="refuseMemo" />
+		<result column="audit_time" property="auditTime" />
+		<result column="is_delete" property="isDelete" />
+		<result column="file_name" property="fileName" />
+		<result column="file_size" property="fileSize" />
+		<result column="file_path" property="filePath" />
+		<result column="extend_name" property="extendName" />
+		<result column="resource_type" property="resourceType" />
+		<result column="knowledge_text" property="knowledgeText" />
+		<result column="create_user_id" property="createUserId" />
+		<result column="create_time" property="createTime" />
+		<result column="update_user_id" property="updateUserId" />
+		<result column="update_time" property="updateTime" />
+		<result column="share_status" property="shareStatus" />
+		<result column="share_time" property="shareTime" />
+		<result column="category_name" property="categoryName" />
+		<result column="role_type" property="roleType" />
+		<result column="is_accident" property="isAccident" />
+	</resultMap>
+	
+	<!-- 知识搜索结果页专用 -->
+	<resultMap id="KnowledgeBeans2" type="com.jftt.wifi.bean.vo.KnowledgeOtherVo" extends="KnowledgeBean">
+		<result column="avgScore" property="avgScore" />
+		<result column="evaluateCount" property="evaluateCount" />
+	</resultMap>
+	
+	<resultMap id="KnowledgeBeans" type="com.jftt.wifi.bean.vo.KnowledgeOtherVo" extends="KnowledgeBean">
+		<result column="userId" property="userId" />
+		<result column="categoryName" property="categoryName" />
+		<result column="avgScore" property="avgScore" />
+		<result column="evaluateCount" property="evaluateCount" />
+		<association property="collectFlag" column="{resourceId=knowledge_id,userId=userId}"
+			select="com.jftt.wifi.dao.KlCollectDownloadDaoMapper.judgeCollect"></association>
+	</resultMap>
+	
+	<resultMap id="klCountsVo" type="com.jftt.wifi.bean.vo.klCountsVo">
+		<result column="allCount" property="allCount" />
+		<result column="documentCount" property="documentCount" />
+		<result column="videoCount" property="videoCount" />
+		<result column="articleCount" property="articleCount" />
+	</resultMap>
+
+	<sql id="SQL_getKnowledgeByConditon">
+		<if test="userIds!= null  and userIds!=''">
+			and tl.create_user_id  in (${userIds})
+		</if>
+		<if test="status!=0 and status!=''">
+			and tl.status = #{status}
+		</if>
+		<if test="categoryName!= null and categoryName!=''">
+			and tl.category_name like CONCAT('%',#{categoryName},'%')
+		</if>
+		<if test="isPublish!= null and isPublish!=''">
+			and tl.is_publish = #{isPublish}
+		</if>
+		<if test="knowledgeName!= null and knowledgeName!= '' ">
+			and tl.knowledge_name like CONCAT('%',#{knowledgeName},'%')
+		</if>
+		<if test="beginTime!= null and beginTime!= '' ">
+			and DATE_FORMAT(tl.create_time,'%Y-%m-%d')   <![CDATA[ >= ]]>
+			#{beginTime}
+		</if>
+		<if test="endTime!= null and endTime!= '' ">
+			and DATE_FORMAT(tl.create_time,'%Y-%m-%d') <![CDATA[ <= ]]>
+			#{endTime}
+		</if>
+		<if test="categoryIds!= null and categoryIds!= '' ">
+			and tl.category_id in(${categoryIds}) 
+		</if>
+	</sql>
+	
+	<!-- 查询知识列表 和知识的总和-->
+	<select id="queryKnowledgeList" parameterType="com.jftt.wifi.bean.KnowledgeBean"
+		resultMap="KnowledgeBean">
+		select * from (
+			select * from (
+				select tk.*,tl.category_name from kl_knowledge tk left join kl_knowledgecategory tl on
+				tk.category_id=tl.category_id
+				where ( tk.is_open=1  or  (tk.is_open=0 and tk.create_user_id =#{createUserId})) and tk.company_id =#{companyId} and tk.sub_company_id =#{subCompanyId} and tk.is_delete!=1 and tk.role_type = 1  
+				) tl  where 1=1 
+				<include refid="SQL_getKnowledgeByConditon"></include>
+			<if test="flag==1">
+				union
+				select * from (
+				select tk.*,tl.category_name from kl_knowledge tk left join kl_knowledgecategory tl on
+				tk.category_id=tl.category_id
+				where ( tk.is_open=1  or  (tk.is_open=0 and tk.create_user_id =#{createUserId})) and tk.company_id =1 and tk.sub_company_id =1 and tk.is_delete!=1 and tk.role_type = 1  
+				) tl  where 1=1 and tl.is_accident=1
+				<include refid="SQL_getKnowledgeByConditon"></include>
+			</if>
+		) tl2
+		order by tl2.create_time desc
+		limit #{fromNum},#{page}
+	</select>
+	<select id="queryKnowledgeCount"   resultType="int">
+		select count(1) from (
+			select * from (
+				select tk.*,tl.category_name from kl_knowledge tk left join kl_knowledgecategory tl on
+				tk.category_id=tl.category_id
+				where ( tk.is_open=1  or  (tk.is_open=0 and tk.create_user_id =#{createUserId})) and tk.company_id =#{companyId} and tk.sub_company_id =#{subCompanyId} and tk.is_delete!=1 and tk.role_type = 1  
+				) tl  where 1=1 
+				<include refid="SQL_getKnowledgeByConditon"></include>
+			<if test="flag==1">
+				union
+				select * from (
+				select tk.*,tl.category_name from kl_knowledge tk left join kl_knowledgecategory tl on
+				tk.category_id=tl.category_id
+				where ( tk.is_open=1  or  (tk.is_open=0 and tk.create_user_id =#{createUserId})) and tk.company_id =1 and tk.sub_company_id =1 and tk.is_delete!=1 and tk.role_type = 1  
+				) tl  where 1=1 and tl.is_accident=1
+				<include refid="SQL_getKnowledgeByConditon"></include>
+			</if>
+		) tl2
+	</select>
+	
+	<!-- 查找审核列表和审核总数 -->
+	<select id="queryAuditKnowledgeList" parameterType="com.jftt.wifi.bean.KnowledgeBean"
+		resultMap="KnowledgeBean">
+		select * from (
+			select tk.*,tl.category_name from kl_knowledge tk left join kl_knowledgecategory tl on
+			tk.category_id=tl.category_id
+			where tk.company_id =#{companyId} and tk.sub_company_id =#{subCompanyId} and 
+			 tk.is_open=1 and  tk.is_delete!=1 and tk.role_type = 2
+		) tl where 1=1
+		<include refid="SQL_getKnowledgeByConditon"></include>
+		order by tl.create_time desc
+		limit #{fromNum},#{page}
+	</select>
+	<select id="queryAuditKnowledgeCount"   resultType="int">
+	select count(1) from (
+			select * from (
+			select tk.*,tl.category_name from kl_knowledge tk left join kl_knowledgecategory tl on
+			tk.category_id=tl.category_id
+			where tk.company_id =#{companyId} and tk.sub_company_id =#{subCompanyId} and  tk.is_open=1 
+			 and  tk.is_delete!=1 and tk.role_type = 2
+		) tl where 1=1 
+		<include refid="SQL_getKnowledgeByConditon"></include>
+		) tt  
+	</select>
+
+
+	<!-- 保存知识 -->
+	<insert id="saveKnowledge" parameterType="com.jftt.wifi.bean.KnowledgeBean" useGeneratedKeys="true" keyProperty="knowledgeId">
+		insert into
+		kl_knowledge(
+		knowledge_name,
+		category_id,
+		company_id,
+		sub_company_id,
+		is_open,
+		is_download,
+		is_recommend,
+		share_status,
+		share_time,
+		is_publish,
+		upload_type,
+		status,
+		tags ,
+		knowledge_desc,
+		is_delete,
+		file_name,
+		file_size,
+		file_path,
+		extend_name,
+		resource_type,
+		knowledge_text,
+		create_user_id,
+		create_time,
+		update_user_id,
+		update_time ,
+		role_type,
+		is_accident)
+		values(
+		#{knowledgeName},
+		#{categoryId},
+		#{companyId},
+		#{subCompanyId},
+		#{isOpen},
+		#{isDownload},
+		#{isRecommend},
+		#{shareStatus},
+		#{shareTime},
+		#{isPublish},
+		#{uploadType},
+		#{status},
+		#{tags},
+		#{knowledgeDesc},
+		#{isDelete},
+		#{fileName},
+		#{fileSize},
+		#{filePath},
+		#{extendName},
+		#{resourceType},
+		#{knowledgeText},
+		#{userId},
+		now(),
+		#{userId},
+		now(),
+		#{roleType},
+		#{isAccident}
+		)
+	</insert>
+
+	<!-- 更新知识 -->
+	<update id="updateKnowledge" parameterType="com.jftt.wifi.bean.KnowledgeBean">
+		update kl_knowledge
+		set
+		knowledge_name=#{knowledgeName},
+		category_id=#{categoryId},
+		is_open=#{isOpen},
+		is_download=#{isDownload},
+		is_recommend=#{isRecommend},
+		tags=#{tags},
+		knowledge_text=#{knowledgeText},
+		knowledge_desc=#{knowledgeDesc},
+		update_time = now(),
+		update_user_id=#{userId}
+		where knowledge_id = ${knowledgeId}
+	</update>
+	<!-- 发布知识 -->
+	<update id="publishKL">
+		update kl_knowledge
+		set is_publish = 2,
+			status=2,
+		update_time = now(),
+		update_user_id=#{userId}
+		where knowledge_Id = ${knowledgeId}
+	</update>
+
+
+	<!-- 删除知识信息 -->
+	<update id="deleteKnowledge" parameterType="java.util.HashMap">
+		update kl_knowledge
+		set
+		is_delete = "1",
+		update_time = now(),
+		update_user_id=#{userId}
+		where knowledge_Id = ${knowledgeId}
+	</update>
+	<!-- 删除知识的分类 -->
+	<delete id="deleteKLTags">
+		delete  from  kl_resource_to_tags where resource_id =#{knowledgeId}
+	</delete>
+	<!-- 查询标签的id -->
+	<select id="queryTagId" resultType="Integer">
+		select id from  kl_tags where tag_name=#{tag}
+	</select>
+	<!-- 插入标签 -->
+	<insert id="insertTags" useGeneratedKeys="true" keyProperty="id">
+		insert into kl_tags(tag_name,update_time) values(#{tagName},now())
+	</insert>
+	<insert id="insertKLTag">
+		insert into  kl_resource_to_tags(resource_id,tag_id,update_time) values(#{knowledgeId},#{tagId},now())
+	</insert>
+	
+	<!-- 审核知识 -->
+	<update id="auditKnowledge" parameterType="java.util.HashMap">
+		update kl_knowledge
+		set
+		status =#{status},
+		<if test="isPublish!=0">
+			is_publish=#{isPublish},
+		</if>
+		refuse_memo =#{refuseMemo},
+		audit_time = now(),
+		update_time = now(),
+		update_user_id=#{userId}
+		where knowledge_Id = ${knowledgeId}
+	</update>
+
+
+	<!-- 查询知识详情 -->
+	<select id="queryKnowledgeDetail" parameterType="String"
+		resultMap="KnowledgeBean">
+		select t.*,(select category_name from kl_knowledgecategory where category_id =t.category_id) category_name 
+		from kl_knowledge t
+		where knowledge_id =#{knowledgeId}
+	</select>
+	
+	<select id="queryKLCategoryCount" resultType="int">
+		select count(1) from kl_knowledgecategory 
+		where is_delete !=1  and parent_id =#{parentId} and company_id =#{companyId}  
+		and sub_company_id =#{subCompanyId} and category_name = #{categoryName}
+	</select>
+
+	<!-- 更新单个的知识分类 -->
+	<update id="updateOneKnowledgeCategroy" >
+		update
+		kl_knowledge set
+		category_id = #{categoryId},
+		update_time = now(),
+		update_user_id=#{userId},
+		is_accident = #{isAccident}
+		where knowledge_Id = ${knowledgeId}
+	</update>
+
+
+	<!-- 更新当前公司某个类型的公司分类 -->
+	<update id="updateKnowledgeCategory" parameterType="java.util.HashMap">
+		update
+		kl_knowledge set
+		category_id = #{categoryId},
+		update_time = now(),
+		update_user_id=#{userId}
+		where category_id in (${oldCategoryId})
+		and company_id = #{companyId} and sub_company_id = #{subCompanyId}
+	</update>
+
+	<!-- 删除知识分类 -->
+	<update id="deleteKLCategory" parameterType="String">
+		update
+		kl_knowledgecategory set
+		is_delete = "1"
+		where category_id = #{categoryId}
+	</update>
+	<!-- 查找知识分类下是否有子集或者知识关联 -->
+	<select id="queryChildren" resultType="int">
+		select count(1) from kl_knowledgecategory 
+		where parent_id = #{categoryId} and is_delete!=1
+	</select>
+	<select id="queryKLCountById" resultType="int">
+		select count(1)from kl_knowledge 
+		where category_id = #{categoryId} and is_delete !=1
+	</select>
+	
+	<!-- 查询知识分类的详情 -->
+	<select id="detailCategory" resultMap="KLCategoryBean">
+		select * from kl_knowledgecategory where category_id=#{categoryId}
+	</select>
+	
+	
+	<!-- 保存知识分类 -->
+	<insert id="saveKLCategory" parameterType="com.jftt.wifi.bean.KLCategoryBean">
+		insert into kl_knowledgecategory
+		(parent_id,company_id,sub_company_id,category_name,create_user_id,create_time,update_user_id,update_time,is_delete,is_accident)
+		values(#{parentId},#{companyId},#{subCompanyId},#{categoryName},#{userId},now(),#{userId},now(),0,#{isAccident})
+	</insert>
+
+	<!-- 查询相关的知识分类树 -->
+	<select id="getKLCategoryTree" parameterType="String" resultMap="KLCategoryBean">
+		select * from kl_knowledgecategory
+		where company_id =#{companyId} and sub_company_id =#{subCompanyId} and is_delete!=1
+		<if test="roleType==2">
+			and is_accident=0
+		</if>
+		<if test="flag==1">
+			<if test="roleType!=2">
+				union
+				select * from kl_knowledgecategory
+				where company_id =1 and sub_company_id =1 and is_delete!=1 and is_accident=1
+			</if>
+		</if>
+	</select>
+	<!-- 更新知识分类的名称 -->
+	<update id="updateKLCategoryName">
+		update kl_knowledgecategory 
+		set category_name =#{categoryName},
+			update_user_id=#{userId},
+			update_time =now()
+		where category_id =#{categoryId}
+	</update>
+	
+	<!-- 查询拥有该权限的用户 -->
+	<select id="queryUserIdList" resultType="int">
+		select distinct mur.user_id  from manage_user_role mur left join manage_role_page mrp on mur.role_id = mrp.role_id
+		left join manage_page mp on mrp.page_id = mp.id 
+		left join manage_role mr on mur.role_id = mr.id
+		where mp.url =#{url} and mr.company_id=#{companyId} and mr.sub_company_id =#{subCompanyId} and mp.delete_flag !=1 and mr.status =1
+	</select>
+
+
+
+
+	<!-- chenrui start -->
+
+	<select id="getByCategoryId" resultMap="KLCategoryBean">
+		select * from kl_knowledgecategory kkc where kkc.category_id=#{categoryId} and kkc.is_delete=0 
+	</select>
+	<!-- 根据id获取类别信息 -->
+	<select id="getByCategoryIdWith" resultMap="KLCategoryVo">
+		select * from kl_knowledgecategory kkc where kkc.category_id=#{categoryId} and kkc.is_delete=0 
+	</select>
+	<!-- 获取当前公司所有知识分类信息 -->
+	<select id="getKnowledgeCategory" resultMap="KLCategoryVo">
+		select * from kl_knowledgecategory kkc where kkc.parent_id=0 
+		and kkc.company_id=#{companyId} and kkc.sub_company_id=#{subCompanyId} and kkc.is_delete=0 and kkc.is_accident=0
+	</select>
+	<!-- 根据父id获取子级分类 -->
+	<select id="getKlCategoryByParentId" resultMap="KLCategoryBean">
+		select * from kl_knowledgecategory kkc where kkc.parent_id=#{categoryId} and kkc.is_delete=0
+	</select>
+	<!-- 获取当前知识资源数目统计 -->
+	<select id="getKnowledgeCount" resultMap="klCountsVo">
+		select count(kk.knowledge_id) as allCount,
+		count(case when kk.resource_type=1 then kk.knowledge_id end) as documentCount,
+		count(case when kk.resource_type=2 then kk.knowledge_id end) as videoCount,
+		count(case when kk.resource_type=3 then kk.knowledge_id end) as articleCount
+		from kl_knowledge kk
+		where kk.is_delete=0 and kk.is_open=1 and kk.is_publish=2 and kk.status=2 and kk.is_accident=0
+		and kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}
+	</select>
+	<!-- 获取我贡献的知识的数目 -->
+	<select id="getMyKnowledgeCount" resultType="int">
+		select count(1) from kl_knowledge kk
+		where kk.create_user_id=#{userId} and kk.is_delete=0
+		and kk.is_publish=2 and kk.status=2 and kk.role_type=2
+		and kk.is_open = 1
+		and kk.company_id =#{companyId}
+		and kk.sub_company_id =#{subCompanyId}
+		and kk.is_accident=0
+	</select>
+	<!-- 获取部门知识 -->
+	<select id="getDepartmentKnowledge" resultMap="KnowledgeBeans"
+		parameterType="java.util.List">
+			select kk.*,sum(ke.score_level)/count(ke.id) avgScore,-1 userId from kl_knowledge kk
+			left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+			where kk.is_delete=0 and kk.is_open=1 and kk.is_publish=2 and kk.status=2  and kk.is_accident=0
+			and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4) or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId}) or kk.share_status=7)
+			and kk.create_user_id in(
+			<foreach collection="userList" item="user" separator=",">
+				#{user.id}
+			</foreach>
+			)
+			group by kk.knowledge_id
+			order by avgScore desc
+		
+	</select>
+	<!-- 获取推荐知识 -->
+	<select id="getRecommendKnowledge" resultMap="KnowledgeBeans">
+		select sum(ke.score_level)/count(ke.id) avgScore,-1 userId,kk.* from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		 where kk.is_delete=0 and kk.is_open=1 and kk.is_publish=2 
+		  and kk.status=2 and kk.is_recommend=1 and kk.is_accident=0
+		  and kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId} 
+		GROUP BY kk.knowledge_id
+		order by kk.create_time desc
+		limit 0,5
+	</select>
+
+	<!-- 根据类别获取知识信息 -->
+	<sql id="where_getKnowledgeByCategory">
+		where 1=1 and kk.is_delete=0 
+		and kk.is_open=1 and kk.is_publish=2 and kk.status=2 and kk.is_accident=#{isAccident}
+		and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4)  or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId}) or kk.share_status=7)
+		<if test="subList!=null and subList.size>0"> 
+			and kk.category_id in (
+			<foreach collection="subList" item="item" separator=",">
+				#{item.categoryId}
+			</foreach>
+			)
+		</if>
+		<if test="name!=null and name != ''"> 
+			and kk.knowledge_name like '%${name}%'
+		</if>
+	</sql>
+	
+	<select id="getKnowledgeByCategory" resultMap="KnowledgeBeans">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id) evaluateCount,
+		-1 userId from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id) 
+		<include refid="where_getKnowledgeByCategory"></include>
+		GROUP BY kk.knowledge_id
+		order by kk.create_time ${orderType}
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getKnowledgeByCategoryCount" resultType="int">
+		select count(kk.knowledge_id)
+		from kl_knowledge kk
+		<include refid="where_getKnowledgeByCategory"></include>
+	</select>
+
+	<!-- 获取对应类别下的知识并按评价排序 -->
+	<select id="getKnowledgeOrderByEvaluate" resultMap="KnowledgeBeans">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id) evaluateCount,-1 userId
+		from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		<include refid="where_getKnowledgeByCategory"></include>
+		GROUP BY kk.knowledge_id
+		order by ke.score_level ${orderType}
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getKnowledgeOrderByEvaluateCount" resultType="int">
+		select count(kk.knowledge_id)
+		from kl_knowledge kk
+		<include refid="where_getKnowledgeByCategory"></include>
+	</select>
+	
+	<!-- 获取对应类别下的知识并按热门排序 -->
+	
+	<select id="getKnowledgeOrderByHot" resultMap="KnowledgeBeans">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id) evaluateCount,-1 userId from kl_knowledge kk 
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		left join (select kcd.resource_id,count(1) count from kl_collect_download kcd GROUP BY kcd.resource_id) t 
+		on(t.resource_id=kk.knowledge_id)
+		<include refid="where_getKnowledgeByCategory"></include>
+		GROUP BY kk.knowledge_id
+		order by t.count ${orderType}
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getKnowledgeOrderByHotCount" resultType="int">
+		select count(kk.knowledge_id)
+		from kl_knowledge kk
+		<include refid="where_getKnowledgeByCategory"></include>
+	</select>
+
+	<!-- 获取查看上传知识页面数据信息 -->
+	<select id="getUploadingKnowledge" resultMap="KnowledgeBeans">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id)
+		evaluateCount ,-1 userId
+		from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		where kk.is_delete=0 and kk.knowledge_id=#{knowledgeId}
+	</select>
+
+	<!-- 获取相关推荐的知识数据：根据标签获取匹配的知识,并按浏览数排序取前五条 -->
+	<select id="getRecommends" resultMap="KnowledgeBean">
+		SELECT kk.* FROM kl_knowledge kk 
+		RIGHT JOIN ( SELECT t1.resource_id FROM kl_brower_info kbi 
+			RIGHT JOIN ( 
+				SELECT DISTINCT krt2.resource_id FROM kl_resource_to_tags krt 
+				LEFT JOIN kl_resource_to_tags krt2 ON (krt.tag_id = krt2.tag_id) 
+				WHERE krt.resource_id = #{knowledgeId} ) t1 
+			ON ( t1.resource_id = kbi.resource_id ) 
+			GROUP BY t1.resource_id ORDER BY count(kbi.resource_id) DESC ) t2 
+		ON ( kk.knowledge_id = t2.resource_id ) 
+		WHERE kk.is_delete = 0 AND kk.knowledge_id &lt;&gt; #{knowledgeId}
+		AND (( kk.company_id = #{companyId} AND kk.sub_company_id = #{subCompanyId} ) 
+		OR ( kk.company_id = #{companyId} AND kk.share_status = 4 ) OR kk.share_status = 7 ) 
+		AND kk.is_open = 1 AND kk.is_publish = 2 AND kk. STATUS = 2 and kk.is_accident=0 LIMIT 0, 5
+	</select>
+	<!-- 获取知识贡献者数据（贡献人、贡献数量） -->
+	<select id="getKnowledgeContributor" resultType="com.jftt.wifi.bean.vo.KlContributorVo">
+		select @orderNum:=@orderNum+1 orderNum,counts,create_user_id createUserId from (
+			select @orderNum:=0 orderNum,count(kk.knowledge_id) counts,kk.create_user_id from kl_knowledge kk
+			where kk.is_delete=0 and kk.is_open=1 and kk.is_publish=2 and kk.status=2 and kk.role_type=2 and kk.is_accident=0
+			and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4) or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId}) or kk.share_status=7)
+			group by kk.create_user_id
+			order by count(kk.knowledge_id) DESC
+			limit 0,10
+		) t
+		
+	</select>
+	<!-- 根据条件筛选知识资源 -->
+	<select id="searchKnowledge" resultMap="KnowledgeBean">
+		select * from kl_knowledge kk
+		where 1=1 and kk.is_delete=0
+		and kk.is_open=1 and kk.is_publish=2 and kk.status=2 and kk.is_accident=0
+		and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4) or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId}) or kk.share_status=7)
+		<if test="knowledgeName!=null and knowledgeName!=''"></if>
+		and kk.knowledge_name like CONCAT('%',#{knowledgeName},'%')
+		<if test="fileType!=null and fileType!=''">
+			and kk.extend_name=#{fileType}
+		</if>
+	</select>
+
+
+	<!-- 获取猜你喜欢的知识数据 -->
+	<select id="getGuessLike" resultMap="KnowledgeBean">
+		select kk.* from kl_knowledge kk 
+		RIGHT JOIN (
+			select sum(ke.score_level)/count(t2.resource_id) avgscore,t2.* from
+			(
+			select kbi2.* from (select distinct kbi.user_id from kl_brower_info kbi where kbi.resource_id=#{knowledgeId} and kbi.user_id&lt;&gt;#{userId}) t1
+			LEFT JOIN kl_brower_info kbi2 on(t1.user_id=kbi2.user_id)
+			) t2
+			LEFT JOIN kl_evaluate ke on(t2.resource_id=ke.resource_id)
+			GROUP BY t2.resource_id
+		) t3 ON(t3.resource_id=kk.knowledge_id)
+		where kk.is_delete=0 and kk.is_open=1 and kk.is_publish=2 and kk.status=2 and kk.is_accident=0 and kk.knowledge_id&lt;&gt;#{knowledgeId}
+		and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4) or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId})  or kk.share_status=7)
+		order by t3.avgscore desc
+		limit 0,5
+	
+	</select>
+	
+	<sql id="where_Knowledge">
+		and kk.is_delete=0 and kk.is_accident=0
+		<if test="searchName!=null and searchName!=''">
+			and kk.knowledge_name like CONCAT('%',#{searchName},'%')
+		</if>
+		<if test="categoryName!=null and categoryName!=''">
+			and kkk.category_name = #{categoryName}
+		</if>
+		<if test="isOpen!=null">
+			and kk.is_open = #{isOpen}
+		</if>
+		<if test="status!=null and status!=0">
+			and kk.status = #{status}
+		</if>
+		
+		<if test="startTime!=null and startTime!=''">
+			and DATE_FORMAT(kk.create_time,'%Y-%m-%d')&gt;=#{startTime}
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and DATE_FORMAT(kk.create_time,'%Y-%m-%d')&lt;=#{endTime}
+		</if>
+		
+		<if test="userList!=null and userList.size>0">
+			and kk.create_user_id in(
+			<foreach collection="userList" item="item" separator=",">
+				#{item.id}
+			</foreach>
+			)
+		</if>
+	</sql>
+	<!-- 我上传的知识 -->
+	<select id="getMyUploadKnowledge" resultMap="KnowledgeBeans">
+		select kk.*,kkk.category_name categoryName,#{userId} userId from kl_knowledge kk 
+		left join kl_knowledgecategory kkk on(kkk.category_id =kk.category_id)
+		where kk.create_user_id=#{userId} and kk.role_type=2
+		<include refid="where_Knowledge"></include>
+		order by kk.create_time desc
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getMyUploadKnowledgeCount" resultType="int">
+		select count(1) from kl_knowledge kk 
+		left join kl_knowledgecategory kkk on(kkk.category_id =kk.category_id)
+		where kk.create_user_id=#{userId} and kk.role_type=2
+		<include refid="where_Knowledge"></include>
+	</select>
+	<!-- 他人的知识查看 -->
+	<select id="getOthersKnowledge" resultMap="KnowledgeBeans">
+		select kk.*,kkk.category_name categoryName,#{othersId} userId from kl_knowledge kk 
+		left join kl_knowledgecategory kkk on(kkk.category_id =kk.category_id)
+		where kk.create_user_id=#{othersId}
+		and kk.is_delete=0 and kk.is_open=1 and kk.is_publish=2 and kk.status=2
+		and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4) or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId})  or kk.share_status=7)
+		<include refid="where_Knowledge"></include>
+		order by kk.create_time desc
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getOthersKnowledgeCount" resultType="int">
+		select count(1) from kl_knowledge kk 
+		left join kl_knowledgecategory kkk on(kkk.category_id =kk.category_id)
+		where kk.create_user_id=#{othersId}
+		and kk.is_open=1 and kk.is_publish=2 and kk.status=2
+		and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4) or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId})  or kk.share_status=7)
+		<include refid="where_Knowledge"></include>
+	</select>
+	<!-- 我收藏下载的知识 -->
+	<select id="getMyKnowledgeForCollectDownload" resultMap="KnowledgeBeans">
+		select kk.*,kkk.category_name categoryName,kcd.id colDowId,#{userId} userId from kl_knowledge kk
+		left join kl_collect_download kcd on(kk.knowledge_id=kcd.resource_id)
+		left join kl_knowledgecategory kkk on(kkk.category_id =kk.category_id)
+		where kcd.operate_type=#{operateType} and kcd.user_id=#{userId}
+		<include refid="where_Knowledge"></include>
+		order by kk.create_time desc
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getMyKnowledgeForCollectDownloadCount" resultType="int">
+		select count(1) from kl_knowledge kk
+		left join kl_collect_download kcd on(kk.knowledge_id=kcd.resource_id)
+		left join kl_knowledgecategory kkk on(kkk.category_id =kk.category_id)
+		where kcd.operate_type=#{operateType} and kcd.user_id=#{userId}
+		<include refid="where_Knowledge"></include>
+	</select>
+	
+	<!-- 删除知识根据id -->
+	<update id="delKlById">
+		update kl_knowledge kk set kk.is_delete=1 
+		where kk.knowledge_id=#{id}
+	</update>
+	
+	<!-- 公开知识操作 -->
+	<update id="toPublic">
+		update kl_knowledge kk set kk.is_open=1,kk.status=1 where kk.knowledge_id=#{id}
+	</update>
+	
+	<!-- 更新知识基础信息 -->
+	<update id="updateKl">
+		update kl_knowledge kk set kk.category_id=#{categoryId},kk.is_open=#{isOpen},
+		kk.is_download=#{isDownload},kk.tags=#{tags},kk.knowledge_desc=#{knowledgeDesc}
+		where kk.id=#{knowledgeId}
+	</update>
+	<!-- 全文检索过滤后获取基础信息 -->
+	<select id="getFullSearchKnowledgeById" resultMap="KnowledgeBeans2">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id) evaluateCount from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)  where kk.knowledge_id = #{knowledgeId}
+	</select>
+	<sql id="where_searchKl">
+		where 1=1 and kk.is_delete=0 and kk.is_open=1 and kk.is_publish=2 and kk.status=2 and kk.is_accident=0
+		and ((kk.company_id=#{companyId} and kk.sub_company_id=#{subCompanyId}) or (kk.company_id=#{companyId} and kk.share_status=4) or (kk.company_id=#{subCompanyId} AND kk.sub_company_id != #{subCompanyId})  or kk.share_status=7)
+		<!-- <if test="knowledgeName!=null and knowledgeName!=''">
+			and kk.knowledge_name like CONCAT('%',#{knowledgeName},'%')
+		</if> -->
+		<if test="idsStr!=null and idsStr!=''">
+			and find_in_set(kk.knowledge_id,#{idsStr})
+		</if>
+		<if test="extendName!=null and extendName!=''">
+			and kk.extend_name like CONCAT('%',#{extendName},'%')
+		</if>
+	</sql>
+	<!-- 知识首页 搜索（默认时间排序） -->
+	<select id="getSearchKnowledge" resultMap="KnowledgeBeans2">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id) evaluateCount from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id) 
+		<include refid="where_searchKl"></include>
+		GROUP BY kk.knowledge_id
+		 order by kk.create_time ${orderType}
+		limit ${fromNum},${pageSize}
+	</select>
+	
+	<select id="getSearchKnowledgeCount" resultType="int">
+		select count(1) from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id) 
+		<include refid="where_searchKl"></include>
+	</select>
+	
+	<!-- 知识首页 搜索 按评价 -->
+	
+	<select id="getSearchKnowledgeByEvaluate"  resultMap="KnowledgeBeans2">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id) evaluateCount
+		from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		<include refid="where_searchKl"></include>
+		GROUP BY kk.knowledge_id
+		order by ke.score_level ${orderType}
+		limit ${fromNum},${pageSize}
+	</select>
+	
+	<select id="getSearchKnowledgeByEvaluateCount"  resultType="int">
+		select count(1)
+		from kl_knowledge kk
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		<include refid="where_searchKl"></include>
+	</select>
+	
+	<!-- 知识首页 搜索 按热门 -->
+	
+	<select id="getSearchKnowledgeByHot" resultMap="KnowledgeBeans2">
+		select kk.*,sum(ke.score_level)/count(ke.id) avgScore,count(ke.id) evaluateCount from kl_knowledge kk 
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		left join (select kcd.resource_id,count(1) count from kl_collect_download kcd GROUP BY kcd.resource_id) t 
+		on(t.resource_id=kk.knowledge_id)
+		<include refid="where_searchKl"></include>
+		GROUP BY kk.knowledge_id
+		order by t.count ${orderType}
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getSearchKnowledgeByHotCount" resultType="int">
+		select count(0) from kl_knowledge kk 
+		left join kl_evaluate ke on(ke.resource_id=kk.knowledge_id)
+		left join (select kcd.resource_id,count(1) count from kl_collect_download kcd GROUP BY kcd.resource_id) t 
+		on(t.resource_id=kk.knowledge_id)
+		<include refid="where_searchKl"></include>
+	</select>
+	
+	<!-- 批量删除知识 -我上传的知识中用到 -->
+	<delete id="toDeleteMoreWithMy">
+		update kl_knowledge set is_delete=1
+		where knowledge_id in(
+		<foreach collection="ids" item="id" separator=",">
+			#{id}
+		</foreach>
+		)
+	</delete>
+	
+	<update id="doRecommend">
+		update kl_knowledge set is_recommend=#{type}
+		where knowledge_id = #{id}
+	</update>
+	
+	<!-- 用于全文检索 -->
+	<select id="getAllByElastisearch" resultMap="KnowledgeBean">
+		select * from kl_knowledge kk where is_delete=0 and is_accident=0
+	</select>
+	
+	<!-- chenrui end -->
+	
+	<!-- luyunlong start -->
+	<!-- 事故分类bean -->
+	<select id="getAccidentCategory" resultMap="KLCategoryBean">
+		SELECT * FROM kl_knowledgecategory
+		WHERE is_accident=1 and company_id=#{companyId}
+		<if test="name != null and name != ''">
+			and category_name like '%${name}%'
+		</if>
+		union 
+		SELECT * FROM kl_knowledgecategory
+		WHERE is_accident=1 and company_id=1 and sub_company_id=1
+		<if test="name != null and name != ''">
+			and category_name like '%${name}%'
+		</if>
+	</select>
+	<!--  -->
+</mapper>

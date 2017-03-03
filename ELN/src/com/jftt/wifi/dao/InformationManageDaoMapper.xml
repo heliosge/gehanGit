@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.InformationManageDaoMapper">
+	<resultMap id="InformationBean" type="com.jftt.wifi.bean.InformationBean">
+		<result column="info_id" property="infoId"/>
+		<result column="company_id" property="companyId" />
+		<result column="info_name" property="infoName" />
+		<result column="info_content" property="infoContent" />
+		<result column="is_publish" property="isPublish" />
+		<result column="is_banner" property="isBanner" />
+		<result column="banner_file_name" property="bannerFileName" />
+		<result column="banner_file_path" property="bannerFilePath" />
+		<result column="create_user_id" property="createUserId" />
+		<result column="create_time" property="createTime" />
+	</resultMap>
+	
+	<resultMap id="InfoAboutUsBean" type="com.jftt.wifi.bean.InfoAboutUsBean">
+		<result column="id" property="id"/>
+		<result column="company_id" property="companyId" />
+		<result column="info_desc" property="infoDesc" />
+		<result column="type" property="type" />
+	</resultMap>
+
+<!-- 根据公司ID查询资讯列表 -->
+	<select id="querylistInformation" parameterType="com.jftt.wifi.bean.InformationBean" resultMap="InformationBean">
+		select
+		*
+		from info_information  
+		where company_id=#{companyId} and is_delete!="1"
+			<if test="roleType==2">
+		       <!-- 学员端列表获取  -->
+		       and is_publish = 1
+	        </if>
+			<if test="userName != null and userName!=''">
+               and create_user_id  in (${userIds}) 
+           </if>
+           <if test="infoName!= null and infoName!= '' ">
+           	and info_name like CONCAT('%',#{infoName},'%')     
+           </if>
+           <if test="beginTime!= null and beginTime!= '' ">
+           	and DATE_FORMAT(create_time,'%Y-%m-%d')   <![CDATA[ >=]]> #{beginTime}    
+           </if>
+           <if test="endTime!= null and endTime!= '' ">
+           	and DATE_FORMAT(create_time,'%Y-%m-%d') <![CDATA[ <= ]]> #{endTime}        
+           </if>
+		order by create_time desc
+		limit ${fromNum},${page}
+	</select>
+	
+	<select id="queryInformationCount" parameterType="com.jftt.wifi.bean.InformationBean" resultType="int">
+		select
+		count(1)
+		from info_information  
+		where company_id=#{companyId} and is_delete!="1"
+			<if test="roleType==2">
+	           	<!-- 学员端列表获取  -->
+	           	and is_publish = 1
+          	 </if>
+			<if test="userName != null and userName!=''">
+               and create_user_id  in (${userIds}) 
+           </if>
+           <if test="infoName!= null and infoName!= '' ">
+           	and info_name like CONCAT('%',#{infoName},'%')     
+           </if>
+           <if test="beginTime!= null and beginTime!= '' ">
+           	and create_time <![CDATA[ > ]]> #{beginTime}    
+           </if>
+           <if test="endTime!= null and endTime!= '' ">
+           	and create_time <![CDATA[ < ]]> #{endTime}        
+           </if>
+		order by create_time desc
+	</select>
+	
+
+	<!-- 根据资讯id查询资讯的详细信息 -->
+	<select id="queryInformation" parameterType="com.jftt.wifi.bean.InformationBean" resultMap="InformationBean">
+		select
+		*
+		from info_information  
+		where info_id=#{infoId}
+	</select>
+	
+	<!-- 保存资讯信息 -->
+	<insert id="saveInformation" parameterType="com.jftt.wifi.bean.InformationBean">
+		insert into info_information( 
+		company_id,info_name,info_content,is_publish,is_banner,
+		banner_file_name,banner_file_path,create_user_id,create_time,update_user_id,update_time,is_delete)
+		values(
+		#{companyId},#{infoName},#{infoContent},0,#{isBanner},
+		#{bannerFileName},#{bannerFilePath},#{userId},now(),#{userId},now(),0)
+	</insert>
+
+
+	<!-- 更新资讯信息 -->
+	<update id="updateInfomation" parameterType="com.jftt.wifi.bean.InformationBean">
+		update info_information 
+		set info_name = #{infoName},info_content =#{infoContent},is_banner =#{isBanner},
+		banner_file_name=#{bannerFileName},banner_file_path=#{bannerFilePath},update_user_id=#{userId},
+		update_time=now()
+		where info_id=#{infoId}
+	</update>
+
+	
+	<!-- 删除资讯信息 -->
+	<update id="deleteOneInformation" parameterType="String">
+		update info_information set is_delete = "1",
+		update_user_id=#{userId},update_time= now()
+		where info_id =#{infoId}
+	</update>
+	
+	<!-- 更新发布资讯信息 -->
+	<update id="updateInfoPuslish" parameterType="String">
+		update info_information set is_publish = #{isPublish},
+		update_user_id=#{userId},update_time= now()
+		where info_id =#{infoId}
+	</update>
+	
+	<!-- 保存关于我们 -->
+	<insert id="saveAboutUsInfo" >
+		replace into info_aboutus( company_id,type,info_desc,update_user_id,update_time)
+		values(#{companyId},#{type},#{infoDesc},#{userId},now())
+	</insert>
+	<!-- 查询关于我们 -->
+	<select id="queryAboutUsInfo" parameterType="java.util.HashMap" resultType="String">
+		select
+		info_desc
+		from info_aboutus  
+		where company_id=#{companyId} and type= #{type}
+	</select>
+	
+	
+</mapper>

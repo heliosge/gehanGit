@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.QuestionnaireRelationDaoMapper">
+    <resultMap type="com.jftt.wifi.bean.questionnaire.QuestionnaireRelationBean" id="questionnaireRelationMap">
+        <id property="id" column="id"/>
+        <result property="questionnaireId" column="questionnaire_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <!--新增问题关联信息  -->
+	<insert id="addQuestionnaireRelation" useGeneratedKeys="true" keyProperty="id">
+		insert into questionnaire_relation
+		(questionnaire_id, question_id, order_num)
+		values(#{questionnaireId}, #{questionId}, #{orderNum})
+	</insert>
+	
+	<!--获取问题关联信息列表  -->
+	<select id="getQuestionnaireRelationList" resultMap="questionnaireRelationMap">
+	   select * from questionnaire_relation
+	   where questionnaire_id = #{questionnaireId}
+       order by order_num
+	</select>
+	
+</mapper>

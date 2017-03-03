@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamQuestionCategoryDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.exam.QuestionCategoryBean" id="questionCategoryMap">
+        <id property="id" column="id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    
+    <select id="getQuestionCategoryList" resultMap="questionCategoryMap">
+        select
+            *
+        from exam_question_category
+        <where>
+            <if test="subCompanyId != null">
+                sub_company_id=#{subCompanyId}
+            </if>
+        	<if test="companyId != null">
+        		and company_id=#{companyId}
+        	</if>
+          	and (is_deleted is null or is_deleted != 1)
+        </where>
+        order by create_time
+    </select>
+    
+    <select id="getCategory" resultMap="questionCategoryMap">
+        select * from exam_question_category
+        where id=#{categoryId}
+    </select>
+    
+    <update id="deleteCategory">
+    	update exam_question_category
+    	set is_deleted=1
+    	where id=#{categoryId}
+    </update>
+    
+    <update id="modifyCategory">
+    	update exam_question_category
+    	<set>
+    		<if test="name != null and name != ''">name=#{name},</if>
+    		<if test="description != null and description != ''">description=#{description}</if>
+    	</set>
+    	where id=#{id}
+    </update>
+    
+    <insert id="addCategory">
+    	insert into exam_question_category
+    	(parent_id, name, description, create_user_id, create_time, update_time, is_deleted, sub_company_id, company_id)
+    	values (#{parentId}, #{name}, #{description}, #{createUserId}, now(), now(), 0, #{subCompanyId}, #{companyId})
+    </insert>
+    
+    <select id="hasSubCategory" resultType="Boolean">
+    	select count(1) from exam_question_category
+    	where parent_id=#{categoryId}
+    	  and (is_deleted is null or is_deleted != 1)
+    </select>
+    
+    <select id="hasQuestion" resultType="Boolean">
+    	select count(1) from exam_question
+    	where category_id=#{categoryId}
+    	  and (is_deleted is null or is_deleted != 1)
+    </select>
+    
+    <select id="getCategoryFamilyTree" resultType="String">
+        select get_question_category_family_tree(#{categoryId}, #{subCompanyId})
+    </select>
+    
+    <!--zhangchen start  -->
+    <!--获取顶层试题分类  -->
+     <select id="getParentCategory" resultMap="questionCategoryMap">
+        select * from exam_question_category
+		 <where>
+            <if test="subCompanyId != null">
+                sub_company_id=#{subCompanyId}
+            </if>
+        	<if test="companyId != null">
+        		and company_id=#{companyId}
+        	</if>
+          	and (is_deleted is null or is_deleted != 1)
+          	and parent_id is null
+        </where>	
+    </select>
+    <!--通过parentId获取一级子分类  -->
+    <select id="getCategoryByParentId" resultMap="questionCategoryMap">
+        select * from exam_question_category
+		 <where>
+          	<if test="subCompanyId != null">
+                sub_company_id=#{subCompanyId}
+            </if>
+        	<if test="companyId != null">
+        		and company_id=#{companyId}
+        	</if>
+          	and (is_deleted is null or is_deleted != 1)
+          	and parent_id = #{id}
+        </where>	
+    </select>
+    <!--zhangchen end  -->
+</mapper>

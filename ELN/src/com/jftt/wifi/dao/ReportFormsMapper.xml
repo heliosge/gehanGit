@@ -1,0 +1,950 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.ReportFormsMapper" >
+	<!-- chenrui start -->
+  
+  <select id="getStuTotalityInfoForm" resultType="com.jftt.wifi.bean.vo.StuTotalityInfoFormVo">
+	select userInfo.userId,userInfo.name,userInfo.deptName,userInfo.postName,it.total_integral getIntegral,selfInfo.finishCourseBySelf,
+			appointInfo.finishCourseByAppoint,courseInfo.getCredit,courseInfo.totalStuTime,
+			examInfo.attendExamCounts,IFNULL(examInfo.passCount/examInfo.attendExamCounts,0) passExamRate
+	from (
+		<foreach collection="users" item="user" separator="union">
+			select #{user.id} userId,#{user.name} name ,#{user.deptName} deptName,#{user.postName} postName from dual
+		</foreach>
+		) userInfo
+		left join int_totalintegral it on(userInfo.userId = it.user_id)
+		left join 
+		<!-- 获取当前用户学分、总学时 -->
+		(select csr.user_id,sum(rc.learn_score) getCredit,sum(rc.learn_time) totalStuTime from course_study_record csr
+		left join res_course rc on(rc.id = csr.course_id)
+		where csr.company_id = #{params.companyId} <!-- and csr.sub_company_id = #{params.subCompanyId}  -->
+			and csr.learn_process = 2 and rc.type = 1
+		group by csr.user_id) courseInfo  on(userInfo.userId = courseInfo.user_id)
+		left join 
+		<!-- 获取完成自学课程数  -->
+		(
+			select tmpSelf.user_id,count(tmpSelf.id) finishCourseBySelf from (
+				select csr2.* from course_study_record csr2 where csr2.course_id not in (
+					select DISTINCT csr.course_id
+					from course_study_record csr 
+					JOIN
+					(select DISTINCT lpa.user_id,lpscr.course_id from learn_plan_assignment lpa
+					left join learn_plan_stage lps on(lpa.plan_id = lps.plan_id)
+					left join learn_plan_stage_course_relation lpscr on(lpscr.stage_id = lps.id)
+					where lpscr.is_disabled!=1) planInfo on(csr.course_id = planInfo.course_id and planInfo.user_id = csr.user_id)
+				)
+			) tmpSelf
+			left join res_course rc on(rc.id = tmpSelf.course_id)
+			where tmpSelf.company_id = #{params.companyId} <!-- and tmpSelf.sub_company_id = #{params.subCompanyId}  -->
+				and tmpSelf.learn_process = 2  and rc.type = 1
+			group by tmpSelf.user_id
+		) selfInfo on(userInfo.userId = selfInfo.user_id)
+		left join
+		<!-- 获取完成指派学习课程数 -->
+		(select tmpAppoint.user_id,count(tmpAppoint.id) finishCourseByAppoint from (
+			select DISTINCT csr.*
+			from course_study_record csr 
+			JOIN
+			(select DISTINCT lpa.user_id,lpscr.course_id from learn_plan_assignment lpa
+			left join learn_plan_stage lps on(lpa.plan_id = lps.plan_id)
+			left join learn_plan_stage_course_relation lpscr on(lpscr.stage_id = lps.id)
+			where lpscr.is_disabled!=1) planInfo on(csr.course_id = planInfo.course_id and planInfo.user_id = csr.user_id)
+		) tmpAppoint
+		left join res_course rc on(rc.id = tmpAppoint.course_id)
+		where tmpAppoint.company_id = #{params.companyId} <!-- and tmpAppoint.sub_company_id = #{params.subCompanyId}  -->
+		and tmpAppoint.learn_process = 2 and rc.type = 1
+		group by tmpAppoint.user_id) appointInfo  on(userInfo.userId = appointInfo.user_id)
+		<!-- 获取当前考试统计信息 -->
+		left join (select eai.user_id,count(0) attendExamCounts,
+			case when eai.is_passed = 1 then count(0) end passCount from exam_assign_info eai 
+			where eai.relation_type = 1 and eai.test_times > 0
+			group by eai.user_id) examInfo on(userInfo.userId = examInfo.user_id)
+		<!-- 以下注释的为业务取消 -->
+		<!-- 获取分享的知识数 -->
+		<!-- left join 
+		(select kl.create_user_id, count(0) shareKnowledgeCount from kl_knowledge kl 
+		where kl.is_delete = 0 and kl.is_accident = 0 and kl.company_id = #{params.companyId} 
+		and kl.sub_company_id = #{params.subCompanyId} and kl.share_status > 4 and kl.status = 2
+		group by kl.create_user_id) knowledgeInfo on(userInfo.userId = knowledgeInfo.create_user_id) -->
+		<!-- 获取我提问信息统计 -->
+		<!-- left join 
+		(select cqt.user_id,count(0) askCounts from course_question_topic cqt
+		where cqt.company_id = #{params.companyId} and cqt.sub_company_id = #{params.subCompanyId}) askInfo 
+		on(userInfo.userId = askInfo.user_id) -->
+		<!-- 获取我回答的信息统计  -->
+		<!-- left join 
+		(select cqr.user_id,count(0) answerCounts from course_question_reply cqr
+		where cqr.company_id = #{params.companyId} and cqr.sub_company_id = #{params.subCompanyId}) answerInfo 
+		on(userInfo.userId = answerInfo.user_id) -->
+		<!-- 获取评论总数 -->
+		<!-- left join 
+		(select ce.user_id,count(0) evaluationCounts from course_evaluation ce
+		where ce.company_id = #{params.companyId} and ce.sub_company_id = #{params.subCompanyId}) evaluationInfo 
+		on(userInfo.userId = evaluationInfo.user_id) -->
+		limit ${params.fromNum},${params.pageSize}
+  </select>
+	
+	<!-- 获得总的学习情况 -->
+	<select id="getLearnALL" resultType="com.jftt.wifi.bean.vo.StuStudyInfoFormVo" >
+		select
+			csr.user_id userId, count(csr.id) totalCourse, sum(rc.learn_score) totalCredit, sum(rc.learn_time) totalTime
+		 from course_study_record csr
+		 left join res_course rc on rc.id = csr.course_id
+		 where
+		 	csr.company_id = #{companyId}
+		 	and csr.learn_process = 2
+		 	<if test="userList !=null and userList.size() > 0 ">
+		 		and csr.user_id in
+		 		<foreach collection="userList" item="user" open="(" close=")" separator="," >
+		 			#{user}
+		 		</foreach>
+		 		group by csr.user_id
+		 	</if>
+	</select>
+	
+	<!-- 获得总的指定学习的情况  -->
+	<select id="getLearnPoint" resultType="com.jftt.wifi.bean.vo.StuStudyInfoFormVo" >
+		select
+			csr.user_id userId, count(csr.id) finishCourseByAppoint, sum(rc.learn_score) getCreditByAppoint, sum(rc.learn_time) finishCourseTimeByAppoint
+		 from course_study_record csr
+		 left join res_course rc on rc.id = csr.course_id
+		 where
+		 	csr.company_id = #{companyId}
+		 	and csr.learn_process = 2
+		 	and rc.type = 1
+		 	<!-- 非自学 -->
+		 	<!-- 这课程在指定课程中 -->
+		 	and rc.id in
+		 	(
+		 		select lpscr.course_id
+		 		from learn_plan_assignment lpa
+		 		left join learn_plan_stage lps on (lpa.plan_id = lps.plan_id)
+		 		left join learn_plan_stage_course_relation lpscr on (lpscr.stage_id = lps.id)
+		 		<!-- left join learn_plan lp on (lp.id = lpa.plan_id) -->
+		 		where <!-- lp.company_id = #{companyId} -->
+		 		<if test="userList !=null and userList.size() > 0 ">
+			 		lpa.user_id in
+			 		<foreach collection="userList" item="user" open="(" close=")" separator="," >
+			 			#{user}
+			 		</foreach>
+			 	</if>
+		 	)
+		 	<!-- 这个人在指定课程中 -->
+		 	and csr.user_id in
+		 	(
+		 		select lpa.user_id
+		 		from learn_plan_assignment lpa
+		 		<!-- left join learn_plan_stage lps on (lpa.plan_id = lps.plan_id)
+		 		left join learn_plan_stage_course_relation lpscr on (lpscr.stage_id = lps.id)
+		 		left join learn_plan lp on (lp.id = lpa.plan_id) -->
+		 		where <!-- lp.company_id = #{companyId} -->
+		 		<if test="userList !=null and userList.size() > 0 ">
+			 		lpa.user_id in
+			 		<foreach collection="userList" item="user" open="(" close=")" separator="," >
+			 			#{user}
+			 		</foreach>
+			 	</if>
+		 	)
+		 	<if test="userList !=null and userList.size() > 0 ">
+		 		and csr.user_id in
+		 		<foreach collection="userList" item="user" open="(" close=")" separator="," >
+		 			#{user}
+		 		</foreach>
+		 		group by csr.user_id
+		 	</if>
+	</select>
+	
+	<!-- 获得有指派课程的人 -->
+	<select id="selectUserIdHavePoint" resultType="int" >
+		select lpa.user_id
+ 		from learn_plan_assignment lpa
+ 		left join learn_plan_stage lps on (lpa.plan_id = lps.plan_id)
+		left join learn_plan_stage_course_relation lpscr on (lpscr.stage_id = lps.id)
+		left join learn_plan lp on (lp.id = lpa.plan_id)
+ 		where lp.company_id = #{companyId}
+ 		GROUP BY lpa.user_id
+	</select>
+	
+	<select id="getStuStudyInfoForm" resultType="com.jftt.wifi.bean.vo.StuStudyInfoFormVo">
+			select userInfo.userId,userInfo.name,userInfo.sex,userInfo.userName,userInfo.deptName,
+			userInfo.postName,selfInfo.finishCourseBySelf,selfInfo.getCreditBySelf,
+			selfInfo.finishCourseTimeBySelf,appointInfo.finishCourseByAppoint,appointInfo.getCreditByAppoint,
+			appointInfo.finishCourseTimeByAppoint from (
+				<foreach collection="users" item="user" separator="union">
+					select #{user.id} userId,#{user.userName} userName,#{user.sex} sex,
+					#{user.name} name,#{user.deptName} deptName,#{user.postName} postName from dual
+				</foreach>
+			) userInfo
+		left join 
+		<!-- 获取自学课程信息  -->
+		(select
+			csr.user_id, count(csr.id) finishCourseBySelf, sum(rc.learn_score) getCreditBySelf, sum(rc.learn_time) finishCourseTimeBySelf
+		 from course_study_record csr
+		 left join res_course rc.id = csr.course_id
+		 where
+		 	csr.company_id = #{params.companyId}
+		 	and csr.learn_process = 2
+		 	and rc.type = 1
+		 	<!-- 非自学 -->
+		 	(
+		 		select 
+		 		from learn_plan_assignment lpa
+		 		left join learn_plan_stage lps on (lpa.plan_id = lps.plan_id)
+		 		left join learn_plan_stage_course_relation lpscr on (lpscr.stage_id = lps.id)
+		 	)
+		 group by csr.user_id
+		)
+		
+		<!-- 获取自学课程信息  -->
+		(
+			select tmpSelf.user_id,count(tmpSelf.id) finishCourseBySelf,sum(rc.learn_score) getCreditBySelf,sum(rc.learn_time) finishCourseTimeBySelf from (
+				select csr2.* from course_study_record csr2 where csr2.course_id not in (
+					select DISTINCT csr.course_id
+					from course_study_record csr 
+					JOIN
+					(select DISTINCT lpa.user_id,lpscr.course_id from learn_plan_assignment lpa
+					left join learn_plan_stage lps on(lpa.plan_id = lps.plan_id)
+					left join learn_plan_stage_course_relation lpscr on(lpscr.stage_id = lps.id)
+					where lpscr.is_disabled!=1) planInfo on(csr.course_id = planInfo.course_id and planInfo.user_id = csr.user_id)
+				)
+			) tmpSelf
+			left join res_course rc on(rc.id = tmpSelf.course_id)
+			where tmpSelf.company_id = #{params.companyId} <!-- and tmpSelf.sub_company_id = #{params.subCompanyId} -->
+			 and tmpSelf.learn_process = 2 and rc.type = 1
+			group by tmpSelf.user_id
+		) selfInfo on(userInfo.userId = selfInfo.user_id)
+		left join
+		<!-- 获取获得指派课程学分、完成指派课程学时、完成指派学习课程数 -->
+		(select tmpAppoint.user_id,count(tmpAppoint.id) finishCourseByAppoint,sum(rc.learn_score) getCreditByAppoint,sum(rc.learn_time) finishCourseTimeByAppoint from (
+			select DISTINCT csr.*
+			from course_study_record csr 
+			JOIN
+			(select DISTINCT lpa.user_id,lpscr.course_id from learn_plan_assignment lpa
+			left join learn_plan_stage lps on(lpa.plan_id = lps.plan_id)
+			left join learn_plan_stage_course_relation lpscr on(lpscr.stage_id = lps.id)
+			where lpscr.is_disabled!=1) planInfo on(csr.course_id = planInfo.course_id and planInfo.user_id = csr.user_id)
+		) tmpAppoint
+		left join res_course rc on(rc.id = tmpAppoint.course_id)
+		where tmpAppoint.company_id = #{params.companyId} <!-- and tmpAppoint.sub_company_id = #{params.subCompanyId}  -->
+		and tmpAppoint.learn_process = 2 and rc.type = 1
+		group by tmpAppoint.user_id) appointInfo  on(userInfo.userId = appointInfo.user_id)
+		<if test="isSearchAll == 2">
+			limit ${params.fromNum},${params.pageSize}
+		</if>
+	</select>
+	
+	
+	<!-- chenrui end -->
+	
+	<!-- zhangchen start -->
+	<!--获取课程基本信息  -->
+	<select id="getResCourse" resultType="com.jftt.wifi.bean.ResCourseBean">
+		<!-- select id,category_id categoryId,code,name,type,learn_time learnTime,learn_score learnScore,
+				company_id companyId,sub_company_id subCompanyId
+		from res_course
+		where status = 2 and mall_status = 1 -->
+		<!-- select b.user_id userId,a.* 
+		from(
+				select id,category_id categoryId,code,name,type,learn_time learnTime,learn_score learnScore,
+						company_id companyId,sub_company_id subCompanyId
+				from res_course
+				where status = 2 and (mall_status = 1 or mall_status = 3 or mall_status = 4)
+				and type = 1
+			) a
+		left join course_study_record b
+		on a.id = b.course_id
+		where 1=1 -->
+		select id,category_id categoryId,code,name,type,learn_time learnTime,learn_score learnScore,
+				company_id companyId,sub_company_id subCompanyId
+		from res_course
+		<!-- and (mall_status = 1 or mall_status = 3 or mall_status = 4) -->
+		<!-- <if test="courseType != null">
+			and a.type = #{courseType}
+		</if> -->
+		<where>
+			<if test="subCompanyId != null">
+				and sub_company_id = #{subCompanyId}
+			</if>
+			<if test="companyId != null">
+				and company_id = #{companyId}
+			</if>
+			<if test="courseName != null and courseName != ''">
+				and name like concat('%', #{courseName}, '%')
+			</if>
+			and status = 2
+			and type = 1
+		</where>
+		<!-- <if test="userList != null and userList.size()>0">
+           and b.user_id in (
+          	<foreach collection="userList" item="user" separator=",">
+          		#{user.id}
+          	</foreach>
+         	)
+         </if> -->
+		<if test="fromNum != null">
+			limit ${fromNum},${pageSize}
+		</if> 
+	</select>
+	
+	<!--获取课程基本信息条数  -->
+	<select id="getResCourseCount" resultType="int">
+		<!-- select count(1) 
+		from(
+				select id,category_id categoryId,code,name,type,learn_time learnTime,learn_score learnScore,
+						company_id companyId,sub_company_id subCompanyId
+				from res_course
+				where status = 2 and (mall_status = 1 or mall_status = 3 or mall_status = 4)
+				and type = 1
+			) a
+		left join course_study_record b
+		on a.id = b.course_id -->
+		select count(1)
+		from res_course
+		<where>
+			<if test="subCompanyId != null">
+				and sub_company_id = #{subCompanyId}
+			</if>
+			<if test="companyId != null">
+				and company_id = #{companyId}
+			</if>
+			<if test="courseName != null and courseName != ''">
+				and name like concat('%', #{courseName}, '%')
+			</if>
+			and status = 2
+			and type = 1
+		</where>
+		<!-- and (mall_status = 1 or mall_status = 3 or mall_status = 4) -->
+		<!-- <if test="courseType != null">
+			and type = #{courseType}
+		</if> -->
+		<!-- <if test="userList != null and userList.size()>0">
+           and b.user_id in (
+          	<foreach collection="userList" item="user" separator=",">
+          		#{user.id}
+          	</foreach>
+         	)
+         </if> -->
+	</select>
+	
+	<!--获取正在学习人数或已完成学习人数  -->
+	<select id="getLearnNum" resultType="int">
+		select count(1)
+		from course_study_record
+		where course_id = #{courseId} and learn_process = #{learnProcess} 
+		<if test="withManager !=null and withManager == 'no' ">
+       		and user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+       	</if>
+	</select>
+	
+	<!--获取课件学习总时长  -->
+	<select id="getCourseTotalDuration" resultType="int">
+		select sum(ifnull(b.total_duration,0)) 
+		from (
+				select * from course_study_record
+				<where>
+					<if test="courseId != null">and course_id = #{courseId}</if>
+					<if test="userId != null">and user_id = #{userId}</if>
+					<if test="withManager !=null and withManager == 'no' ">
+       					and user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+       				</if>
+				</where>
+		) a
+		left join course_ware_record b
+		on a.id = b.record_id
+		<!-- group by a.course_id -->
+	</select>
+	
+	<!--根据课程ID获取课程开放人群   暂时未用-->
+	<select id="getOpenCrowd" resultType="int" parameterType="com.jftt.wifi.bean.ResCourseOpenCrowdBean">
+		select * from res_course_open_crowd
+		where course_id = #{courseId}
+	</select>
+	
+	<!--根据课程ID获取学习计划中安排的人员 暂时未用 -->
+	<select id="getPlanUserId" resultType="int" parameterType="String">
+		select GROUP_CONCAT(DISTINCT(d.user_id)) 
+		from (
+			select plan_id from(
+				select stage_id,course_id from learn_plan_stage_course_relation
+				where course_id = #{courseId}
+			) a
+			left join learn_plan_stage b
+			on a.stage_id = b.id
+		) c
+		left join learn_plan_assignment d
+		on c.plan_id = d.plan_id
+	</select>
+	
+	<!--查询课程名  -->
+	<select id="selectValues"  resultType="String">
+		select name from res_course
+	</select>
+	
+	<!--通过课程名查询课程信息  -->
+	<select id="getCourseInfo" resultType="com.jftt.wifi.bean.ResCourseBean" parameterType="int">
+		select id,code,name,type,learn_time learnTime,learn_score learnScore from res_course
+		<!-- where name = #{courseName} -->
+		where id = #{courseId}
+	</select>
+	
+	<!--通过课程名查询学习记录  -->
+	<select id="getCourseStudyRecordByCourse" resultType="com.jftt.wifi.bean.vo.CourseDetailByCourseVo">
+		select user_id userId,course_id courseId,DATE_FORMAT(start_time, '%Y-%m-%d %H:%i:%S') startTime,
+				DATE_FORMAT(this_learn_time, '%Y-%m-%d %H:%i:%S') thisLearnTime,learn_process learnProcess
+		from course_study_record
+		where course_id = #{courseId}
+		<!-- where course_id = (
+			select id from res_course
+			where name = #{courseName}
+		) -->
+		<if test="userList != null and userList.size()>0">
+           and user_id in (
+          	<foreach collection="userList" item="user" separator=",">
+          		#{user.id}
+          	</foreach>
+         	)
+         </if>
+         <if test="withManager !=null and withManager == 'no' ">
+       		and user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+       	 </if>
+         <if test="learn_process !=null ">
+         	AND learn_process = #{learn_process}
+         </if>
+		<if test="fromNum != null">
+			limit ${fromNum},${pageSize}
+		</if>
+	</select>
+	
+	<!--通过课程名查询学习记录条数-->
+	<select id="getCourseStudyRecordByCourseCount" resultType="int">
+		select count(1)
+		from course_study_record
+		where course_id = #{courseId}
+		<if test="userList != null and userList.size()>0">
+           and user_id in (
+          	<foreach collection="userList" item="user" separator=",">
+          		#{user.id}
+          	</foreach>
+         	)
+         </if>
+         <if test="withManager !=null and withManager == 'no' ">
+       		and user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+       	 </if>
+         <if test="learn_process !=null ">
+         	AND learn_process = #{learn_process}
+         </if>
+		<!-- where course_id = (
+			select id from res_course
+			where name = #{courseName}
+		) -->
+	</select>
+	
+	<!--通过用户ID查询学习记录  -->
+	<select id="getCourseStudyRecordByUser" resultType="com.jftt.wifi.bean.vo.CourseDetailByUserVo">
+		select a.*
+		from
+			(	select course_id courseId,DATE_FORMAT(start_time, '%Y-%m-%d %H:%i:%S') startTime,
+				DATE_FORMAT(this_learn_time, '%Y-%m-%d %H:%i:%S') thisLearnTime,learn_process learnProcess
+				from course_study_record
+				where user_id = #{userId}
+			) a
+		left join res_course b
+		on a.courseId = b.id
+		where b.type = 1 and b.status = 2 <!-- and (b.mall_status = 1 or b.mall_status = 3 or b.mall_status = 4) -->
+		<if test="courseType != null">
+			and b.type = #{courseType}
+		</if>
+		<if test="courseName != null and courseName != ''">
+			and b.name like concat('%', #{courseName}, '%')
+		</if>
+		<if test="courseCode != null and courseCode != ''">
+			and b.code like concat('%', #{courseCode}, '%')
+		</if>
+		order by a.learnProcess desc,a.courseId asc
+		<if test="fromNum != null">
+			limit ${fromNum},${pageSize}
+		</if>
+	</select>
+	
+	<!--通过用户ID查询学习记录条数 -->
+	<select id="getCourseStudyRecordByUserCount" resultType="int">
+		select count(1)
+		from
+			(	select course_id courseId,DATE_FORMAT(start_time, '%Y-%m-%d %H:%i:%S') startTime,
+				DATE_FORMAT(this_learn_time, '%Y-%m-%d %H:%i:%S') thisLearnTime,learn_process learnProcess
+				from course_study_record
+				where user_id = #{userId}
+			) a
+		left join res_course b
+		on a.courseId = b.id
+		where b.type = 1 and b.status = 2<!--  and (b.mall_status = 1 or b.mall_status = 3 or b.mall_status = 4) -->
+		<if test="courseType != null">
+			and b.type = #{courseType}
+		</if>
+		<if test="courseName != null and courseName != ''">
+			and b.name like concat('%', #{courseName}, '%')
+		</if>
+		<if test="courseCode != null and courseCode != ''">
+			and b.code like concat('%', #{courseCode}, '%')
+		</if>
+	</select>
+	
+	<!--考试统计 -->
+	<select id="getExamList" resultType="com.jftt.wifi.bean.exam.vo.MarkExamListItemVo">
+		select
+		    es.id examId,
+		    es.title,
+		    es.duration,
+		    es.allow_times allowTimes,
+		    es.begin_time beginTime,
+		    es.end_time endTime,
+		    es.create_time createTime,
+		    es.is_score_public isScorePublic,
+		    es.is_marked isMarked,
+		    es.is_score_published isScorePublished,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            and exam_status > 2
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) attendCount,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            and is_passed = 1
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) passCount,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) assignCount,
+		    (select count(0)
+		        from exam_assign_info eai
+		        <where>
+		            and is_marked = 1
+		            <include refid="where_specify_exam_id_in_exam_assign_info"></include>
+		        </where>) markCount
+		from exam_schedule es
+		
+        <include refid="where_getMarkVoList"></include>
+		order by es.create_time desc
+        <include refid="limitClause" />
+    </select>
+    <!--考试统计条数  -->
+    <select id="getExamListCount" resultType="Integer">
+        select
+            count(0)
+        from exam_schedule es
+        <include refid="where_getMarkVoList"></include>
+    </select>
+    
+    <sql id="where_getMarkVoList">
+        <where>
+        	<!-- and find_in_set(#{userId},score_marker) -->
+        	<if test="subCompanyId != null and subCompanyId !=''">and es.sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null and companyId !=''">and es.company_id = #{companyId}</if>
+            <if test="subCompanyIdList !=null and subCompanyIdList.size() > 0 ">
+		 		and es.sub_company_id in
+		 		<foreach collection="subCompanyIdList" item="sub" open="(" close=")" separator="," >
+		 			#{sub}
+		 		</foreach>
+		 	</if>
+            <if test="title != null and title != ''">and es.title like concat('%', #{title}, '%')</if>
+            <if test="beginTimeBegin != null and beginTimeBegin !=''">
+            	and DATE_FORMAT(es.begin_time,'%Y-%m-%d') &gt;= #{beginTimeBegin}
+            </if>
+            <if test="beginTimeEnd != null and beginTimeEnd !=''"> 
+            	and DATE_FORMAT(es.begin_time,'%Y-%m-%d') &lt;= #{beginTimeEnd}
+            </if>
+            and es.is_published = 1
+            and es.end_time &lt;= now()
+            and es.type = 1
+            <if test="examId != null and examId !=''" >and es.id = #{examId}</if>
+        </where>
+    </sql>
+     <sql id="where_specify_exam_id_in_exam_assign_info">
+     	<if test="withManager !=null and withManager == 'no' ">
+       		and user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+       	</if>
+       	and relation_id = es.id
+        and relation_type = 1
+    </sql>
+     <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <!--成绩预览列表记录 Map -->
+    <resultMap id="examAssignMap" type="com.jftt.wifi.bean.exam.ExamAssignBean">
+		<id property="id" column="id"/>
+		<result property="relationType" column="relation_type"/>
+		<result property="relationId" column="relation_id"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="examBeginTime" column="exam_begin_time"/>
+		<result property="examSubmitTime" column="exam_submit_time"/>
+		<result property="examStatus" column="exam_status"/>
+		<result property="testTimes" column="test_times"/>
+		<result property="isPassed" column="is_passed"/>
+		<result property="passScore" column="pass_score"/>
+		<result property="score" column="score"/>
+		<result property="isMarked" column="is_marked"/>
+		<result property="score" column="score"/>
+		<result property="isScoreModified" column="is_score_modified"/>
+        <result property="modifyReason" column="modify_reason"/>
+		<result property="remainingTime" column="remaining_time"/>
+		<result property="leaveTimes" column="leave_times"/>
+		<result property="updateTime" column="update_time"/>
+        <result property="rank" column="rank"/>
+	</resultMap>
+    
+    <!--获取成绩预览列表记录  -->
+    <select id="getGradeDetailList" resultMap="examAssignMap">
+		select
+		  eai.id, eai.user_id, eai.test_times, eai.is_passed, eai.score, score_rank.rank-score_rank.count_+1 rank
+		from
+		  (select * from exam_assign_info) eai 
+		  left join
+		  (select @rownum:=@rownum+count_ rank,d.score,count_
+		    from 
+		    (select @rownum:=0,eai.score,count(0) count_ from exam_assign_info eai
+             <include refid="where_getExamResultList_part"></include>
+	         group by eai.score
+	         order by eai.score desc
+		    ) d
+		  ) score_rank
+		  on eai.score = score_rank.score
+		<include refid="where_getExamResultList"></include>
+		order by score_rank.score desc
+		  <if test="pageSize!=null and pageSize!=''">
+			  limit ${fromNum},${pageSize}
+		  </if>
+    </select>
+    
+    <!-- 获取成绩预览列表记录数 -->
+    <select id="getGradeDetailCount" resultType="int">
+    	select count(1) from
+		  exam_assign_info eai left join
+		  (select @rownum:=@rownum+1 rank,d.score
+		    from 
+		    (select @rownum:=0,eai.score from exam_assign_info eai
+	            <include refid="where_getExamResultList_part"></include>
+	         group by eai.score
+	         order by eai.score desc
+		    ) d
+		  ) score_rank
+		  on eai.score = score_rank.score
+		<include refid="where_getExamResultList"></include>
+    </select>
+    
+     <sql id="where_getExamResultList_part">
+        where
+          eai.relation_type = 1
+          and eai.relation_id = #{examId}
+    </sql>
+    
+    <sql id="where_getExamResultList">
+        <include refid="where_getExamResultList_part"></include>
+        	<if test="isAttend!=''">
+	          <if test="isAttend == 1">and eai.test_times > 0</if>
+	          <if test="isAttend == 0">and (eai.test_times = 0 or eai.test_times is null)</if>
+        	</if>
+        	<choose>
+        		<when test="isPassed !=null and isPassed == 'yes' ">
+        			and eai.is_passed = 1
+        		</when>
+        		<when test="isPassed !=null and isPassed == 'no' ">
+        			and (eai.is_passed is null or eai.is_passed !=1)
+        		</when>
+        	</choose>
+          	<if test="userList != null and userList.size()>0">
+	           and eai.user_id in (
+	          	<foreach collection="userList" item="user" separator=",">
+	          		#{user.id}
+	          	</foreach>
+	         	)
+          	</if>
+          	<if test="withManager !=null and withManager == 'no' ">
+	       		and eai.user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+	       	</if>
+    </sql>
+    
+    <resultMap id="ManageDepartmentBean" type="com.jftt.wifi.bean.ManageDepartmentBean">
+		<id property="id" column="id" />
+		<result property="code" column="code" />
+		<result property="name" column="name" />
+		<result property="descr" column="descr" />
+		<result property="parentId" column="parent_id" />
+		<result property="companyId" column="company_id" />
+		<result property="subCompanyId" column="sub_company_id" />
+		<result property="isSubCompany" column="is_sub_company" />
+		<result property="order" column="order_" />
+	</resultMap>
+	
+	<resultMap id="deptExamVo" type="com.jftt.wifi.bean.exam.vo.DeptExamVo">
+		<id property="id" column="id" />
+		<result property="deptName" column="deptName" />
+		<result property="userNum" column="userNum" />
+		<result property="attendNum" column="attendNum" />
+		<result property="attendPercent" column="attendPercent" />
+		<result property="attendExamNum" column="attendExamNum" />
+		<result property="rank" column="rank" />
+	</resultMap>
+    
+    <!-- 获取当前公司下的子公司/部门 -->
+	<select id="getDeptList" resultMap="ManageDepartmentBean">
+		select * from manage_department md 
+		where md.company_id = #{companyId} and md.sub_company_id=#{subCompanyId}
+		<if test="depName != null and depName != '' ">
+			and md.name like CONCAT('%', #{depName}, '%')
+		</if>
+		<!-- <if test="fromNum != null">
+			limit ${fromNum},${pageSize}
+		</if> -->
+	</select>
+	
+	<select id="getDeptListCount" resultType="int">
+		select count(1) from manage_department md 
+		where md.company_id = #{companyId} and md.sub_company_id=#{subCompanyId}
+		<if test="depName != null and depName != '' ">
+			and md.name like CONCAT('%', #{depName}, '%')
+		</if>
+	</select>
+    
+    <!--考试统计（按部门） 查询部门参与考试人数  -->
+	<select id="getDeptExamPersonNum" resultType="int">
+		 select count(DISTINCT user_id) from exam_assign_info a
+		 left join exam_schedule b
+		 on a.relation_id =  b.id
+		 where EXISTS(
+					select id from exam_schedule
+					where id = a.relation_id
+					and type = 1 and is_published = 1
+				) 
+	 	<if test="userList != null and userList.size()>0">
+           and a.user_id in (
+          	<foreach collection="userList" item="user" separator=",">
+          		#{user.id}
+          	</foreach>
+         	)
+         </if>
+	</select>
+	
+	 <!--考试统计（按部门） 查询部门参与考试数  -->
+	<select id="getDeptExamNum" resultType="int">
+		 select count(relation_id) from exam_assign_info a
+		 left join exam_schedule b
+		 on a.relation_id =  b.id
+		 where EXISTS(
+					select id from exam_schedule
+					where id = a.relation_id
+					and type = 1 and is_published = 1
+				) 
+	 	<if test="userList != null and userList.size()>0">
+        	and user_id in (
+          	<foreach collection="userList" item="user" separator=",">
+          		#{user.id}
+          	</foreach>
+         	)
+         </if>
+	</select>
+	
+	<!--  -->
+	<select id="getDeptExamVoList" resultType="com.jftt.wifi.bean.exam.vo.DeptExamVo">
+		select a.* from(
+			<foreach collection="deptExamVoList" item="deptExamVo" separator="union">
+				select #{deptExamVo.id} id,
+						#{deptExamVo.deptName} deptName,
+						#{deptExamVo.userNum} userNum,
+						#{deptExamVo.attendNum} attendNum, 
+						#{deptExamVo.attendExamNum} attendExamNum, 
+						#{deptExamVo.attendPercent} attendPercent,
+						#{deptExamVo.rank} rank
+				from dual
+			</foreach>
+		) a
+		<!-- where 1=1
+		<if test="depName != null and depName != '' ">
+			and a.depName like CONCAT('%', #{depName}, '%')
+		</if> -->
+		order by a.attendPercent desc
+		<if test="fromNum != null">
+			limit ${fromNum},${pageSize}
+		</if>
+	</select>
+	
+	<!--考试统计（按部门） 部门详情  -->
+	<select id="getDeptExamDetail" resultType="com.jftt.wifi.bean.exam.vo.DeptExamDetailVo">
+		select a.user_id userId,a.score getScore,a.pass_score passScore,c.total_score totalScore,
+				a.is_passed isPassed,b.title examTitle,
+				DATE_FORMAT(b.begin_time, '%Y-%m-%d %H:%i') startTime,
+			    DATE_FORMAT(b.end_time, '%Y-%m-%d %H:%i') endTime
+		from (
+			select relation_id,user_id,score,pass_score,is_passed from exam_assign_info
+			where 1 = 1
+			<if test="userList != null and userList.size()>0">
+	           and user_id in (
+	          	<foreach collection="userList" item="user" separator=",">
+	          		#{user.id}
+	          	</foreach>
+	         	)
+	         </if>
+	         <if test="withManager !=null and withManager == 'no' ">
+       			and user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+       	 	 </if>
+			order by relation_id
+		) a
+		left join exam_schedule b
+		on a.relation_id = b .id
+		left join exam_paper c
+		on b.paper_id = c.id
+		where EXISTS(
+					select id from exam_schedule
+					where id = a.relation_id
+					and type = 1 and is_published = 1
+				) 
+		<if test="isPassed != null and isPassed != ''">
+			<if test="isPassed == 'yes' ">
+				and a.is_passed = 1
+			</if>
+			<if test="isPassed == 'no'">
+				and (a.is_passed != 1 or a.is_passed is null)
+			</if>
+		</if>
+		 <if test="examTitle != null and examTitle != '' ">
+			and b.title like CONCAT('%', #{examTitle}, '%')
+		</if>
+		<if test="startTime != null and startTime != '' ">
+			and DATE_FORMAT(b.begin_time, '%Y-%m-%d') &gt;= #{startTime}
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			and DATE_FORMAT(b.end_time, '%Y-%m-%d') &lt;= #{endTime}
+		</if>
+		<if test="fromNum != null">
+			limit ${fromNum},${pageSize}
+		</if>
+	</select>
+	<!--考试统计（按部门） 部门详情条数  -->
+	<select id="getDeptExamDetailCount" resultType="int">
+		select count(1)
+		from (
+			select relation_id,user_id,score,pass_score,is_passed from exam_assign_info
+			where 1 = 1
+			<if test="userList != null and userList.size()>0">
+	           and user_id in (
+	          	<foreach collection="userList" item="user" separator=",">
+	          		#{user.id}
+	          	</foreach>
+	         	)
+	         </if>
+	         <if test="withManager !=null and withManager == 'no' ">
+       			and user_id not in (select init_user_id from manage_company WHERE init_user_id IS NOT NULL)
+       	 	 </if>
+			order by relation_id
+		) a
+		left join exam_schedule b
+		on a.relation_id = b .id
+		left join exam_paper c
+		on b.paper_id = c.id
+		where EXISTS(
+					select id from exam_schedule
+					where id = a.relation_id
+					and type = 1 and is_published = 1
+				) 
+		<if test="isPassed != null and isPassed != ''">
+			<if test="isPassed == 'yes' ">
+				and a.is_passed = 1
+			</if>
+			<if test="isPassed == 'no'">
+				and (a.is_passed != 1 or a.is_passed is null)
+			</if>
+		</if>
+		 <if test="examTitle != null and examTitle != '' ">
+			and b.title like CONCAT('%', #{examTitle}, '%')
+		</if>
+		<if test="startTime != null and startTime != '' ">
+			and DATE_FORMAT(b.begin_time, '%Y-%m-%d') &gt;= #{startTime}
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			and DATE_FORMAT(b.end_time, '%Y-%m-%d') &lt;= #{endTime}
+		</if>
+	</select>
+	
+	<resultMap id="wrongDetailMap" type="com.jftt.wifi.bean.exam.vo.ReportWrongDetailVo">
+		<id property="id" column="id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="questionType" column="display_type"/>
+		<result property="difficultLevel" column="difficult_level"/>
+		<result property="questionCategory" column="category_name"/>
+        <result property="createUserId" column="create_user_id"/>
+		<result property="score" column="score"/>
+	</resultMap>
+	
+	
+	
+	<!-- zhangchen end -->
+	
+	<sql id="getExamUser_sql">
+		<where>
+  			<if test="exam_schedule_title != null and exam_schedule_title !='' ">
+	           and es.title like CONCAT('%', #{exam_schedule_title}, '%')
+	        </if>
+  			<if test="userList != null and userList.size()>0">
+	           and eai.user_id in (
+	          	<foreach collection="userList" item="user" separator=",">
+	          		#{user}
+	          	</foreach>
+	         	)
+	        </if>
+	        <if test="begin_time != null and begin_time != '' ">
+				and DATE_FORMAT(es.begin_time, '%Y-%m-%d') &gt;= #{begin_time}
+			</if>
+			<if test="end_time != null and end_time != '' ">
+				and DATE_FORMAT(es.end_time, '%Y-%m-%d') &lt;= #{end_time}
+			</if>
+			<if test="end_time != null and end_time != '' ">
+				and DATE_FORMAT(es.end_time, '%Y-%m-%d') &lt;= #{end_time}
+			</if>
+			<if test="is_passed != null ">
+				and eai.is_passed = #{is_passed}
+			</if>
+			and eai.relation_type = 1
+  			and es.type = 1 
+  			and es.is_published = 1
+		</where>
+	</sql>
+  	
+  	<select id="getExamUserCount" resultType="int" parameterType="com.jftt.wifi.bean.vo.ExamUserVo" >
+  		select
+  			COUNT(eai.id)
+  		from
+  			exam_assign_info eai
+  			left join exam_schedule es on es.id = eai.relation_id
+  			left join exam_paper ep on ep.id = es.paper_id
+  		<include refid="getExamUser_sql" />
+  	</select>
+  	
+  	<select id="getExamUser" resultType="com.jftt.wifi.bean.vo.ExamUserVo" parameterType="com.jftt.wifi.bean.vo.ExamUserVo" >
+  		select
+  			eai.user_id userId,
+			eai.score,      
+			eai.is_passed,
+			eai.pass_score,
+			es.id exam_schedule,
+			es.title exam_schedule_title,
+			DATE_FORMAT(es.begin_time, '%Y-%m-%d %H:%i') begin_time,
+			DATE_FORMAT(es.end_time, '%Y-%m-%d %H:%i') end_time,
+			ep.total_score
+  		from
+  			exam_assign_info eai
+  			left join exam_schedule es on es.id = eai.relation_id
+  			left join exam_paper ep on ep.id = es.paper_id
+  		<include refid="getExamUser_sql" />
+  		<if test="fromNum !=null and pageSize !=0 ">
+  			limit #{fromNum}, #{pageSize}
+  		</if>
+  	</select>
+  
+</mapper>

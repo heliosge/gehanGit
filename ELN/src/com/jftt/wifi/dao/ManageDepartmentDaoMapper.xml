@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManageDepartmentDaoMapper">
+
+	<resultMap id="ManageDepartmentBean" type="com.jftt.wifi.bean.ManageDepartmentBean">
+		<id property="id" column="id" />
+		<result property="code" column="code" />
+		<result property="name" column="name" />
+		<result property="descr" column="descr" />
+		<result property="parentId" column="parent_id" />
+		<result property="companyId" column="company_id" />
+		<result property="subCompanyId" column="sub_company_id" />
+		<result property="isSubCompany" column="is_sub_company" />
+		<result property="order" column="order_" />
+	</resultMap>
+
+	<sql id="bean_propertys">
+		id,
+		code,
+		name,
+		descr,
+		parent_id,
+		company_id,
+		sub_company_id,
+		is_sub_company,
+		order_
+	</sql>
+
+	<sql id="manageDepartmentMap">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="code != null and code != '' ">
+				AND code = #{code}
+			</if>
+			<if test="name != null and name != '' ">
+				AND name like CONCAT('%', #{name}, '%')
+			</if>
+			<if test="id != null and id != '' ">
+				AND id = #{id}
+			</if>
+			<if test="parentId != null and parentId != '' ">
+				AND parent_id = #{parentId}
+			</if>
+			<if test="companyId != null and companyId != '' ">
+				AND company_id = #{companyId}
+			</if>
+			<if test="subCompanyId != null and subCompanyId != '' ">
+				AND sub_company_id = #{subCompanyId}
+			</if>
+			<if test="isSubCompany != null and isSubCompany != '' ">
+				AND is_sub_company = #{isSubCompany}
+			</if>
+		</trim>
+	</sql>
+
+	<update id="updateManageDepartmentById" parameterType="com.jftt.wifi.bean.ManageDepartmentBean">
+		update manage_department
+		set name = #{name},code = #{code},
+		<if test="parentId != null and parentId != '' ">
+			parent_id = #{parentId},
+		</if>
+		descr = #{descr}
+		where id = #{id}
+	</update>
+
+	<select id="getManageDepartmentCountByMap" resultType="Integer"
+		parameterType="java.util.HashMap">
+		select count(1) from manage_department
+		<include refid="manageDepartmentMap" />
+	</select>
+
+	<!-- 根据条件获得用户 -->
+	<select id="getManageDepartmentByMap" resultMap="ManageDepartmentBean"
+		parameterType="java.util.HashMap">
+		select
+		id,code,name,parent_id,company_id, descr, is_sub_company,
+		sub_company_id, order_
+		from
+		manage_department
+		<include refid="manageDepartmentMap" />
+		order by is_sub_company desc,order_ asc, id asc
+	</select>
+
+	<!-- 根据条件获得用户 -->
+	<select id="getManageDepartmentByMap2" resultMap="ManageDepartmentBean"
+		parameterType="java.util.HashMap">
+		select
+		id,code,name,parent_id,company_id,descr,is_sub_company,sub_company_id,order_
+		from
+		manage_department
+		<include refid="manageDepartmentMap" />
+		order by is_sub_company desc,order_ asc, id asc
+	</select>
+
+	<!-- 新增部门 -->
+	<insert id="addManageDepartment" parameterType="com.jftt.wifi.bean.ManageDepartmentBean"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into manage_department
+		(code, name, parent_id, company_id, descr, is_sub_company,
+		sub_company_id, order_)
+		values
+		(#{code}, #{name}, #{parentId},
+		#{companyId}, #{descr}, #{isSubCompany},
+		#{subCompanyId}, #{order})
+
+	</insert>
+
+	<!-- 根据条件获得用户 -->
+	<select id="getManageDepartmentById" resultMap="ManageDepartmentBean"
+		parameterType="long">
+		select
+		id,code,name,parent_id,company_id, descr,
+		is_sub_company, sub_company_id, order_
+		from
+		manage_department
+
+		where
+		id =
+		#{id}
+	</select>
+
+	<select id="selectCourseOpenDeptByCourseId" resultMap="ManageDepartmentBean">
+		select
+		id,code,name,parent_id,company_id, descr, is_sub_company,
+		sub_company_id, order_
+		from
+		manage_department
+		where id in (select
+		open_crow_id from res_course_open_crowd where
+		course_id=#{courseId} and
+		open_type=4)
+	</select>
+
+	<!-- 根据条件获得用户 -->
+	<delete id="delManageDepartmentById" parameterType="long">
+		delete from
+		manage_department where id =#{id}
+	</delete>
+
+	<update id="setDeptToSubCom" parameterType="com.jftt.wifi.bean.ManageDepartmentBean">
+		update
+		manage_department set sub_company_id = #{id} where id=#{id}
+	</update>
+
+	<update id="downPrevDept">
+		update manage_department set order_=order_+1
+		where
+		<if test="parentId != null and parentId != '' ">
+			parent_id = #{parentId}
+		</if>
+		<if test="parentId == null">
+			company_id = #{companyId} and parent_id is null
+		</if>
+		and order_ = #{order}-1
+	</update>
+
+	<update id="upThisDept">
+		update manage_department set order_=order_-1
+		where
+		id=#{id}
+	</update>
+
+	<update id="upNextDept">
+		update manage_department set order_=order_-1
+		where
+		<if test="parentId != null and parentId != '' ">
+			parent_id = #{parentId}
+		</if>
+		<if test="parentId == null">
+			company_id = #{companyId} and parent_id is null
+		</if>
+		and order_ = #{order}+1
+	</update>
+
+	<update id="downThisDept">
+		update manage_department set order_=order_+1
+		where
+		id=#{id}
+	</update>
+
+	<select id="getMaxOrder" resultType="int">
+		select IFNULL(MAX(order_),0) FROM manage_department WHERE
+		<if test="parentId != null and parentId != '' ">
+			parent_id = #{parentId}
+		</if>
+		<if test="parentId == null">
+			company_id = #{companyId} and parent_id is null
+		</if>
+	</select>
+
+	<select id="getGThanThisOrder" resultType="int">
+		select count(1) FROM manage_department WHERE
+		<if test="parentId != null and parentId != '' ">
+			parent_id = #{parentId}
+		</if>
+		<if test="parentId == null">
+			company_id = #{companyId} and parent_id is null
+		</if>
+		and order_ &gt; (select order_ from manage_department where id =
+		#{id})
+	</select>
+
+	<select id="getLThanThisOrder" resultType="int">
+		select count(1) FROM manage_department WHERE
+		<if test="parentId != null and parentId != '' ">
+			parent_id = #{parentId}
+		</if>
+		<if test="parentId == null">
+			company_id = #{companyId} and parent_id is null
+		</if>
+		and order_ &lt; (select order_ from manage_department where id =
+		#{id})
+	</select>
+
+	<select id="getParentCode" resultType="String">
+		select code FROM
+		manage_department WHERE id=#{id}
+	</select>
+
+	<select id="getMaxCode" resultType="String">
+		select ifnull(max(code),'0') FROM manage_department WHERE
+		<if test="id == ''">
+			parent_id is null
+		</if>
+		<if test="id != ''">
+			parent_id=#{id}
+		</if>
+		and company_id = #{companyId}
+	</select>
+
+	<!-- chenrui start -->
+	<select id="getByName" resultMap="ManageDepartmentBean">
+		select * from manage_department
+		md where md.name=#{name}
+	</select>
+	<!-- 获取当前公司下的子公司/部门 -->
+	<select id="getDepInfo" resultMap="ManageDepartmentBean">
+		select * from
+		manage_department md where md.company_id = #{companyId} and
+		md.sub_company_id=#{subCompanyId}
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getDepInfoCount" resultType="int">
+		select count(1) from
+		manage_department md where md.company_id = #{companyId} and
+		md.sub_company_id=#{subCompanyId}
+	</select>
+	<!-- chenrui end -->
+
+	<!-- shenhaijun start -->
+
+	<select id="getCompanysByCompanyId" resultMap="ManageDepartmentBean">
+		SELECT
+		<include refid="bean_propertys" />
+		FROM manage_department
+		WHERE company_id = #{companyId}
+	</select>
+
+
+	<!-- shenhaijun end -->
+</mapper>

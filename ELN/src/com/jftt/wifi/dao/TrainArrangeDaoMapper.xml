@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.TrainArrangeDaoMapper">
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainArrangeBean">
+    <id column="id" property="id" />
+    <result column="name" property="name" />
+    <result column="time_type" property="timeType" />
+    <result column="train_plan_id" property="trainPlanId" />
+    <result column="train_plan_name" property="trainPlanName"/>
+    <result column="begin_time"  property="beginTime" />
+    <result column="end_time"  property="endTime" />
+    <result column="begin_time_date"  property="beginTimeDate" />
+    <result column="end_time_date"  property="endTimeDate" />
+    <result column="is_join" property="isJoin" />
+    <result column="max_join_num" property="maxJoinNum" />
+    <result column="is_recommend" property="isRecommend" />
+    <result column="fit_crowd" property="fitCrowd" />
+    <result column="descr" property="descr" />
+    <result column="cover" property="cover" />
+    <result column="create_user_id" property="createUserId" />
+    <result column="create_user_name" property="createUserName" />
+    <result column="create_time"  property="createTime" />
+    <result column="update_time"  property="updateTime" />
+    <result column="company_id" property="companyId" />
+    <result column="sub_company_id" property="subCompanyId" />
+    <result column="submit_user_name" property="submitUserName" />
+    <result column="status" property="status" />
+    <result column="all_period" property="allPeriod" />
+    <result column="is_close" property="isClose" />
+    <result column="is_release" property="isRelease" />
+    <result column="pass_percent" property="passPercent"/>
+    <result column="after_class_exam" property="afterClassExam"/>
+    <result column="after_class_exam_name" property="afterClassExamName"/>
+    <result column="ace_duration" property="aceDuration"/>
+    <result column="ace_allow_times" property="aceAllowTimes"/>
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, name, time_type, train_plan_id, DATE_FORMAT(begin_time,'%Y-%m-%d %H:%i') begin_time, begin_time begin_time_date, end_time end_time_date,  DATE_FORMAT(end_time,'%Y-%m-%d %H:%i') end_time, is_join, max_join_num, is_recommend, status,
+    fit_crowd, descr, cover, create_time, create_user_id, create_user_name, update_time, submit_user_name, is_close, (select sum(period) from train_arrange_content where train_arrange_id = a.id) all_period,is_release,
+  	(select name from train_plan where id = train_plan_id) train_plan_name,after_class_exam, pass_percent,ace_allow_times, ace_duration,  (select title from  exam_paper p where p.id = a.after_class_exam) after_class_exam_name
+  </sql>
+  <select id="selectById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from train_arrange a
+    where id = #{id}
+  </select>
+  <delete id="deleteById" parameterType="java.lang.Integer">
+    delete from train_arrange
+    where id = #{id}
+  </delete>
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainArrangeBean"  useGeneratedKeys="true" keyProperty="id">
+    insert into train_arrange (name, train_plan_id, time_type,
+      begin_time, end_time, is_join, ace_allow_times, ace_duration,after_class_exam, pass_percent,
+      max_join_num, is_recommend, fit_crowd, 
+      descr, cover, create_user_id, create_user_name, company_id, sub_company_id)
+    values (#{name}, #{trainPlanId}, #{timeType}, 
+      #{beginTime}, #{endTime}, #{isJoin}, #{aceAllowTimes}, #{passPercent}, #{afterClassExam}, #{passPercent},
+      #{maxJoinNum}, #{isRecommend}, #{fitCrowd}, 
+      #{descr}, #{cover}, #{createUserId}, #{createUserName}, #{companyId}, #{subCompanyId})
+  </insert>
+  <update id="updateById" parameterType="com.jftt.wifi.bean.TrainArrangeBean">
+    update train_arrange
+    set name = #{name},
+      train_plan_id = #{trainPlanId},
+      time_type = #{timeType},
+      begin_time = #{beginTime},
+      end_time = #{endTime},
+      is_join = #{isJoin},
+      max_join_num = #{maxJoinNum},
+      is_recommend = #{isRecommend},
+      fit_crowd = #{fitCrowd},
+      descr = #{descr},
+      cover = #{cover},
+      after_class_exam = #{afterClassExam},
+      ace_allow_times = #{aceAllowTimes}, 
+      ace_duration = #{aceDuration},
+      pass_percent = #{passPercent}
+    where id = #{id}
+  </update>
+  
+   <sql id="whereConditions">
+        <trim>
+        	<if test="trainPlanId != null and trainPlanId != ''">
+                AND train_plan_id = #{trainPlanId} 
+            </if>
+            <if test="companyId != null and companyId != ''">
+                AND company_id = #{companyId} 
+            </if>
+            <if test="subCompanyId != null and subCompanyId != '' ">
+            	  AND sub_company_id = #{subCompanyId} 
+            </if>
+            <if test="createUserName != null and createUserName != '' ">
+            	  AND create_user_name like '%${createUserName}%'
+            </if>
+            <if test="timeType != null and timeType != '' ">
+            	  AND time_type in (${timeType})
+            </if>
+            <if test="status != null and status != '' ">
+            	  AND status in (${status})
+            </if>
+            <if test="isJoin != null and isJoin != '' ">
+            	  AND is_join = #{isJoin}
+            </if>
+            <if test="isClose != null and isClose != '' ">
+            	  AND is_close = #{isClose}
+            </if>
+            <if test="name != null and name != '' ">
+            	  AND name like '%${name}%'
+            </if>
+            <if test="startStatus == 1">
+            	  AND status = 3 AND begin_time &gt; now()
+            </if>
+             <if test="startStatus == 2">
+            	  AND status = 3 AND begin_time &lt;  now() AND end_time &gt; now()
+            </if>
+            <if test="startStatus == 3">
+            	  AND status = 3 AND end_time &lt; now()
+            </if>
+            <if test="beginTime != null and beginTime != '' ">
+            	  AND str_to_date(#{beginTime},"%Y-%m-%d %T") &gt; begin_time AND str_to_date(#{beginTime},"%Y-%m-%d %T")  &lt;  end_time
+            </if>
+            <if test="endTime != null and endTime != '' ">
+            	 AND str_to_date(#{endTime},"%Y-%m-%d %T") &gt; begin_time AND str_to_date(#{endTime},"%Y-%m-%d %T")  &lt;  end_time
+            </if>
+            <if test="teacherName != null and teacherName != ''">
+            	  AND EXISTS (select * from res_teacher where teacher_id in(select teacher_id from train_arrange_content where train_arrange_id=a.id) and teacher_name like '%${teacherName}%')
+            </if>
+             <if test="contentType != null and contentType != ''">
+            	  AND EXISTS (select * from train_arrange_content where train_arrange_id = a.id and train_type = #{contentType})
+            </if>
+        </trim>
+    </sql>
+  
+  <select id="selectTrainArrangeCount" resultType="int">
+  	 select count(1)
+    from train_arrange a
+    where 1=1
+     <include refid="whereConditions"/>
+  </select>
+  
+   <select id="selectTrainArrangeList" resultMap="BaseResultMap">
+  	 select 
+    <include refid="Base_Column_List" /> ,
+       (select count(0) from train_arrange_user where train_arrange_id = a.id )joinNum,
+       (select count(DISTINCT(tau.user_id)) from train_arrange_user tau
+       left join train_arrange_content tac on tac.train_arrange_id = tau.train_arrange_id
+       left join train_arrange_score tas on tas.train_arrange_content_id = tac.id and tas.user_id = tau.user_id
+       where tau.train_arrange_id =a.id and (tau.is_sign=1 or tas.is_sign=1))realJoinNum
+    from train_arrange a
+    where 1=1
+     <include refid="whereConditions"/>
+     order by create_time desc
+    <if test="pageSize != null and pageSize != ''">
+    	limit ${fromNum},${pageSize}
+    </if>
+  </select>
+  
+  <update id="submitArrange" parameterType="com.jftt.wifi.bean.TrainArrangeBean">
+  	  update train_arrange
+    set status = #{status},
+      submit_user_name = #{submitUserName},
+      update_time = now()
+    where id = #{id}
+  </update>
+  
+    <update id="rejectArrange" >
+  	update train_arrange 
+  	set status = 4 
+  	where id = #{id}
+  </update>
+  
+  <update id="passArrange">
+  	update train_arrange set status = 3 where id=#{trainId} 
+  	AND NOT EXISTS (select id from train_check where type = #{type} and train_id = #{trainId} and id > #{id})
+  </update>
+  
+  <update id="updateArrangeStauts">
+  	update train_arrange set status = #{status}
+  	where id = #{id}
+  </update>
+  
+  <sql id="canJoinWhereConditions">
+        <trim>
+            <if test="createUserName != null and createUserName != '' ">
+            	  AND create_user_name like '%${createUserName}%'
+            </if>
+            <if test="timeType != null and timeType != '' ">
+            	  AND time_type in (${timeType})
+            </if>
+            <if test="status != null and status != '' ">
+            	  AND status in (${status})
+            </if>
+            <if test="isJoin != null and isJoin != '' ">
+            	  AND is_join = #{isJoin}
+            </if>
+            <if test="isClose != null and isClose != '' ">
+            	  AND is_close = #{isClose}
+            </if>
+            <if test="name != null and name != '' ">
+            	  AND name like '%${name}%'
+            </if>
+            <if test="startStatus == 1">
+            	  AND status = 3 AND begin_time &gt; now()
+            </if>
+             <if test="startStatus == 2">
+            	  AND status = 3 AND begin_time &lt;  now() AND end_time &gt; now()
+            </if>
+            <if test="startStatus == 3">
+            	  AND status = 3 AND end_time &lt; now()
+            </if>
+            <if test="beginTime != null and beginTime != '' ">
+            	  AND str_to_date(#{beginTime},"%Y-%m-%d %T") &gt; begin_time AND str_to_date(#{beginTime},"%Y-%m-%d %T")  &lt;  end_time
+            </if>
+            <if test="endTime != null and endTime != '' ">
+            	 AND str_to_date(#{endTime},"%Y-%m-%d %T") &gt; begin_time AND str_to_date(#{endTime},"%Y-%m-%d %T")  &lt;  end_time
+            </if>
+            <if test="teacherName != null and teacherName != ''">
+            	  AND EXISTS (select * from res_teacher where teacher_id in(select teacher_id from train_arrange_content where train_arrange_id=a.id) and teacher_name like '%${teacherName}%')
+            </if>
+             <if test="contentType != null and contentType != ''">
+            	  AND EXISTS (select * from train_arrange_content where train_arrange_id = a.id and train_type = #{contentType})
+            </if>
+        </trim>
+    </sql>
+  
+  <select id="selectCanJoinTrainArrangeCount" resultType="int">
+  	select count(1) from (
+  		SELECT t.*,ta.pass_status FROM train_arrange t
+  		left join train_arrange_user ta on (ta.train_arrange_id = t.id AND ta.user_id=#{userId})
+		WHERE company_id=#{companyId} AND sub_company_id in (${subCompanyId}) AND is_join=1 AND STATUS=3
+		AND NOT EXISTS (SELECT * FROM train_arrange_open_crowd WHERE train_arrange_id=t.id)
+		AND (ta.pass_status != 2 OR ta.pass_status IS NULL) AND t.is_close = 2
+		AND t.begin_time &gt; now()
+		UNION
+		SELECT t.*,ta.pass_status FROM train_arrange t
+		left join train_arrange_user ta on (ta.train_arrange_id = t.id AND ta.user_id=#{userId})
+		WHERE company_id=#{companyId} AND sub_company_id in (${subCompanyId}) AND is_join=1 AND STATUS=3
+		AND EXISTS (SELECT * FROM train_arrange_open_crowd WHERE train_arrange_id=t.id AND dept_id=#{deptId})
+		AND (ta.pass_status != 2 OR ta.pass_status IS NULL) AND t.is_close = 2
+		AND t.begin_time &gt; now()
+  	) a where 1=1
+  	<include refid="canJoinWhereConditions"/>
+  </select>
+  
+  
+  <resultMap id="CanJoinArrangeResultMap" type = "com.jftt.wifi.bean.CanJoinTrainArrangeBean" extends="BaseResultMap">
+  	<result column="pass_status" property="passStatus" />
+  </resultMap>
+  
+  
+  <select id="selectCanJoinTrainArrangeList" resultMap="CanJoinArrangeResultMap">
+  	select <include refid="Base_Column_List" />, a.pass_status
+  	 from (
+  		SELECT t.*,ta.pass_status FROM train_arrange t
+  		left join train_arrange_user ta on (ta.train_arrange_id = t.id AND ta.user_id=#{userId})
+		WHERE company_id=#{companyId} AND sub_company_id in (${subCompanyId}) AND is_join=1 AND STATUS=3
+		AND NOT EXISTS (SELECT * FROM train_arrange_open_crowd WHERE train_arrange_id=t.id)
+		AND (ta.pass_status != 2 OR ta.pass_status IS NULL) AND t.is_close = 2
+		AND t.begin_time &gt; now()
+		UNION
+		SELECT t.*,ta.pass_status FROM train_arrange t
+		left join train_arrange_user ta on (ta.train_arrange_id = t.id AND ta.user_id=#{userId})
+		WHERE company_id=#{companyId} AND sub_company_id in (${subCompanyId}) AND is_join=1 AND STATUS=3
+		AND EXISTS (SELECT * FROM train_arrange_open_crowd WHERE train_arrange_id=t.id AND dept_id=#{deptId})
+		AND (ta.pass_status != 2 OR ta.pass_status IS NULL) AND t.is_close = 2
+		AND t.begin_time &gt; now()
+  	) a where 1=1
+  	<include refid="canJoinWhereConditions"/>
+  	order by create_time desc
+    <if test="pageSize != null and pageSize != ''">
+    	limit ${fromNum},${pageSize}
+    </if>
+  </select>
+  
+  <select id="selectJoinedTrainArrangeCount" resultType="int">
+  	SELECT COUNT(1) FROM
+  	(
+  		SELECT t.* FROM train_arrange t
+  		join train_arrange_user ta on (ta.train_arrange_id = t.id AND ta.user_id=#{userId} AND ta.pass_status = 2 )
+		WHERE company_id=#{companyId} AND is_join=1 AND STATUS=3
+  	) a where 1=1
+      <if test="isHaveTest!=null">
+       and    after_class_exam is not null
+      </if>
+  	<include refid="whereConditions"/>
+  </select>
+  
+   <resultMap id="JoinedArrangeResultMap" type = "com.jftt.wifi.bean.TrainArrangeBean" extends="BaseResultMap">
+  	<result column="is_pass" property="isPass" />
+  	<result column="score" property="score" />
+  </resultMap>
+  
+  <select id="selectJoinedTrainArrangeList" resultMap="JoinedArrangeResultMap">
+  	select <include refid="Base_Column_List" />, is_pass, score
+  	 from (
+  		SELECT t.*,ta.is_pass, ta.score FROM train_arrange t
+  		join train_arrange_user ta on (ta.train_arrange_id = t.id AND ta.user_id=#{userId} AND ta.pass_status = 2 )
+		WHERE company_id=#{companyId} AND is_join=1 AND STATUS=3
+			<if test="id != null and id != ''">
+                AND t.id = #{id} 
+            </if>
+  	) a where 1=1
+
+     <if test="isHaveTest!=null">
+       and   after_class_exam is not null
+     </if>
+  	<include refid="whereConditions"/>
+  	order by create_time desc
+    <if test="pageSize != null and pageSize != ''">
+    	limit ${fromNum},${pageSize}
+    </if>
+  </select>
+  
+  
+   <resultMap id="QuestionResultMap" type="com.jftt.wifi.bean.TrainQuestionnaireBean" >
+	    <id column="id" property="id"/>
+	    <result column="assign_id" property="assignId"/>
+	    <result column="name" property="name"/>
+	    <result column="status" property="status"/>
+	    <result column="content_id" property="contentId"/>
+	    <result column="content_name" property="contentName"/>
+  </resultMap>
+  
+  <select id="selectAfterClassTestByArrangeId" resultMap="QuestionResultMap">
+  	SELECT q.id, q.name, a.status, a.id assign_id,c.content content_name,c.id content_id
+	FROM train_arrange_content c
+	LEFT JOIN  questionnaire q ON c.after_class_test=q.id
+	LEFT JOIN investigation_assign a ON (a.investigation_id=c.id AND a.type=2)
+	WHERE c.train_arrange_id=#{arrangeId} AND c.after_class_test IS NOT NULL
+  </select>
+  
+  <update id="updateTrainArrangeCloseStatus">
+  	update train_arrange set is_close = #{isClose} where id = #{id}
+  </update>
+  
+  <update id="releaseTrainArrangeScore">
+  	update train_arrange set is_release = 1 where id = #{id}
+  </update>
+</mapper>

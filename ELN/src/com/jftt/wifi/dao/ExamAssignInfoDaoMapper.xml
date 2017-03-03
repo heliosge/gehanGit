@@ -1,0 +1,838 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamAssignInfoDaoMapper">
+<!-- wangyifeng begin -->
+    <insert id="addAssignInfo" useGeneratedKeys="true" keyProperty="id">
+        insert into exam_assign_info
+        (relation_type, relation_id, paper_id,
+		user_id, exam_status, test_times, pass_score,score,is_marked, update_time)
+        values
+        (#{relationType}, #{relationId}, #{paperId},
+        #{userId}, #{examStatus}, #{testTimes}, #{passScore},#{score}, #{isMarked}, now())
+    </insert>
+    
+    <delete id="realDeleteAssignInfo">
+        delete from exam_assign_info
+        where
+            relation_type=#{relationType}
+            and relation_id=#{relationId}
+    </delete>
+    
+    <sql id="where_getExamResultList_part">
+        where
+          eai.relation_type = 1
+          and eai.relation_id = #{examId}
+    </sql>
+    
+    <sql id="where_getExamResultList">
+        <include refid="where_getExamResultList_part"></include>
+        	<if test="isAttend!=''">
+	          <if test="isAttend == 1">and eai.test_times > 0</if>
+	          <if test="isAttend == 0">and (eai.test_times = 0 or eai.test_times is null)</if>
+        	</if>
+          <if test="userList != null and userList.size()>0">
+	           and eai.user_id in (
+	          	<foreach collection="userList" item="user" separator=",">
+	          		#{user.id}
+	          	</foreach>
+	         	)
+          </if>
+    </sql>
+    
+    <select id="getExamResultList" resultMap="examAssignMap">
+		select
+		  eai.id, eai.user_id, eai.test_times, eai.is_passed, eai.score, score_rank.rank-score_rank.count_+1 rank
+		from
+		  (select * from exam_assign_info) eai 
+		  left join
+		  (select @rownum:=@rownum+count_ rank,d.score,count_
+		    from 
+		    (select @rownum:=0,eai.score,count(0) count_ from exam_assign_info eai
+             <include refid="where_getExamResultList_part"></include>
+	         group by eai.score
+	         order by eai.score desc
+		    ) d
+		  ) score_rank
+		  on eai.score = score_rank.score
+		<include refid="where_getExamResultList"></include>
+		order by score_rank.score desc
+		  <if test="pageSize!=null and pageSize!=''">
+			  limit ${fromNum},${pageSize}
+		  </if>
+    </select>
+   
+   <select id="getCjYlListAll" resultMap="examAssignMap">
+   		select
+		  eai.id, eai.user_id, eai.test_times, eai.is_passed, eai.score, score_rank.rank-score_rank.count_+1 rank
+		from
+		  (select * from exam_assign_info) eai 
+		  left join
+		  (select @rownum:=@rownum+count_ rank,d.score,count_
+		    from 
+		    (select @rownum:=0,eai.score,count(0) count_ from exam_assign_info eai
+             <include refid="where_getExamResultList_part"></include>
+	         group by eai.score
+	         order by eai.score desc
+		    ) d
+		  ) score_rank
+		  on eai.score = score_rank.score
+		<include refid="where_getExamResultList"></include>
+		order by score_rank.score desc
+   </select>
+   <!--查询批阅页面参加考试的人员  zhangchen modify  -->
+    <select id="getAttendUserInfoList" resultMap="examAssignMap" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+        select
+          id, user_id,is_marked
+        from
+          exam_assign_info
+        where
+            relation_type = 1
+            and relation_id = #{id}
+            and (exam_status = 3 or exam_status = 4)
+            <if test="userList!=null and userList.size>0">
+				And user_id in
+				<foreach collection="userList" item="user" open="(" close=")"
+					separator=",">
+					#{user.id}
+				</foreach>
+			</if>
+        order by user_id
+    </select>
+    
+    <update id="modifyScore">
+		update exam_assign_info
+		<set>
+			score = #{score},
+			is_passed = (#{score} >= pass_score),
+			<if test="isScoreModified != null">is_score_modified = #{isScoreModified},</if>
+			<if test="modifyReason != null">modify_reason = #{modifyReason},</if>
+			<if test="isMarked != null">is_marked = #{isMarked},</if>
+			<if test="examStatus != null">exam_status = #{examStatus},</if>
+		</set>
+		where id = #{id}
+    </update>
+<!-- wangyifeng end -->
+	
+<!--zhangchen start  -->
+	<resultMap id="examAssignMap" type="com.jftt.wifi.bean.exam.ExamAssignBean">
+		<id property="id" column="id"/>
+		<result property="relationType" column="relation_type"/>
+		<result property="relationId" column="relation_id"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="examBeginTime" column="exam_begin_time"/>
+		<result property="examSubmitTime" column="exam_submit_time"/>
+		<result property="examStatus" column="exam_status"/>
+		<result property="testTimes" column="test_times"/>
+		<result property="isPassed" column="is_passed"/>
+		<result property="passScore" column="pass_score"/>
+		<result property="score" column="score"/>
+		<result property="isMarked" column="is_marked"/>
+		<result property="score" column="score"/>
+		<result property="isScoreModified" column="is_score_modified"/>
+        <result property="modifyReason" column="modify_reason"/>
+		<result property="remainingTime" column="remaining_time"/>
+		<result property="leaveTimes" column="leave_times"/>
+		<result property="updateTime" column="update_time"/>
+        <result property="rank" column="rank"/>
+	</resultMap>
+	
+	<!--我的考试记录Vo  -->
+	<resultMap id="examRecorderVo" type="com.jftt.wifi.bean.vo.ExamRecorderVo">
+		<id property="id" column="id"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="examAssignId" column="exam_assign_id"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="isScorePublic" column="is_score_public"/>
+		<result property="isAnswerPublic" column="is_answer_public"/>
+		<result property="isAutoMarking" column="is_auto_marking"/>
+		<result property="examStatus" column="exam_status"/>
+		<result property="isPassed" column="is_passed"/>
+		<result property="allowTimes" column="allow_times"/>
+		<result property="testTimes" column="test_times"/>
+		<result property="passScore" column="pass_score"/>
+		<result property="passScorePercent" column="pass_score_percent"/>
+		<result property="score" column="score"/>
+		<result property="type" column="type"/>
+		<result property="isPublished" column="is_published"/>
+		<result property="isScorePublished" column="is_score_published"/>
+		<result property="isAntiCheating" column="is_anti_cheating"/>
+		<result property="isMarked" column="is_marked"/>
+		<association property="totalnum" column="id"
+		        javaType="String"
+			    select="selectExamTotalNum"/>
+		<association property="totalScore" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperDaoMapper.selectTotalScoreById"/>
+		<association property="rownum" column="{relation_id=id,score=score}"
+		        javaType="Integer"
+			    select="selectExamRowNum"/>
+	</resultMap>
+	
+	<!--查询我的考试-参与考试记录  -->
+	<select id="selectExamAssignInfoByUserId" resultMap="examRecorderVo" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select a.id exam_assign_id,a.user_id,b.id,a.paper_id,b.type,
+				a.exam_status,a.is_passed,b.allow_times,a.test_times,a.exam_submit_time,
+				b.title,a.pass_score,b.pass_score_percent,ifnull(a.score,0) score,
+				DATE_FORMAT(b.begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(b.end_time, '%Y-%m-%d %H:%i') end_time,
+				b.is_score_public,b.is_score_published,b.is_answer_public,b.is_published,
+				b.is_auto_marking,a.is_marked,b.is_anti_cheating
+		from (
+				select id,user_id,relation_id,paper_id,exam_status,exam_submit_time,is_passed,pass_score,score,test_times,update_time,is_marked
+				from exam_assign_info
+				where relation_type = 1 and user_id = #{user_id}
+			 	and EXISTS(select id from exam_schedule
+						where relation_id = id and type = 1 and is_published = 1
+				)
+			) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		<include refid="condition_where" />
+		order by a.update_time desc
+		<if test="fromNum != null">
+			limit ${fromNum}, ${pageSize}
+		</if>
+	</select>
+	
+	<!--获取我的考试记录条数   -->
+	<select id="selectExamRecorderCount" resultType="int" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select count(1)
+		from (
+				select user_id,relation_id,paper_id,exam_status,exam_submit_time,is_passed,pass_score,score,test_times
+				from exam_assign_info
+				where relation_type = 1 and user_id = #{user_id}
+			 	and EXISTS(select id from exam_schedule
+						where relation_id = id and type = 1 and is_published = 1
+				)
+			) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		<include refid="condition_where" />
+	</select>
+	
+	<!--查询一场考试总名次-->
+	<select id="selectExamTotalNum" resultType="int" parameterType="int">
+		select count(1) from exam_assign_info where relation_id = #{relation_id} and relation_type = 1
+	</select>
+	
+	<!--查询个人在考试中的排名  -->
+	<select id="selectExamRowNum" resultType="String" parameterType="java.util.HashMap">
+		<!-- select b.rownum-b.count_+1 rownum from
+			(select @rownum:=@rownum+count_ rownum,a.score,count_
+				from 
+				(select @rownum:=0,a.score,count(1) count_ from exam_assign_info a 
+					where a.relation_id = #{relation_id} and relation_type = 1 
+					group by a.score order by a.score desc) a	
+			) b -->
+		select b.rownum-b.count_+1 rownum,b.score from
+			(select @rownum:=@rownum+count_ rownum,a.score,count_
+				from 
+				(select @rownum:=0,ifnull(score,0) score,count(1) count_ from exam_assign_info 
+					where relation_id = #{relation_id} and relation_type = 1 
+					group by score order by score desc) a	
+			) b
+		where b.score = #{score}
+	</select>
+
+	<sql id="condition_where">
+		<trim prefix="where" prefixOverrides="AND">
+			<!--未过期考试   -->
+				<if test="id != null and id!='' ">
+					AND b.id = #{id}
+				</if>
+				<if test="title != null and title != '' ">
+					AND b.title like CONCAT('%', #{title}, '%')
+				</if>
+				<if test="begin_time != null and begin_time != '' ">
+					AND b.begin_time &gt;= #{begin_time}
+				</if>
+				<if test="end_time != null and end_time != '' ">
+					AND b.end_time &lt;= #{end_time}
+				</if>
+				<!-- <if test="is_passed != null">
+					AND a.is_passed = #{is_passed}
+					and b.is_score_published = 1
+				</if> -->
+				<if test="is_passed != null">
+					<if test="is_passed == 0">
+						AND ( a.is_passed = 0
+								or a.is_passed is null )
+					</if>
+					<if test="is_passed == 1">
+						AND a.is_passed = 1
+					</if>
+				</if>
+				<!--未开始  未到达考试时间-->
+				<if test="exam_status == 1">
+					AND b.begin_time &gt; now()
+				</if>
+				<!--进行中  到达考试时间但未参加考试-->
+				<if test="exam_status == 2">
+					AND (a.exam_status = 1 or a.exam_status = 2)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now()
+				</if>
+				<!--已提交  考试在进行中且用户提交答案-->
+				<if test="exam_status == 3">
+					AND (a.exam_status = 3 or a.exam_status = 4)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now()
+				</if>
+				<!--已结束  考试结束且已提交答案-->
+				<if test="exam_status == 4">
+					AND (a.exam_status = 3 or a.exam_status = 4)
+					and b.end_time &lt; now()
+				</if>
+				<!--已过期  考试结束且未提交答案-->
+				<if test="exam_status == 5">
+					AND (a.exam_status = 2 or a.exam_status = 1)
+					AND b.end_time &lt; now()
+				</if>
+		</trim>
+	</sql>
+	
+	<resultMap id="simulateRecorderVo" type="com.jftt.wifi.bean.vo.ExamRecorderVo">
+		<id property="id" column="id"/>
+		<result property="paperId" column="paper_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="examAssignId" column="exam_assign_id"/>
+		<!-- <result property="examStatus" column="exam_status"/> -->
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="score" column="score"/>
+		<!-- <result property="isScorePublic" column="is_score_public"/>
+		<result property="isPassed" column="is_passed"/>
+		<result property="allowTimes" column="allow_times"/> -->
+		<result property="testTimes" column="test_times"/>
+		<!-- <result property="isAutoMarking" column="is_auto_marking"/> -->
+		<result property="displayMode" column="display_mode"/>
+		<result property="duration" column="duration"/>
+	</resultMap>
+	<!--查询我的考试-模拟考试  -->
+	<select id="selectSimulateRecorder" resultMap="simulateRecorderVo" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select a.id exam_assign_id,b.id,b.title,a.test_times
+				,a.user_id,a.paper_id,a.score,b.display_mode,b.duration
+				,DATE_FORMAT(a.exam_begin_time, '%Y-%m-%d %H:%i') begin_time
+				,DATE_FORMAT(a.exam_submit_time, '%Y-%m-%d %H:%i') end_time
+		from (
+				select id,user_id,relation_id,paper_id,test_times,score,update_time,exam_begin_time,exam_submit_time
+				from exam_assign_info
+				where relation_type = 1 and user_id = #{user_id}
+				and EXISTS(
+					select id from exam_schedule
+					where id = relation_id
+					and type = 3 and is_published = 1
+					<if test="title != null and title != '' ">
+						AND title like CONCAT('%', #{title}, '%')
+					</if>
+				) 
+			) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		left join exam_paper c
+		on a.paper_id = c.id
+		order by a.update_time desc
+		<if test="pageSize !=0 ">
+			limit #{fromNum}, #{pageSize}
+		</if>
+	</select>
+	
+	<!--查询我的考试-模拟考试条数  -->
+	<select id="selectSimulateCount" resultType="int" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select count(1)
+		from (
+				select user_id,relation_id,paper_id,test_times,is_passed
+				from exam_assign_info
+				where relation_type = 1 and user_id = #{user_id}
+				and EXISTS(
+					select id from exam_schedule
+					where id = relation_id
+					and type = 3 and is_published = 1
+					<if test="title != null and title != '' ">
+						AND title like CONCAT('%', #{title}, '%')
+					</if>
+				) 
+			) a
+	</select>
+	
+	
+	<resultMap id="examGradeVo" type="com.jftt.wifi.bean.vo.ExamGradeVo">
+		<id property="id" column="id"/>
+		<result property="userId" column="user_id"/>
+		<result property="isPassed" column="is_passed"/>
+		<result property="testTimes" column="test_times"/>
+		<result property="score" column="score"/>
+		<result property="rownum" column="rownum"/>
+	</resultMap>
+	<!--成绩总览  -->
+	<select id="selectAllGrade" resultMap="examGradeVo" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select a.relation_id id,a.user_id,d.score,a.test_times,a.is_passed,d.rownum
+		from (
+			select relation_id,user_id,test_times,is_passed,ifnull(score,0) score
+			from exam_assign_info 
+			where relation_id = #{relation_id} and relation_type = 1
+			<if test="user_id != 0 ">
+				AND user_id = #{user_id}
+			</if>
+			<if test="userList!=null and userList.size>0">
+				And user_id in
+				<foreach collection="userList" item="user" open="(" close=")"
+					separator=",">
+					#{user.id}
+				</foreach>
+			</if>
+		  <if test="is_passed == 1">and test_times > 0</if>
+          <if test="is_passed == 0">and (test_times = 0 or test_times is null)</if>
+		) a
+		left join (
+			select c.rownum-c.count_+1 rownum,c.score from
+				(select @rownum:=@rownum+count_ rownum,ifnull(b.score,0) score,count_
+					from 
+					(select @rownum:=0,ifnull(score,0) score,count(1) count_ 
+						from exam_assign_info
+						where relation_id = #{relation_id} and relation_type = 1 
+						group by score order by score desc
+					) b
+				) c
+			) d
+		on a.score = d.score
+		order by a.is_passed desc,d.rownum
+		<if test="fromNum != null">
+			limit ${fromNum}, ${pageSize}
+		</if>
+		
+		<!-- select a.relation_id id,a.user_id,a.score,a.test_times,a.is_passed,c.rownum
+		from (
+			select * from exam_assign_info 
+			where relation_id = #{relation_id} and relation_type = 1
+			<if test="user_id != 0 ">
+				AND user_id = #{user_id}
+			</if>
+			<if test="userList!=null and userList.size>0">
+				And user_id in
+				<foreach collection="userList" item="user" open="(" close=")"
+					separator=",">
+					#{user.id}
+				</foreach>
+			</if>
+		  <if test="is_passed == 1">and test_times > 0</if>
+          <if test="is_passed == 0">and (test_times = 0 or test_times is null)</if>
+		) a
+		left join (
+			select b.rownum-b.count_+1 rownum,b.score from
+				(select @rownum:=@rownum+count_ rownum,a.score,count_
+					from 
+					(select @rownum:=0,a.score,count(1) count_ from exam_assign_info a 
+						where a.relation_id = #{relation_id} and relation_type = 1 
+						group by a.score order by a.score desc) a	
+				) b
+			) c
+		on a.score = c.score
+		order by a.is_passed desc,c.rownum
+		<if test="fromNum != null">
+			limit ${fromNum}, ${pageSize}
+		</if> -->
+	</select>
+	<!--成绩总览条数  -->
+	<select id="selectAllGradeCount" resultType="int" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select count(1)
+		from (
+			select * from exam_assign_info 
+			where relation_id = #{relation_id} and relation_type = 1
+			<if test="user_id != 0 ">
+				AND user_id = #{user_id}
+			</if>
+			<if test="userList!=null and userList.size>0">
+				And user_id in
+				<foreach collection="userList" item="user" open="(" close=")"
+					separator=",">
+					#{user.id}
+				</foreach>
+			</if>
+			<if test="is_passed == 1">and test_times > 0</if>
+            <if test="is_passed == 0">and (test_times = 0 or test_times is null)</if>
+			<!-- <if test="is_passed != -1 ">
+				AND is_passed = #{is_passed}
+			</if> -->
+		) a
+	</select>
+	
+	<!--查询成绩总览页面的其它信息，如考试时长、及格分、总分  -->
+	<select id="selectGradeOtherInfo" resultType="com.jftt.wifi.bean.vo.ExamRecorderVo" parameterType="int">
+		select b.id,a.id examAssignId,c.id paperId,a.pass_score passScore,b.duration,c.total_score totalScore,b.title,c.title paperName
+		from (
+			select id,relation_id,pass_score from exam_assign_info where id = #{id}
+		) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		left join exam_paper c
+		on b.paper_id = c.id
+	</select>
+	
+	<resultMap id="examRecorderDetailVo" type="com.jftt.wifi.bean.vo.ExamAssignDetailVo">
+		<id property="id" column="id"/>
+		<result property="assignId" column="assign_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="examType" column="exam_type"/>
+		<result property="title" column="title"/>
+		<result property="beginTime" column="begin_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="duration" column="duration"/>
+		<result property="displayMode" column="display_mode"/>
+		<result property="organizingMode" column="organizing_mode"/>
+		<result property="paperName" column="paper_name"/>
+		<result property="totalScore" column="total_score"/>
+		<association property="examScheduleVo" column="id"
+		        javaType="com.jftt.wifi.bean.vo.ExamScheduleVo"
+			    select="com.jftt.wifi.dao.ExamScheduleDaoMapper.selectExamScheduleVo"/>
+		<!-- <collection property="userAnswerList" column="assign_id"
+				select="com.jftt.wifi.dao.ExamUserAnswerDaoMapper.selectExamQuestionDetail"
+				ofType="com.jftt.wifi.bean.exam.ExamUserAnswerBean">
+		</collection> -->
+	</resultMap>
+	
+	<!--在无答题的情况下，查询试卷详情  -->
+	<select id="selectExamAssignDetail" resultMap="examRecorderDetailVo" parameterType="int">
+		select a.id assign_id,a.relation_id id,a.user_id,a.paper_id,
+				a.pass_score,a.score,b.type exam_type,b.title,
+				DATE_FORMAT(b.begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(b.end_time, '%Y-%m-%d %H:%i') end_time,
+				b.duration,b.display_mode,c.organizing_mode,
+				c.title paper_name,c.total_score
+		from (
+			select id,relation_id,user_id,paper_id,pass_score,score from exam_assign_info
+			where id = #{exam_assign_id}  and relation_type = 1
+		) a
+		left join exam_schedule b on a.relation_id = b.id
+		left join exam_paper c on a.paper_id = c.id
+	</select>
+	
+	<!--提交试卷后，如果是自动批阅，需要更新表中的数据-->
+	<update id="updateExamAssignInfo" parameterType="com.jftt.wifi.bean.exam.ExamAssignBean">
+		update exam_assign_info
+		<set>
+			<if test="examStatus != null">
+				exam_status = #{examStatus},
+			</if>
+			<if test="examBeginTime != null and examBeginTime != ''">
+				exam_begin_time = #{examBeginTime},
+			</if>
+			<if test="examSubmitTime != null and examSubmitTime != ''">
+				exam_submit_time = #{examSubmitTime},
+			</if>
+			<if test="testTimes != null">
+				test_times = ifnull(test_times,0) + 1,
+			</if>
+			<if test="isPassed != null">
+				is_passed = #{isPassed},
+			</if>
+			<if test="isMarked != null">
+				is_marked = #{isMarked},
+			</if>
+			<if test="score != null">
+				score = #{score},
+			</if>
+			<if test="remainingTime != null">
+				remaining_time = #{remainingTime},
+			</if>
+			<if test="leaveTimes != null">
+				leave_times = ifnull(leave_times,0) + 1
+			</if>
+		</set>
+		where id = #{id}
+	
+	</update>
+	
+	<!--通过ID查询一场考试所需要的一些重要参数-->
+	<select id="selectInfoByAssignId" parameterType="int" resultType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select a.id exam_assign_id,a.relation_id id,a.exam_status,
+				b.display_mode,b.type exam_type,b.is_auto_marking,b.duration,b.submit_duration,
+				b.is_score_public,
+				DATE_FORMAT(b.begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(b.end_time, '%Y-%m-%d %H:%i') end_time,b.is_anti_cheating,
+				c.id paper_id,c.organizing_mode,b.allow_leave_times,ifnull(a.remaining_time,0) remaining_time
+		from(
+				select * from exam_assign_info where id = #{id} and relation_type = 1
+		) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		left join exam_paper c
+		on a.paper_id = c.id
+	</select>
+	
+	<!--查询考试离开次数   -->
+	<select id="selectLeaveTimes" resultType="int" parameterType="int">
+		select ifnull(leave_times,0) leave_times from exam_assign_info where id = #{id}
+	</select>
+	
+	<!--通过assign_id查询组卷方式  -->
+	<select id="selectTestDetailParam" resultType="com.jftt.wifi.bean.ExamQueryConditionBean" parameterType="int">
+		select c.organizing_mode,b.is_marked,b.is_answer_public
+		from(
+				select paper_id,relation_id,exam_status from exam_assign_info where id = #{id} and relation_type = 1
+		) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		left join exam_paper c
+		on a.paper_id = c.id
+	</select>
+	
+	<!--查询及格分  -->
+	<select id="selectPassScore" resultType="int" parameterType="int">
+		select ifnull(pass_score,0) pass_score from exam_assign_info where id = #{id} and relation_type = 1
+	</select>
+	<!--根据考试ID查询用户ID  -->
+	<select id="selectUserByRelationId" parameterType="int" resultType="com.jftt.wifi.bean.exam.ExamAssignBean">
+		select id,relation_type,relation_id,user_id from exam_assign_info
+		where relation_id = #{relation_id}
+	</select>
+	<!--根据考试ID查询用户IDs  -->
+	<select id="selectUserIdsByRelationId" parameterType="int" resultType="String">
+		select user_id from exam_assign_info
+		where relation_id = #{relation_id}
+	</select>
+	<!--根据考试ID删除  -->
+	<delete id="deleteByRelationId" parameterType="int">
+		delete from exam_assign_info where relation_id = #{relation_id}
+	</delete>
+	<!--通过assignId查询考试次数   -->
+	<select id="selectTestTimes" parameterType="int" resultType="com.jftt.wifi.bean.exam.ExamAssignBean">
+		select ifnull(test_times,0) testTimes,(ifnull(leave_times,0) &lt; b.allow_leave_times) isAttend
+				,ifnull(leave_times,0) leaveTimes 
+		from (
+			select relation_id,leave_times,test_times from exam_assign_info where id = #{id}
+		)a
+		left join exam_schedule b
+		on a.relation_id = b.id
+	</select>
+	
+<!--zhangchen end  -->
+	
+	<!-- shenhaijun start -->
+	
+	<!-- 获取我的考试数量 -->
+	<select id="getMyExamCount" resultType="java.lang.Integer">
+		SELECT COUNT(eai.paper_id) 
+		  FROM exam_assign_info eai 
+		  WHERE eai.user_id = #{userId} AND eai.exam_status = #{examStatus} 
+	</select>
+	
+	<!-- 根据条件查询id -->
+	<select id="getIdByConditions" resultType="java.lang.Integer">
+		SELECT id FROM exam_assign_info 
+		  WHERE relation_type = #{relationType} 
+		    AND relation_id = #{relationId} AND paper_id = #{paperId} 
+		  	AND user_id = #{userId} 
+	</select>
+	
+	<!-- 根据考试id和用户id查询学习地图的考试分配信息 -->
+	<select id="getIdByExamIdUserId" resultType="java.lang.Integer">
+		SELECT id FROM exam_assign_info 
+		  WHERE relation_type = 1 AND relation_id = #{examId} AND user_id = #{userId} 
+	</select>
+	
+	<!-- 根据id查询考试分配信息 -->
+	<select id="getById" parameterType="java.lang.Integer" resultMap="examAssignMap">
+		SELECT * FROM exam_assign_info WHERE id = #{id} 
+	</select>
+	
+	<!-- shenhaijun end -->
+	
+	  <!-- chenrui start -->
+		 <!-- 获取成绩预览列表记录数 -->
+	    <select id="getExamResultListCount" resultType="int">
+	    	select count(1) from
+		  exam_assign_info eai left join
+		  (select @rownum:=@rownum+1 rank,d.score
+		    from 
+		    (select @rownum:=0,eai.score from exam_assign_info eai
+             <include refid="where_getExamResultList_part"></include>
+	         group by eai.score
+	         order by eai.score desc
+		    ) d
+		  ) score_rank
+		  on eai.score = score_rank.score
+		<include refid="where_getExamResultList"></include>
+	    </select>
+	    <!-- 根据用户 和考试id获取考试记录信息  -->
+	    <select id="getAssignInfoByUserExamId" resultMap="examAssignMap">
+	    	select * from exam_assign_info eai
+	    	where eai.relation_id=#{examId} and eai.user_id=#{userId}
+	    </select>
+	    <!-- 获取晋级者的考试信息 -->
+	    <select id="getInfoByPromoteNum" resultMap="examAssignMap">
+	    	select * from exam_assign_info eai
+	    	where eai.is_passed=1 and relation_id = #{examId}
+	    	order by eai.score desc
+	    	limit 0,${promoteNum}
+	    </select>
+	    
+  	<!-- chenrui end -->
+  	
+  	<!-- zhangbocheng start -->
+  	<!--查询我的考试-参与考试记录  -->
+	<select id="selectExamAssignInfoByUserIdForMobiel" resultMap="examRecorderVo" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select a.id exam_assign_id,a.user_id,b.id,a.paper_id,b.type,
+				a.exam_status,a.is_passed,b.allow_times,a.test_times,a.exam_submit_time,
+				b.title,a.pass_score,b.pass_score_percent,ifnull(a.score,0) score,
+				DATE_FORMAT(b.begin_time, '%Y-%m-%d %H:%i') begin_time,
+				DATE_FORMAT(b.end_time, '%Y-%m-%d %H:%i') end_time,
+				b.is_score_public,b.is_score_published,b.is_answer_public,b.is_published,
+				b.is_auto_marking,a.is_marked,b.is_anti_cheating
+		from (
+				select id,user_id,relation_id,paper_id,exam_status,exam_submit_time,is_passed,pass_score,score,test_times,update_time,is_marked
+				from exam_assign_info
+				where relation_type = 1 and user_id = #{user_id}
+			 	and EXISTS(select id from exam_schedule
+						where relation_id = id and type = 1 and is_published = 1
+				)
+			) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		where 1= 1
+		         <if test="id != null and id!='' ">
+					AND b.id = #{id}
+				</if>
+				<if test="title != null and title != '' ">
+					AND b.title like CONCAT('%', #{title}, '%')
+				</if>
+				<if test="begin_time != null and begin_time != '' ">
+					AND b.begin_time &gt;= #{begin_time}
+				</if>
+				<if test="end_time != null and end_time != '' ">
+					AND b.end_time &lt;= #{end_time}
+				</if>
+				<!-- <if test="is_passed != null">
+					AND a.is_passed = #{is_passed}
+					and b.is_score_published = 1
+				</if> -->
+				<if test="is_passed != null">
+					<if test="is_passed == 0">
+						AND ( a.is_passed = 0
+								or a.is_passed is null )
+					</if>
+					<if test="is_passed == 1">
+						AND a.is_passed = 1
+					</if>
+				</if>
+				<!-- 全部考试，移动端只查询未开始和进行中 -->
+				<if test="exam_status == 0">
+					AND b.begin_time &gt; now() or((a.exam_status = 1 or a.exam_status = 2 or a.exam_status = 3 or a.exam_status = 4)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now())
+				</if>
+				<!--未开始  未到达考试时间-->
+				<if test="exam_status == 1">
+					AND b.begin_time &gt; now()
+				</if>
+				<!--进行中  到达考试时间但未参加考试-->
+				<if test="exam_status == 2">
+					AND (a.exam_status = 1 or a.exam_status = 2 or a.exam_status = 3 or a.exam_status = 4)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now()
+				</if>
+				<!--已提交  考试在进行中且用户提交答案-->
+				<if test="exam_status == 3">
+					AND (a.exam_status = 3 or a.exam_status = 4)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now()
+				</if>
+				<!--已结束  考试结束且已提交答案-->
+				<if test="exam_status == 4">
+					AND (a.exam_status = 3 or a.exam_status = 4)
+					and b.end_time &lt; now()
+				</if>
+				<!--已过期  考试结束且未提交答案-->
+				<if test="exam_status == 5">
+					AND (a.exam_status = 2 or a.exam_status = 1)
+					AND b.end_time &lt; now()
+				</if>
+		order by a.update_time desc
+		<if test="fromNum != null">
+			limit ${fromNum}, ${pageSize}
+		</if>
+	</select>
+	
+		<!--获取我的考试记录条数-移动端   -->
+	<select id="selectExamRecorderCountForMobile" resultType="int" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select count(1)
+		from (
+				select user_id,relation_id,paper_id,exam_status,exam_submit_time,is_passed,pass_score,score,test_times
+				from exam_assign_info
+				where relation_type = 1 and user_id = #{user_id}
+			 	and EXISTS(select id from exam_schedule
+						where relation_id = id and type = 1 and is_published = 1
+				)
+			) a
+		left join exam_schedule b
+		on a.relation_id = b.id
+		where 1= 1
+		         <if test="id != null and id!='' ">
+					AND b.id = #{id}
+				</if>
+				<if test="title != null and title != '' ">
+					AND b.title like CONCAT('%', #{title}, '%')
+				</if>
+				<if test="begin_time != null and begin_time != '' ">
+					AND b.begin_time &gt;= #{begin_time}
+				</if>
+				<if test="end_time != null and end_time != '' ">
+					AND b.end_time &lt;= #{end_time}
+				</if>
+				<!-- <if test="is_passed != null">
+					AND a.is_passed = #{is_passed}
+					and b.is_score_published = 1
+				</if> -->
+				<if test="is_passed != null">
+					<if test="is_passed == 0">
+						AND ( a.is_passed = 0
+								or a.is_passed is null )
+					</if>
+					<if test="is_passed == 1">
+						AND a.is_passed = 1
+					</if>
+				</if>
+				<if test="exam_status == 0">
+					AND b.begin_time &gt; now() or((a.exam_status = 1 or a.exam_status = 2 or a.exam_status = 3 or a.exam_status = 4)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now())
+				</if>
+				<!--未开始  未到达考试时间-->
+				<if test="exam_status == 1">
+					AND b.begin_time &gt; now()
+				</if>
+				<!--进行中  到达考试时间但未参加考试-->
+				<if test="exam_status == 2">
+					AND (a.exam_status = 1 or a.exam_status = 2 or a.exam_status = 3 or a.exam_status = 4)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now()
+				</if>
+				<!--已提交  考试在进行中且用户提交答案-->
+				<if test="exam_status == 3">
+					AND (a.exam_status = 3 or a.exam_status = 4)
+					and b.begin_time &lt;= now()
+					and b.end_time &gt; now()
+				</if>
+				<!--已结束  考试结束且已提交答案-->
+				<if test="exam_status == 4">
+					AND (a.exam_status = 3 or a.exam_status = 4)
+					and b.end_time &lt; now()
+				</if>
+				<!--已过期  考试结束且未提交答案-->
+				<if test="exam_status == 5">
+					AND (a.exam_status = 2 or a.exam_status = 1)
+					AND b.end_time &lt; now()
+				</if>
+	
+	</select>
+  	<!-- zhangbocheng end -->
+  	
+  	<!-- wangjian add 获取 某次考试的 参加次数 -->
+  	<select id="getUserTestNum" parameterType="long" resultType="Integer" >
+  		select ifnull(test_times, 0) from exam_assign_info where relation_id = #{relation_id} and user_id = #{user_id}
+  	</select>
+    	
+</mapper>

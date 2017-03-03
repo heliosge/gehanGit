@@ -1,0 +1,55 @@
+@charset "utf-8";
+/* CSS Document */
+
+/* reset */
+body,h1,h2,h3,h4,h5,p,dl,dd,ul,ol,form,input,textarea,th,td,select { margin:0; padding:0; }
+em { font-style:normal; }
+li { list-style:none; cursor:pointer; }
+a { text-decoration:none; cursor:pointer; }
+img { border:none; }
+table { border-collapse:collapse; }
+input,textarea { outline:none; }
+textarea { resize:none; overflow:auto; }
+body { font-size:12px;}
+input[type=button]{ cursor:pointer;}
+/* end reset */
+
+/* public */
+.clear { zoom:1; }
+.clear:after { content:''; display:block; clear:both; }
+.fl { float:left; }
+.fr { float:right; }
+/*end pubulic */
+
+.head{ width:100%; height:70px; min-width:1000px; font-family:'微软雅黑';}
+.head .head_t{ width:908px; height:66px; line-height:66px; margin:0 auto; padding-top:4px; padding-right:72px;}
+.head .head_t .logo_left{ width:270px; height:66px; float:left;}
+.head .head_t .logo_left img{ vertical-align:middle;}
+.head .head_t .logo_right{ width:340px; height:66px; float:right;}
+.head .head_t .logo_right .phone{ width:224px; height:51px; float:left; padding-top:7px; padding-bottom:8px;}
+.head .head_t .logo_right .phone img{ vertical-align:middle;}
+.head .head_t .logo_right .wx{ width:110px; height:58px; position:relative; float:right; margin-left:6px;}
+.head .head_t .logo_right .wx img{ vertical-align:top; position:absolute; left:30px; top:0;}
+.head .head_t .logo_right .wx a{ position:absolute; left:-20px; top:14px; color:#2a88c6; font-weight:bold;}
+.head .head_t .logo_right .wx a:hover{ color:#d0724c;}
+.head .head_t .logo_right .wx .wx_f{ width:350px; height:157px; position:absolute; top:56px; left:-14px; background:url(../images/login/bg_wx.png) no-repeat; padding:18px 24px 0 24px; display:none;}
+.head .head_t .logo_right .wx .wx_f img{ margin-top:40px;}
+.head .head_t .logo_right .wx .wx_f p{ margin-top:110px; color:#2a88c6; font-weight:bold;}
+
+.l_con{ width:1440px; height:456px; min-width:1000px; /* background:url(../images/login/login_bg.png) no-repeat; */ margin:0 auto; font-family:'微软雅黑'; box-shadow:2px 2px 4px 2px #ccc;}
+.l_con .login{ width:910px; height:408px; margin:0 auto; padding-right:70px; padding-top:48px;}
+.l_con .login .login_l{ width:244px; height:319px; background:#fff; float:right; padding:36px 36px 0 36px;}
+.l_con .login .login_l h4{text-align:center; font-size:14px; padding-bottom:48px;}
+.l_con .login .login_l p{ padding-bottom:16px;}
+.l_con .login .login_l p input[type=text],.l_con .login .login_l p input[type=password]{ width:240px; border:1px solid #ccc; height:40px; line-height:40px; text-indent:3em;/*  color:#999; */ font-family:'微软雅黑';}
+.l_con .login .login_l p input[type=text]{ background:url(../images/login/user.png) no-repeat 12px center;}
+.l_con .login .login_l p input[type=password]{ background:url(../images/login/password.png) no-repeat 12px center;}
+
+.l_con .login .login_l p input[type=checkbox]{ vertical-align:middle;}
+.l_con .login .login_l p span{ margin-left:8px; color:#666;}
+.l_con .login .login_l p .fog{ float:right; color:#666;}
+.l_con .login .login_l p a:hover{ color:#39C; text-decoration:underline;}
+.l_con .login .login_l p input[type=button]{ width:240px; border:none; background:#2482bf; height:40px; color:#fff; font-family:'微软雅黑'; letter-spacing:4px;}
+
+.foot{width:100%; min-width:1000px; margin-top:10px;}
+.foot p{ margin:0 auto; width:980px; text-align:center; color:#333; font-size:14px; line-height:20px;}
