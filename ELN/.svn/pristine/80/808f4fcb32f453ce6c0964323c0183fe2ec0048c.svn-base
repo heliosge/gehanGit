@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.InvestigationAssignDaoMapper">
+    
+    <!--调查报告人员map  -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.InvestigationAssignBean" id="assignMap">
+        <id property="id" column="id"/>
+        <result property="investigationId" column="investigation_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="status" column="status"/>
+        <result property="type" column="type"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <!--调查vomap  -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.InvestigationVoBean" id="voMap">
+        <id property="id" column="id"/>
+        <result property="assignId" column="assign_id"/>
+        <result property="questionnaireId" column="questionnaire_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="isPublic" column="is_public"/>
+        <result property="publishTime" column="publish_time"/>
+        <result property="status" column="status"/>
+    </resultMap>
+    
+    <!--查询调查报告人员  -->
+    <select id="getByInvestigationId" resultMap="assignMap">
+    	select * from investigation_assign 
+    	where investigation_id = #{investigationId} and type = #{type}
+    </select>
+    
+    <!--调查报告人员的插入  -->
+    <insert id="add" useGeneratedKeys="true" keyProperty="id">
+    	insert investigation_assign(investigation_id,user_id,status,type) 
+    	values(#{investigationId},#{userId},#{status},#{type})
+    </insert>
+    
+    <!--删除调查报告人员  -->
+    <delete id="delete">
+        delete from investigation_assign 
+        where investigation_id = #{investigationId} and type = #{type}
+    </delete>
+    
+    <!--查询调查参与人员数量  -->
+    <select id="getUser" parameterType="Integer" resultType="int">
+    	select count(1) from investigation_assign 
+    	where investigation_id = #{id} and type = #{type}
+    </select>
+    
+    <!--查询调查参与人员  -->
+    <select id="getUsers" parameterType="Integer" resultMap="assignMap">
+    	select * from investigation_assign 
+    	where investigation_id = #{id} and type = #{type}
+    </select>
+    
+    <!--获取我的问卷列表  -->
+    <select id="getVoList" resultMap="voMap">
+        select b.id,a.id assign_id,a.status,DATE_FORMAT(a.submit_time,'%Y-%m-%d %H:%I'),
+				b.questionnaire_id,b.title,
+				DATE_FORMAT(b.begin_time,'%Y-%m-%d %H:%I') begin_time,
+				DATE_FORMAT(b.end_time,'%Y-%m-%d %H:%I') end_time,
+				DATE_FORMAT(b.publish_time,'%Y-%m-%d %H:%I:%S') publish_time,
+				b.is_public 
+		from(
+			select * from investigation_assign
+			where user_id = #{userId} and type = #{type}
+				and EXISTS(select id from investigation
+							<include refid="where_getVoList"></include>
+					)
+		) a
+		left join  investigation b
+		on a.investigation_id = b.id
+		order by publish_time desc
+		<include refid="limitClause"></include>
+    </select>
+    
+    <!--获取我的问卷列表条数  -->
+    <select id="getTotalCount" resultType="Integer">
+         select count(1) from(
+			select * from investigation_assign
+			where user_id = #{userId} and type = #{type}
+				and EXISTS(select id from investigation
+							<include refid="where_getVoList"></include>
+					)
+		) a
+		left join  investigation b
+		on a.investigation_id = b.id
+    </select>
+    
+    <!--查询条件  -->
+    <sql id="where_getVoList">
+        <where>
+        investigation_id = id 
+            <if test="title != null and title != ''">and title like CONCAT('%', #{title}, '%')</if>
+            <if test="beginTime != null and beginTime != ''">and DATE_FORMAT(end_time,'%Y-%m-%d') &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and DATE_FORMAT(end_time,'%Y-%m-%d') &lt;= #{endTime}</if>
+           	<if test="isPeriod == 1">
+           		and ( (begin_time &lt; now() and end_time &gt; now() )
+           			or( begin_time &lt; now() and end_time is null)
+           		)
+           	</if>
+           	<if test="isPeriod == 2">
+           		and (begin_time &gt;= now() or end_time &lt;= now() )
+           	</if>
+            <!-- <if test="intendType != null">and intend_type = #{intendType}</if> -->
+            <if test="isPublic != null">and is_public = #{isPublic}</if>
+            <!-- <if test="isPublished != null">is_published = #{isPublished}</if> -->
+            <if test="createUserId != null">and create_user_id = #{createUserId}</if>
+            <if test="subCompanyId != null">and sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null">and company_id = #{companyId}</if>
+            <if test="status != null and status != 0">and status = #{status}</if>
+            and is_published = 1
+            and (is_deleted is null or is_deleted != 1)
+        </where>
+    </sql>
+    
+    <!--分页限制  -->
+    <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <!--更新问卷提交状态  -->
+    <update id="modifyStatus">
+    	update investigation_assign 
+    	set status = 2,submit_time = now()
+    	where id = #{id}
+    </update>
+    
+    <!--通过ID查询调查ID -->
+    <select id="getInvestigationId" parameterType="Integer" resultType="Integer">
+    	select investigation_id from investigation_assign where id = #{id}
+    </select>
+    <!--查询某个调查的参与总人数  -->
+    <select id="getTotalNum" parameterType="Integer" resultType="Integer">
+    	select count(1) from investigation_assign
+    	where investigation_id = #{id} and type = 1
+    </select>
+    <!--查询某个调查的实际参与人数  -->
+    <select id="getIntendNum" parameterType="Integer" resultType="Integer">
+    	select count(1) from investigation_assign
+    	where investigation_id = #{id} and status = 2 and type = 1
+    </select>
+    
+    <!--查询参与某个调查的所有人员  -->
+    <select id="getIntendList" parameterType="Integer" resultMap="assignMap">
+    	select b.id,b.investigation_id,b.user_id,b.status,b.submit_time  
+    	from investigation_assign b
+    	where b.investigation_id = #{id} and b.status = 2 and type = #{type}
+    	order by update_time
+    </select>
+    
+    <!--获取某个调查的员工答卷列表  -->
+    <select id="getUserAnswerList"  resultMap="assignMap">
+    	select id,investigation_id,user_id,status,submit_time  
+    	from investigation_assign
+    	where investigation_id = #{id} and type = #{type}
+    	<if test="userList!=null and userList.size>0">
+			And user_id in
+			<foreach collection="userList" item="user" open="(" close=")"
+				separator=",">
+				#{user.id}
+			</foreach>
+		</if>
+		<if test="status != null and status != 0">and status = #{status}</if>
+		order by status desc,id asc
+		<include refid="limitClause"></include>
+    </select>
+    
+    <!--获取某个调查的员工答卷列表条数  -->
+    <select id="getUserAnswerListCount"  resultType="int">
+    	select count(1)  
+    	from investigation_assign
+    	where investigation_id = #{id} and type = #{type}
+    	<if test="userList!=null and userList.size>0">
+			And user_id in
+			<foreach collection="userList" item="user" open="(" close=")"
+				separator=",">
+				#{user.id}
+			</foreach>
+		</if>
+		<if test="status != null and status != 0">and status = #{status}</if>
+    </select>
+    
+    <!--通过ID查询调查标题 -->
+    <select id="getById" parameterType="Integer" resultMap="voMap">
+    	select b.title,a.user_id userId from(
+			select investigation_id,user_id from investigation_assign
+			where id = #{id}
+		) a
+		left join investigation b
+		on a.investigation_id = b.id
+    </select>
+    
+     <!--根据调查ID获取分配表ID  -->
+    <select id="getAssignIdByInvestigationId" parameterType="int" resultType="String">
+    	select group_concat(id) from investigation_assign
+        where investigation_id = #{id} and type = 1
+    </select>
+    
+</mapper>

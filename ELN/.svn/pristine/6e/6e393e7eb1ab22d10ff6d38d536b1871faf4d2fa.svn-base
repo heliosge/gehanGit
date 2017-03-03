@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KlResourceToTagsDaoMapper" >
+  <resultMap id="KlResourceToTagsBean" type="com.jftt.wifi.bean.KlResourceToTagsBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="resource_id" property="resourceId" jdbcType="INTEGER" />
+    <result column="tag_id" property="tagId" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, resource_id, tag_id, update_time
+  </sql>
+    <!-- chenrui start -->
+  <select id="getById" resultMap="KlResourceToTagsBean">
+    select 
+    <include refid="Base_Column_List" />
+    from kl_resource_to_tags
+    where id = #{id}
+  </select>
+  
+  <!-- 根据知识id删除对应标签关联 -->
+  <delete id="removeByKlId">
+  	delete from kl_resource_to_tags krtt where krtt.resource_id=#{knowledgeId}
+  </delete>
+  
+  <insert id="add">
+  	insert into kl_resource_to_tags(resource_id,tag_id) values(#{knowledgeId},#{tagId})
+  </insert>
+  <!-- chenrui end -->
+</mapper>

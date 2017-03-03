@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KlCollectDownloadDaoMapper" >
+  <resultMap id="KlCollectDownloadBean" type="com.jftt.wifi.bean.KlCollectDownloadBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="resource_id" property="resourceId" jdbcType="INTEGER" />
+    <result column="user_id" property="userId" jdbcType="INTEGER" />
+    <result column="operate_time" property="operateTime" jdbcType="TIMESTAMP" />
+    <result column="operate_type" property="operateType" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, resource_id, user_id, operate_time, operate_type,updateTime
+  </sql>
+  
+  <select id="getById" resultMap="KlCollectDownloadBean">
+  	select
+  	<include refid="Base_Column_List"></include>
+  	from kl_collect_download kcd
+  	where kcd.id=#{id}
+  </select>
+  
+  <insert id="addCollectAndDownload">
+  	insert into kl_collect_download(resource_id,user_id,operate_time,operate_type)
+  	values(#{resourceId},#{userId},now(),#{operateType});
+  </insert>
+  
+  <select id="judgeCollecDownload" resultType="com.jftt.wifi.bean.vo.judgeColDownReturnVo">
+  	select count(case when kcd.operate_type=1 then 1 end) collectCount,
+  	count(case when kcd.operate_type=2 then 1 end) downloadCount
+  	from kl_collect_download kcd
+  	where kcd.user_id=#{userId} and kcd.resource_id=#{knowledgeId}
+  </select>
+  <!-- 判断是否收藏 -->
+  <select id="judgeCollect" parameterType="java.util.HashMap" resultType="int">
+  	select count(1) collectFlag from kl_collect_download kcd 
+  	where kcd.operate_type=1 and kcd.user_id=#{userId} and kcd.resource_id=#{resourceId}
+  </select>
+  
+   <!-- 单个删除 -->
+  <delete id="doDelColDow">
+  	delete from kl_collect_download
+  	where id =#{id}
+  </delete>
+  
+  <!-- 批量删除 -->
+  
+  <delete id="toDelColDown">
+  	delete from kl_collect_download
+  	where id in(
+  	<foreach collection="ids" item="id" separator=",">
+  		#{id}
+  	</foreach>
+  	)
+  </delete>
+
+</mapper>

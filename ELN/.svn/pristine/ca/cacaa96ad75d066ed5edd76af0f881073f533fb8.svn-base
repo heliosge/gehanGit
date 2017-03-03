@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseQuestionReplyDaoMapper">
+
+    <resultMap type="com.jftt.wifi.bean.CourseQuestionReplyBean" id="CourseQuestionReplyBeanMap">
+        <id property="id" column="id"/>
+        <result property="topicId" column="topic_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="content" column="content"/>
+        <result property="answertime" column="answertime"/>
+        <result property="type" column="type"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="companyId" column="company_id"/>
+        <result property="level" column="level"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.CourseQuestionTopicBean" id="CourseQuestionTopicBeanMap">
+        <id property="id" column="id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="frontImage" column="front_image"/>
+        <result property="qcode" column="qcode"/>
+        <result property="asktime" column="asktime"/>
+        <result property="state" column="state"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.CourseReplyVoForStudy" id="CourseReplyVoForStudyMap">
+    	<id property="id" column="id"/>
+    	<result property="userId" column="user_id"/>
+    	<result property="userName" column="user_name"/>
+    	<result property="content" column="content"/>
+    	<result property="answertime" column="answertime"/>
+    	<result property="replyText" column="reply_text"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.MyQuestionVo" id="MyQuestionVoMap">
+		<result property="courseId" column="course_id"/>
+		<result property="courseName" column="course_name"/>
+		<result property="courseCode" column="course_code"/>
+		<result property="frontImage" column="front_image"/>
+		<result property="lastAskTime" column="last_ask_time"/>
+		<result property="questionCount" column="question_count"/>
+	</resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.CourseWareIdTypeVo" id="CourseWareIdTypeVoMap">
+    	<result property="courseWareId" column="course_ware_id"/>
+    	<result property="courseWareType" column="course_ware_type"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.QuestionReplyVo" id="QuestionReplyVoMap">
+    	<id property="id" column="id"/>
+    	<result property="userId" column="user_id"/>
+    	<result property="userName" column="user_name"/>
+    	<result property="userPost" column="user_post"/>
+    	<result property="answertime" column="answertime"/>
+    	<result property="replyContent" column="reply_content"/>
+    	<result property="content" column="content"/>
+    </resultMap>
+    
+    <!--查询条件 -->
+    <sql id="Where_Clause">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="userId != null and userId != '' ">
+			   <![CDATA[   AND a.user_id = #{userId}]]> 
+			</if>
+			<if test="courseName != null and courseName != '' ">
+			   <![CDATA[   AND b.name like '%#{courseName}%']]> 
+			</if>
+			<if test="asktimeStart != null and asktimeStart != '' ">
+				<![CDATA[  AND a.asktime >= #{asktimeStart}]]> 
+			</if>
+			<if test="asktimeEnd != null and asktimeEnd != '' ">
+				<![CDATA[  AND a.asktime <= #{asktimeEnd}]]>
+			</if>
+		</trim>
+	</sql>
+    <!-- 根据id查询课程问答回答 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="CourseQuestionReplyBeanMap">
+        select * from course_question_reply where id = #{id}
+    </select>
+    <!-- 根据查询条件查询回答的问题 -->
+    <select id="queryMyReplyByCondition" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean" resultMap="CourseQuestionTopicBeanMap">
+       SELECT 
+			a.id,
+			a.course_id,
+			a.user_id,
+			a.title,
+			a.content,
+			a.front_image,
+			a.qcode,
+			a.asktime,
+			a.state,
+			a.update_time,
+			a.company_id
+		FROM 
+			course_question_topic AS a  
+			INNER JOIN  res_course AS b on a.course_id = b.id 
+            INNER JOIN course_question_reply as c  on c.topic_id=a.id 
+        <include refid="Where_Clause" />
+         limit ${pageStartSize}, ${pageSize}
+    </select>
+    <!--根据查询条件查询回答的问题总数-->
+	<select id="countByCondition" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean" resultType="java.lang.Integer">
+        SELECT 
+		   count(*)
+		FROM 
+			course_question_topic AS a  
+			INNER JOIN  res_course AS b on a.course_id = b.id 
+            INNER JOIN course_question_reply as c  on c.topic_id=a.id  
+		 <include refid="Where_Clause" />
+    </select>
+     <!--根据topicId获取个数-->
+	<select id="queryCountByTopicId" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean" resultType="java.lang.Integer">
+        SELECT 
+		   count(*) 
+		FROM 
+			course_question_reply_text as c  
+		WHERE 
+		    c.topic_id=#{topicId}
+    </select>
+     <!--新增我的回复-->
+    <insert id="addMyReply" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+	    insert into course_question_reply (topic_id, user_id, content, type, parent_id,company_id,sub_company_id,answertime) 
+	    values 
+	    (#{topicId}, #{userId}, #{content}, #{type}, #{parentId},#{companyId},#{subCompanyId},#{answertime})
+    </insert>
+     <!--新增回复富文本-->
+    <insert id="addReplyContent" parameterType="com.jftt.wifi.bean.CourseQuestionReplyTextBean">
+	    insert into course_question_reply_text (reply_id,reply_content) 
+	    values 
+	    (#{replyId}, #{replyContent})
+    </insert>
+    <!--编辑我的回复-->
+    <update id="editMyReply" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+		update course_question_reply set 
+			<trim>
+				<if test="content != null and content != '' ">
+					content = #{content}
+				</if>
+			</trim>
+		where id = #{id}
+	</update>
+	 <!--编辑我的Topic-->
+    <update id="editMyTopic" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+		update course_question_topic set 
+			<trim>
+				<if test="content != null and content != '' ">
+					content = #{content},
+				</if>
+			</trim>
+		where id = #{topicId}
+	</update>
+	<!--根据topicId编辑富文本-->
+    <update id="editReplyContent" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+		update course_question_reply_text set 
+			<trim>
+				<if test="replyContent != null and replyContent != '' ">
+					reply_content = #{replyContent},
+				</if>
+			</trim>
+		WHERE  topic_id=#{topicId} 
+	</update>
+	<!-- 删除回复 -->
+	<delete id="delMyReply" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+		delete from course_question_reply where topic_id = ${topicId}
+	</delete>
+	<!-- 删除TOPIC -->
+	<delete id="delMyTopic" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+		delete from course_question_topic where id = ${topicId}
+	</delete>
+	<!-- 删除富文本-->
+	<delete id="delReplyContent" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+		delete from course_question_reply_text where topic_id=#{topicId} 
+	</delete>
+	
+	<!-- shenhaijun start -->
+	
+	<!-- 获取该问题所有回答 -->
+	<select id="getReplys" parameterType="java.lang.Integer" resultMap="CourseReplyVoForStudyMap">
+		SELECT cqr.id,cqr.user_id,cqr.content,cqr.answertime,cqrt.reply_content reply_text 
+		  FROM (SELECT * FROM course_question_reply WHERE topic_id = #{topicId}) cqr 
+		    LEFT JOIN course_question_reply_text cqrt 
+		    ON cqr.id = cqrt.reply_id 
+		  ORDER BY cqr.answertime DESC 
+	</select>
+	
+	<!-- 获取回答问题的课程 -->
+	<select id="getReplyQuestions" resultMap="MyQuestionVoMap">
+		SELECT DISTINCT rc.id course_id,rc.name course_name,rc.code course_code,rc.front_image,
+    	    (SELECT MAX(asktime) FROM course_question_topic WHERE user_id = #{userId} AND course_id = rc.id) last_ask_time,
+    	    (SELECT COUNT(id) FROM course_question_topic WHERE user_id = #{userId} AND course_id = rc.id) question_count  
+		  FROM course_question_reply cqr LEFT JOIN course_question_topic cqt ON cqr.topic_id = cqt.id 
+		    LEFT JOIN res_course rc ON cqt.course_id = rc.id 
+		  WHERE cqr.user_id = #{userId} 
+		  <trim>
+    	    <if test="courseName != null and courseName != '' ">
+    	    	AND rc.name LIKE CONCAT('%',#{courseName},'%') 
+    	    </if>
+    	    <if test="asktimeStartDate != null">
+    	    	AND cqt.asktime &gt;= #{asktimeStartDate} 
+    	    </if>
+    	    <if test="asktimeEndDate != null">
+    	    	AND cqt.asktime &lt;= #{asktimeEndDate} 
+    	    </if>
+    	  </trim>
+    	  ORDER BY ${sortName} ${sortOrder} 
+    	  LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 获取回答问题的课程数量 -->
+	<select id="getReplyQuestionsCount" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(rc.id)) 
+		  FROM course_question_reply cqr LEFT JOIN course_question_topic cqt ON cqr.topic_id = cqt.id 
+		    LEFT JOIN res_course rc ON cqt.course_id = rc.id 
+		  WHERE cqr.user_id = #{userId} 
+		  <trim>
+    	    <if test="courseName != null and courseName != '' ">
+    	    	AND rc.name LIKE CONCAT('%',#{courseName},'%') 
+    	    </if>
+    	    <if test="asktimeStartDate != null">
+    	    	AND cqt.asktime &gt;= #{asktimeStartDate} 
+    	    </if>
+    	    <if test="asktimeEndDate != null">
+    	    	AND cqt.asktime &lt;= #{asktimeEndDate} 
+    	    </if>
+    	  </trim>
+	</select>
+	
+	<!-- 获取这门课程的本学员回答所在的前两个问题 -->
+	<select id="getReplyDoubleQuestions" resultType="java.lang.String">
+		SELECT DISTINCT(cqt.title) 
+		  FROM course_question_reply cqr LEFT JOIN course_question_topic cqt ON cqr.topic_id = cqt.id 
+		  WHERE cqr.user_id = #{userId} AND cqt.course_id = #{courseId} 
+		  ORDER BY cqr.answertime DESC 
+		  LIMIT 0,2 
+	</select>
+	
+	<!-- 获取该课该学员提问的最近问题的courseWareId和courseWareType -->
+	<select id="getAskWareIdType" resultMap="CourseWareIdTypeVoMap">
+		SELECT DISTINCT cqt.course_ware_id,cqt.course_ware_type 
+		  FROM course_question_topic cqt LEFT JOIN res_courseware rco 
+		    ON cqt.course_ware_id = rco.id 
+		  WHERE cqt.user_id = #{userId} AND cqt.course_id = #{courseId} AND rco.delete_flag = 1 
+		  ORDER BY cqt.asktime DESC 
+		  LIMIT 0,1 
+	</select>
+	
+	<!-- 获取该课该学员回答的最近问题的courseWareId和courseWareType -->
+	<select id="getReplyWareIdType" resultMap="CourseWareIdTypeVoMap">
+		SELECT DISTINCT cqt.course_ware_id,cqt.course_ware_type 
+		  FROM course_question_reply cqr LEFT JOIN course_question_topic cqt ON cqr.topic_id = cqt.id 
+		    LEFT JOIN res_courseware rco ON cqt.course_ware_id = rco.id 
+		  WHERE cqr.user_id = #{userId} AND cqt.course_id = #{courseId} AND rco.delete_flag = 1 
+		  ORDER BY cqr.answertime DESC 
+		  LIMIT 0,1 
+	</select>
+	
+	<!-- 修改该回复的内容 -->
+	<update id="updateReply" parameterType="com.jftt.wifi.bean.CourseQuestionReplyBean">
+		UPDATE course_question_reply 
+		  <set>
+		  	<if test="userId != null">
+		  		user_id = #{userId},
+		  	</if>
+		  	<if test="content != null and content != '' ">
+		  		content = #{content},
+		  	</if>
+		  	<if test="answertime != null">
+		  		answertime = #{answertime},
+		  	</if>
+		  </set>
+		  WHERE id = #{id} 
+	</update>
+	
+	<!-- 获取回复的内容 -->
+	<select id="getQuestionReplys" resultMap="QuestionReplyVoMap">
+		SELECT cqr.id,cqr.user_id,cqr.content,cqr.answertime,
+		  (SELECT reply_content FROM course_question_reply_text WHERE reply_id = cqr.id) reply_content 
+		  FROM course_question_reply cqr 
+		  WHERE cqr.topic_id = #{topicId} 
+		ORDER BY cqr.answertime DESC 
+	</select>
+	
+	<!-- shenhaijun end -->
+	
+</mapper>

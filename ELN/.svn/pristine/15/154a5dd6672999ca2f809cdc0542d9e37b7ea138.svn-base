@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.TrainArrangeContentDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainArrangeContentBean" >
+    <id column="id" property="id"/>
+    <result column="train_arrange_id" property="trainArrangeId"/>
+    <result column="content" property="content" />
+    <result column="teacher_id" property="teacherId"/>
+    <result column="teacher_name" property="teacherName"/>
+    <result column="begin_time" property="beginTime" />
+    <result column="end_time" property="endTime" />
+    <result column="begin_time_date" property="beginTimeDate" />
+    <result column="end_time_date" property="endTimeDate" />
+    <result column="sign_begin_time" property="signBeginTime" />
+    <result column="sign_end_time" property="signEndTime" />
+    <result column="period" property="period"/>
+    <result column="score" property="score"/>
+    <result column="train_type" property="trainType"/>
+    <result column="course_id" property="courseId"/>
+    <result column="course_name" property="courseName"/>
+    <result column="place" property="place" />
+    <result column="pass_percent" property="passPercent"/>
+    <!-- <result column="after_class_exam" property="afterClassExam"/>
+    <result column="after_class_exam_name" property="afterClassExamName"/>
+    <result column="ace_duration" property="aceDuration"/>
+    <result column="ace_allow_times" property="aceAllowTimes"/> -->
+    <result column="after_class_test" property="afterClassTest"/>
+    <result column="after_class_test_name" property="afterClassTestName"/>
+    <result column="before_class_course_id" property="beforeClassCourseId"/>
+    <result column="before_class_course_name" property="beforeClassCourseName"/>
+    <result column="before_class_file_path" property="beforeClassFilePath"/>
+    <result column="before_class_file_name" property="beforeClassFileName"/>
+    <result column="before_class_file_size" property="beforeClassFileSize"/>
+  </resultMap>
+  <sql id="Base_Column_List" >
+    a.id, train_arrange_id, content, a.teacher_id,  begin_time begin_time_date, end_time end_time_date, DATE_FORMAT(begin_time,'%Y-%m-%d %H:%i') begin_time,  DATE_FORMAT(end_time,'%Y-%m-%d %H:%i') end_time,
+    DATE_FORMAT(sign_begin_time,'%Y-%m-%d %H:%i')  sign_begin_time, DATE_FORMAT(sign_end_time,'%Y-%m-%d %H:%i') sign_end_time, period, score, train_type, course_id, place, 
+    pass_percent, after_class_test,before_class_course_id, before_class_file_path, before_class_file_name,b.name course_name, 
+    c.name before_class_course_name, before_class_file_size, d.teacher_name teacher_name, e.name after_class_test_name<!-- , p.title after_class_exam_name, a.ace_allow_times, a.ace_duration -->
+  </sql>
+  <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from train_arrange_content a
+    left join res_course b on a.course_id = b.id
+    left join res_course c on a.before_class_course_id = c.id
+    left join res_teacher d on a.teacher_id = d.teacher_id
+    left join questionnaire e on e.id = a.after_class_test
+    <!-- left join exam_paper p on p.id = a.after_class_exam -->
+    where a.id = #{id}
+  </select>
+  <delete id="deleteById" parameterType="java.lang.Integer" >
+    delete from train_arrange_content
+    where id = #{id}
+  </delete>
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainArrangeContentBean" >
+    insert into train_arrange_content (train_arrange_id, content, 
+      teacher_id, begin_time, end_time, 
+      sign_begin_time, sign_end_time, period, 
+      score, train_type, course_id, 
+      place, pass_percent, <!-- after_class_exam, ace_allow_times, ace_duration,  -->after_class_test, 
+      before_class_course_id, before_class_file_path, before_class_file_name, before_class_file_size)
+    values (#{trainArrangeId}, #{content}, 
+      #{teacherId}, #{beginTime}, #{endTime}, 
+      #{signBeginTime}, #{signEndTime}, #{period}, 
+      #{score}, #{trainType}, #{courseId}, 
+      #{place}, #{passPercent}, <!-- #{afterClassExam}, #{aceAllowTimes}, #{aceDuration}, --> #{afterClassTest}, 
+      #{beforeClassCourseId}, #{beforeClassFilePath}, #{beforeClassFileName}, #{beforeClassFileSize})
+  </insert>
+ 
+  <update id="updateById" parameterType="com.jftt.wifi.bean.TrainArrangeContentBean" >
+    update train_arrange_content
+    set content = #{content},
+      teacher_id = #{teacherId},
+      begin_time = #{beginTime},
+      end_time = #{endTime},
+      sign_begin_time = #{signBeginTime},
+      sign_end_time = #{signEndTime},
+      period = #{period},
+      score = #{score},
+      train_type = #{trainType},
+      course_id = #{courseId},
+      place = #{place},
+     <!--  after_class_exam = #{afterClassExam},
+       ace_allow_times = #{aceAllowTimes}, 
+       ace_duration = #{aceDuration}, -->
+      pass_percent = #{passPercent},
+      after_class_test = #{afterClassTest},
+      before_class_course_id = #{beforeClassCourseId},
+      before_class_file_path = #{beforeClassFilePath},
+      before_class_file_name = #{beforeClassFileName},
+      before_class_file_size = #{beforeClassFileSize}
+    where id = #{id}
+  </update>
+  
+  <select id="selectContentsByArrangeId"  resultMap="BaseResultMap">
+  	 select 
+    <include refid="Base_Column_List" />
+    from train_arrange_content a
+    left join res_course b on a.course_id = b.id
+    left join res_course c on a.before_class_course_id = c.id
+    left join res_teacher d on a.teacher_id = d.teacher_id
+    left join questionnaire e on e.id = a.after_class_test
+    <!--  left join exam_paper p on p.id = a.after_class_exam -->
+    where train_arrange_id = #{arrangeId}
+  </select>
+  
+</mapper>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.OfflineTestResultsDaoMapper">
+
+	<resultMap id="OfflineTestResultsBean" type="com.jftt.wifi.bean.OfflineTestResultsBean">
+		<id column="id" property="id" />
+		<result column="offline_test_id" property="offline_test_id" />
+	    <result column="name" property="name" />
+		<result column="email" property="email" />
+		<result column="phone" property="phone" />
+		<result column="job" property="job" />
+		<result column="department" property="department" />
+		<result column="score" property="score" />
+		<result column="create_time" property="create_time" />
+		<result column="update_time" property="update_time" />
+		<result column="is_delete" property="is_delete" />
+	</resultMap>
+	
+	<sql id="OfflineTestResultsBean_where">
+		<where>
+			<if test="id != null ">
+				AND id = #{id, jdbcType=INTEGER}
+			</if>
+			<if test="offline_test_id != null ">
+				AND offline_test_id = #{offline_test_id, jdbcType=INTEGER}
+			</if>
+			<if test="is_delete != null ">
+				AND is_delete = #{is_delete, jdbcType=INTEGER}
+			</if>
+		</where>
+	</sql>
+	
+	<sql id="OfflineTestResultsBean_property">
+		id,
+		offline_test_id,
+		name,
+		email,
+		phone,
+		job,
+		department,
+		score,
+		create_time,
+		update_time,
+		is_delete
+	</sql>
+	
+	<!-- 增加 -->
+  	<insert id="addOfflineTestResults" parameterType="com.jftt.wifi.bean.OfflineTestResultsBean" useGeneratedKeys="true" keyProperty="id" >
+    	insert into offline_test_results (offline_test_id, name, email, phone, job, department, score, create_time, update_time, is_delete)
+    	values (#{offline_test_id, jdbcType=INTEGER}, #{name, jdbcType=VARCHAR}, #{email, jdbcType=VARCHAR}, #{phone, jdbcType=VARCHAR}, #{job, jdbcType=VARCHAR}, 
+    			#{department, jdbcType=VARCHAR}, #{score, jdbcType=VARCHAR}, (select now()), (select now()), #{is_delete, jdbcType=INTEGER})
+  	</insert>
+	
+	<!-- 修改 -->
+	<update id="updateOfflineTestResults" parameterType="com.jftt.wifi.bean.OfflineTestResultsBean" >
+		update offline_test_results
+		<set>
+			<if test="name !=null ">
+				name = #{name, jdbcType=VARCHAR},
+			</if>
+			<if test="email !=null ">
+				email = #{email, jdbcType=VARCHAR},
+			</if>
+			<if test="phone !=null ">
+				phone = #{phone, jdbcType=VARCHAR},
+			</if>
+			<if test="job !=null ">
+				job = #{job, jdbcType=VARCHAR},
+			</if>
+			<if test="department !=null ">
+				department = #{department, jdbcType=VARCHAR},
+			</if>
+			<if test="score !=null ">
+				score = #{score, jdbcType=VARCHAR},
+			</if>
+			<if test="is_delete !=null ">
+				is_delete = #{is_delete, jdbcType=INTEGER},
+			</if>
+			update_time = (select now())
+		</set>
+		where id = #{id, jdbcType=BIGINT}
+	</update>
+	
+	<!-- 查询 -->
+	<select id="getOfflineTestResultsNum" parameterType="com.jftt.wifi.bean.OfflineTestResultsBean" resultType="int" >
+		select COUNT(*) from offline_test_results
+		<include refid="OfflineTestResultsBean_where" />
+	</select>
+	
+	<!-- 查询 -->
+	<select id="getOfflineTestResults" parameterType="com.jftt.wifi.bean.OfflineTestResultsBean" resultMap="OfflineTestResultsBean" >
+		select 
+		<include refid="OfflineTestResultsBean_property" />
+		from offline_test_results
+		<include refid="OfflineTestResultsBean_where" />
+		<!-- order by score+0 desc -->
+		<if test="fromNum != null and pageSize !=null and pageSize !=0 ">
+			limit #{fromNum}, #{pageSize}
+		</if>
+	</select>
+	
+	<!-- 删除线下考试结果 -->
+	<delete id="deleteOfflineTestResultsByTestId" parameterType="long">
+		delete from offline_test_results where offline_test_id = #{testId}
+	</delete>
+	
+</mapper>

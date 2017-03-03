@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseLearningMapDaoMapper">
+    <!--映射关系-->
+    <resultMap type="com.jftt.wifi.bean.vo.CoursePromotionPathStage" id="promPathStage">
+        <id property="stageId" column="stageId"/>
+        <result property="postId" column="post_id"/>
+        <result property="postName" column="post_name"/>
+        <result property="promStatus" column="promotion_status"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="stageAccount" column="stage_account"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.vo.CoursePromotionPath" id="promPath">
+        <id property="id" column="promotion_path_id"/>
+        <result property="isDisabled" column="is_disabled"/>
+        <!-- 将stageList属性映射到collection -->
+        <collection property="stageList" ofType="com.jftt.wifi.bean.vo.CoursePromotionPathStage" resultMap="promPathStage"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.vo.CoursePromStageCourse" id="stageCourse">
+        <id property="courseId" column="course_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="wareType" column="ware_type"/>
+        <result property="courseType" column="course_type"/>
+    </resultMap>
+    <resultMap type="com.jftt.wifi.bean.vo.CoursePromotionPathStage" id="stage">
+        <id property="stageId" column="id"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="postName" column="post_name"/>
+        <result property="examId" column="exam_id"/>
+        <result property="examStatus" column="exam_status"/>
+        <!-- 将courseList属性映射到collection -->
+        <collection property="courseList" ofType="com.jftt.wifi.bean.vo.CoursePromStageCourse" resultMap="stageCourse"/>
+    </resultMap>
+    <!--查询条件-->
+    <sql id="Where_Clause">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="postName != null and postName != '' ">
+			   <![CDATA[   AND e.name = #{postName}]]> 
+			</if>
+		</trim>
+	</sql>
+    <!--学习地图首页 -->
+    <select id="queryLearningMapInfoByUserId" parameterType="com.jftt.wifi.bean.vo.CoursePromotionPath" resultMap="promPath">
+        SELECT 
+		  b.promotion_path_id,
+		  b.is_disabled,
+		  c.post_id,
+		  e.name as post_name,
+		  c.order_num,
+		  c.id as stageId,
+		  d.promotion_status,
+		  '' as stage_account  
+		FROM 
+			(
+				SELECT DISTINCT
+					c.promotion_path_id,f.is_disabled
+				FROM
+					post_promotion_state AS a 
+			    LEFT JOIN
+			      post_promotion_path_stage as c ON a.promotion_stage_id=c.id
+			    LEFT JOIN post_promotion_path as f ON f.id=c.promotion_path_id 
+				WHERE 
+					a.user_id = #{userId}  and f.is_deleted=0 
+			) as b 
+	   	LEFT JOIN post_promotion_path_stage as c ON c.promotion_path_id=b.promotion_path_id 
+	   	LEFT JOIN post_promotion_state AS d ON d.promotion_stage_id=c.id  
+	   	LEFT JOIN manage_post as e ON e.id=c.post_id   
+   		ORDER BY b.promotion_path_id ASC,c.order_num ASC
+    </select>
+    <!--发现更多-->
+    <select id="queryFindMoreInfoByUserId" parameterType="com.jftt.wifi.bean.vo.CoursePromotionPath" resultMap="promPath">
+        SELECT 
+		  b.promotion_path_id,
+		  b.is_disabled,
+		  c.post_id,
+		  e.name as post_name,
+		  c.order_num,
+		  c.id as stageId,
+		  d.promotion_status,
+		  get_stage_account(#{userId},c.id) as stage_account 
+		FROM 
+			(
+				SELECT DISTINCT
+					c.promotion_path_id,f.is_disabled
+				FROM
+					post_promotion_state AS a 
+			    LEFT JOIN
+			      post_promotion_path_stage as c ON a.promotion_stage_id=c.id
+			    LEFT JOIN post_promotion_path as f ON f.id=c.promotion_path_id 
+			    LEFT JOIN manage_post as g ON g.id=c.post_id   
+				WHERE 
+					a.user_id = #{userId}  and f.is_deleted=0   
+				<if test="postName != null and postName != '' ">
+		              and g.name=#{postName}  
+				</if>
+				LIMIT ${pageStartSize}, ${pageSize} 
+			) as b 
+	   	LEFT JOIN post_promotion_path_stage as c ON c.promotion_path_id=b.promotion_path_id 
+	   	LEFT JOIN post_promotion_state AS d ON d.promotion_stage_id=c.id  
+	   	LEFT JOIN manage_post as e ON e.id=c.post_id   
+   		ORDER BY b.promotion_path_id ASC,c.order_num ASC
+    </select>
+    <!--发现更多总记录数-->
+	<select id="countByCondition" parameterType="com.jftt.wifi.bean.vo.CoursePromotionPath" resultType="java.lang.Integer">
+	   	SELECT count(DISTINCT c.promotion_path_id)
+		FROM
+			post_promotion_state AS a 
+	    LEFT JOIN
+	      post_promotion_path_stage as c ON a.promotion_stage_id=c.id
+	    LEFT JOIN post_promotion_path as f ON f.id=c.promotion_path_id 
+        LEFT JOIN manage_post as g ON g.id=c.post_id   
+		WHERE 
+		a.user_id = #{userId} and f.is_deleted=0  
+		<if test="postName != null and postName != '' ">
+		   and g.name=#{postName}
+		</if>
+    </select>
+    <!--查看阶段明细-->
+    <select id="queryCurrentStageInfoByStageId" parameterType="com.jftt.wifi.bean.vo.CoursePromotionPathStage" resultMap="stage">
+          SELECT 
+			  a.id,
+			  a.order_num,
+			  b.NAME as post_name,
+			  a.exam_id,
+			  c.exam_status,
+			  f.name as course_name,
+			  e.learn_process as ware_type,
+			  e.course_id,
+			  d.course_type 
+			FROM 
+				post_promotion_path_stage AS a 
+			LEFT JOIN manage_post AS b ON a.post_id = b.id 
+			LEFT JOIN exam_assign_info AS c ON a.exam_id = c.paper_id and c.user_id=#{userId} 
+			LEFT JOIN post_course_relation as d ON d.post_id=a.post_id  
+			LEFT JOIN course_study_record as e ON e.course_id=d.course_id 
+			LEFT JOIN res_course as f ON f.id=e.course_id 
+			WHERE a.id=#{stageId}
+    </select>
+</mapper>

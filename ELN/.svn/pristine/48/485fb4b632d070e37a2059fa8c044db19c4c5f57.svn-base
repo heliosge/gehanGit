@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.TrainCheckDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainCheckBean" >
+    <id column="id" property="id"/>
+    <result column="train_id" property="trainId"/>
+    <result column="check_user_id" property="checkUserId"/>
+    <result column="check_user_name" property="checkUserName"/>
+    <result column="type" property="type"/>
+    <result column="status" property="status"/>
+    <result column="refuse_reason" property="refuseReason"/>
+    <result column="create_time" property="createTime"/>
+    <result column="update_time" property="updateTime"/>
+  </resultMap>
+  
+  <resultMap id="TrainPlanCheckResultMap" type = "com.jftt.wifi.bean.TrainCheckBean" extends="BaseResultMap">
+  	<association property="plan" column="train_id"
+		    select="com.jftt.wifi.dao.TrainPlanDaoMapper.selectById"/>
+  </resultMap>
+  
+   <resultMap id="TrainArrangeResultMap" type = "com.jftt.wifi.bean.TrainCheckBean" extends="BaseResultMap">
+  	<association property="arrange" column="train_id"
+		    select="com.jftt.wifi.dao.TrainArrangeDaoMapper.selectById"/>
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    id, train_id, check_user_id, check_user_name, type, status, refuse_reason, create_time, update_time
+  </sql>
+  <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from train_check
+    where id = #{id}
+  </select>
+  
+  <select id="selectTrainCheckById" resultMap="BaseResultMap">
+  	select 
+    <include refid="Base_Column_List" />
+    from train_check
+    where id = #{id}
+  </select>
+  
+  <delete id="deleteById" parameterType="java.lang.Integer" >
+    delete from train_check
+    where id = #{id}
+  </delete>
+  
+  <delete id="deleteByMap">
+  	delete from train_check
+    where train_id = #{trainId} and type = #{type}
+  </delete>
+  
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainCheckBean" >
+    insert into train_check (train_id, check_user_id, check_user_name, type)
+    values (#{trainId}, #{checkUserId}, #{checkUserName},#{type})
+  </insert>
+  <update id="updateById" parameterType="com.jftt.wifi.bean.TrainCheckBean" >
+    update train_check
+    set status = #{status},
+      refuse_reason = #{refuseReason},
+      update_time = now()
+    where id = #{id}
+  </update>
+  
+  <update id="updateStatusByTrainId" >
+  	 update train_check
+    set status = #{status},
+      update_time = now()
+    where train_id = #{trainId} and type = #{type}
+  </update>
+  
+  <sql id="planConditions">
+        <trim>
+            <if test="timeType != null and timeType != '' ">
+            	  AND b.time_type = #{timeType}
+            </if>
+            <if test="timeValue != null and timeValue != '' ">
+            	  AND b.time_value = #{timeValue}
+            </if>
+            <if test="submitUserName != null and submitUserName != '' ">
+            	  AND b.submit_user_name like '%${submitUserName}%'
+            </if>
+            <if test="submitDept != null and submitDept != '' ">
+            	  AND b.submit_dept like '%${submitDept}%'
+            </if>
+            <if test="status != null and status != '' ">
+            	  AND a.status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+				AND b.update_time &gt;= str_to_date(#{startTime},"%Y-%m-%d %T") 
+			</if>
+			<if test="endTime != null and endTime != ''">
+				AND b.update_time &lt;= str_to_date(CONCAT(#{endTime}," 23:59:59"),"%Y-%m-%d %T") 
+			</if>
+        </trim>
+    </sql>
+  
+  <select id="selectTrainPlanCheckList" resultMap="TrainPlanCheckResultMap">
+  	SELECT a.* FROM train_check a 
+  	join train_plan b on a.train_id=b.id
+  	WHERE NOT EXISTS (SELECT c.id FROM train_check c WHERE c.train_id=a.train_id AND c.type=a.type AND c.id &lt; a.id 
+  	AND (c.STATUS = 1 OR c.STATUS = 3)) AND type = 1
+		AND check_user_id=#{checkUserId} 
+	<include refid="planConditions"/> 
+	order by a.create_time desc
+	limit #{fromNum},#{pageSize}
+  </select>
+  
+    <select id="selectTrainPlanCheckCount" resultType="int">
+  	SELECT count(1) FROM train_check a 
+  	join train_plan b on a.train_id=b.id
+  	WHERE NOT EXISTS (SELECT c.id FROM train_check c WHERE c.train_id=a.train_id AND c.type=a.type AND c.id &lt; a.id 
+  	AND (c.STATUS = 1 OR c.STATUS = 3)) AND type = 1
+		AND check_user_id=#{checkUserId} 
+		<include refid="planConditions"/> 
+  </select>
+  
+   <select id="selectTrainArrangeCheckList" resultMap="TrainArrangeResultMap">
+  	SELECT a.* FROM train_check a 
+  	join train_arrange b on a.train_id=b.id
+  	WHERE NOT EXISTS (SELECT c.id FROM train_check c WHERE c.train_id=a.train_id AND c.type=a.type AND c.id &lt; a.id 
+  	AND (c.STATUS = 1 OR c.STATUS = 3)) AND type = 2
+		AND check_user_id=#{checkUserId} 
+		<include refid="planConditions"/> 
+	order by a.create_time desc
+	limit #{fromNum},#{pageSize}
+  </select>
+  
+    <select id="selectTrainArrangeCheckCount" resultType="int">
+  	SELECT count(1) FROM train_check a 
+  	join train_arrange b on a.train_id=b.id
+  	WHERE NOT EXISTS (SELECT c.id FROM train_check c WHERE c.train_id=a.train_id AND c.type=a.type AND c.id &lt; a.id 
+  	AND (c.STATUS = 1 OR c.STATUS = 3)) AND type = 2
+		AND check_user_id=#{checkUserId} 
+		<include refid="planConditions"/> 
+  </select>
+  
+  <select id="selectTrainCheckByVo" resultMap="BaseResultMap" parameterType="com.jftt.wifi.bean.vo.TrainVo">
+  	select * from train_check where train_id=#{trainId} and type=#{type}
+  </select>
+</mapper>

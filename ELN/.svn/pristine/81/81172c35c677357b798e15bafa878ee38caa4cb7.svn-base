@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.ExamWrongCardDaoMapper" >
+  <resultMap id="ExamWrongCardBean" type="com.jftt.wifi.bean.ExamWrongCardBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="from_user_id" property="fromUserId" jdbcType="INTEGER" />
+    <result column="question_id" property="questionId" jdbcType="INTEGER" />
+    <result column="join_time" property="joinTime" jdbcType="TIMESTAMP" />
+    <result column="type" property="type" jdbcType="INTEGER" />
+    <result column="user_answer" property="userAnswer" jdbcType="VARCHAR" />
+    <result column="evaluation" property="evaluation" jdbcType="VARCHAR" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, from_user_id, question_id, join_time, evaluation,updateTime
+  </sql>
+  
+  <select id="getById" resultMap="ExamWrongCardBean">
+  	select
+  	<include refid="Base_Column_List"></include>
+  	from exam_wrong_card ewc
+  	where ewc.id=#{id}
+  </select>
+  
+  <!--zhangchen start  -->
+  <resultMap id="examWrongCardVo" type="com.jftt.wifi.bean.vo.ExamWrongCardVo">
+		<result property="id" column="id"/>
+		<!-- <result property="paperId" column="paper_id"/> -->
+		<result property="wrongId" column="wrong_id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="title" column="title"/>
+		<result property="content" column="content"/>
+		<result property="type" column="type"/>
+		<result property="wrongType" column="wrong_type"/>
+		<result property="isMultimedia" column="is_multimedia"/>
+		<result property="assignId" column="assign_id"/>
+		<result property="userId" column="user_id"/>
+		<!-- <result property="myAnswer" column="my_answer"/> -->
+		<association property="answerId" column="{question_id=question_id,exam_assign_id=assign_id}"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamUserAnswerDaoMapper.selectAnswerIdByAssignIdAndQuestionId"/>
+		<association property="myAnswer" column="{question_id=question_id,exam_assign_id=assign_id}"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.ExamUserAnswerDaoMapper.selectAnswerByAssignIdAndQuestionId"/>
+		<association property="correctAnswer" column="question_id"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.ExamUserAnswerDaoMapper.selectExamCorrectAnswer"/>
+	</resultMap>
+	
+	<!--查询我的考试-错题集  -->
+	<select id="selectWrongCardByUserId" resultMap="examWrongCardVo" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select d.id,d.title,a.id wrong_id,a.question_id,a.exam_result_id assign_id,
+				a.from_user_id user_id,b.content,b.type,b.is_multimedia,a.type wrong_type
+		from(select id,question_id,exam_result_id,from_user_id,type from exam_wrong_card
+				where from_user_id = #{user_id}
+				and EXISTS(
+					select id from exam_question
+					where id = question_id
+					<if test="content != null and content != '' ">
+						AND content like CONCAT('%', #{content}, '%')
+					</if>
+					<!--首先判断是否是多媒体题，然后判断其它题型  -->
+					<if test="type != 0 ">
+						AND display_type = #{type}
+					</if>
+				)
+				<if test="question_id != 0">
+					AND question_id = #{question_id}
+				</if>
+				<if test="wrongType != null ">
+					AND type = #{wrongType}
+				</if>
+			) a
+		left join exam_question b
+		on a.question_id = b.id
+		left join exam_assign_info c
+		on a.exam_result_id = c.id
+		left join exam_schedule d
+		on c.relation_id = d.id
+		<if test="fromNum != null">
+			limit ${fromNum}, ${pageSize}
+		</if>
+	</select>
+	
+	<!--查询错题条数  -->
+	<select id="selectWrongCount" resultType="int" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select count(1)
+		from(select id,question_id,exam_result_id,from_user_id,type from exam_wrong_card
+				where from_user_id = #{user_id}
+				and EXISTS(
+					select id from exam_question
+					where id = question_id
+					<if test="content != null and content != '' ">
+						AND content like CONCAT('%', #{content}, '%')
+					</if>
+					<if test="type != 0 ">
+						AND display_type = #{type}
+					</if>
+				)
+				<if test="question_id != 0">
+					and question_id = #{question_id}
+				</if>
+				<if test="wrongType != null ">
+					AND type = #{wrongType}
+				</if>
+			) a
+	</select>
+	
+	
+	 <resultMap id="simExamWrongCardVo" type="com.jftt.wifi.bean.vo.ExamWrongCardVo">
+		<result property="id" column="id"/>
+		<!-- <result property="paperId" column="paper_id"/> -->
+		<result property="wrongId" column="wrong_id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="title" column="title"/>
+		<result property="content" column="content"/>
+		<result property="type" column="type"/>
+		<result property="wrongType" column="wrong_type"/>
+		<result property="isMultimedia" column="is_multimedia"/>
+		<result property="userId" column="user_id"/>
+		<result property="myAnswer" column="user_answer"/>
+		<association property="correctAnswer" column="question_id"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.ExamUserAnswerDaoMapper.selectExamCorrectAnswer"/>
+	</resultMap>
+	<!--查询我的模拟考试-错题集  -->
+	<select id="selectSimWrongCard" resultMap="simExamWrongCardVo" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select d.id,d.title,a.id wrong_id,a.question_id,a.exam_result_id assign_id,
+				a.from_user_id user_id,b.content,b.type,b.is_multimedia,a.type wrong_type,a.user_answer
+		from(select id,question_id,exam_result_id,from_user_id,type,user_answer from exam_wrong_card
+				where from_user_id = #{user_id}
+				and EXISTS(
+					select id from exam_question
+					where id = question_id
+					<if test="content != null and content != '' ">
+						AND content like CONCAT('%', #{content}, '%')
+					</if>
+					<!--首先判断是否是多媒体题，然后判断其它题型  -->
+					<if test="type != 0 ">
+						AND display_type = #{type}
+					</if>
+				)
+				<if test="question_id != 0">
+					AND question_id = #{question_id}
+				</if>
+				<if test="wrongType != null ">
+					AND type = #{wrongType}
+				</if>
+			) a
+		left join exam_question b
+		on a.question_id = b.id
+		left join exam_assign_info c
+		on a.exam_result_id = c.id
+		left join exam_schedule d
+		on c.relation_id = d.id
+		<if test="fromNum != null">
+			limit ${fromNum}, ${pageSize}
+		</if>
+	</select>
+	
+	<!--查询模拟考试 错题条数  -->
+	<select id="selectSimExamWrongCount" resultType="int" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select count(1)
+		from(select id,question_id,exam_result_id,from_user_id,type from exam_wrong_card
+				where from_user_id = #{user_id}
+				and EXISTS(
+					select id from exam_question
+					where id = question_id
+					<if test="content != null and content != '' ">
+						AND content like CONCAT('%', #{content}, '%')
+					</if>
+					<if test="type != 0 ">
+						AND display_type = #{type}
+					</if>
+				)
+				<if test="question_id != 0">
+					and question_id = #{question_id}
+				</if>
+				<if test="wrongType != null ">
+					AND type = #{wrongType}
+				</if>
+			) a
+	</select>
+	
+	<resultMap id="oneExamWrongCard" type="com.jftt.wifi.bean.vo.ExamWrongCardVo">
+		<!-- <result property="id" column="id"/> -->
+		<result property="wrongId" column="wrong_id"/>
+		<result property="assignId" column="assign_id"/>
+		<result property="questionId" column="question_id"/>
+		<!-- <result property="paperId" column="paper_id"/>
+		<result property="examSubmitTime" column="exam_submit_time"/>
+		<result property="paperName" column="title"/>
+		<result property="passScore" column="pass_score"/>
+		<association property="totalScore" column="paper_id"
+		        javaType="Integer"
+			    select="com.jftt.wifi.dao.ExamPaperDaoMapper.selectTotalScoreById"/> -->
+		<association property="userAnswerBean" column="{question_id=question_id,exam_assign_id=exam_result_id}"
+		        javaType="com.jftt.wifi.bean.exam.ExamUserAnswerBean"
+			    select="com.jftt.wifi.dao.ExamUserAnswerDaoMapper.selectOneExamQuestionDetail"/>
+	</resultMap>
+	<!--查看错题详情  -->
+	<select id="selectWrongQuestionDetail" resultMap="oneExamWrongCard" parameterType="int">
+		<!-- select a.id wrong_id,a.question_id,a.exam_result_id -->
+				<!-- ,c.id,b.paper_id,b.exam_submit_time,c.title,b.pass_score -->
+		select id,question_id,exam_result_id from exam_wrong_card
+		where id = #{id}
+		
+		<!-- left join exam_assign_info b
+		on a.exam_result_id = b.id
+		left join exam_paper c
+		on b.paper_id = c.id -->
+	</select>
+	
+	<!--移出错题集  -->
+	<delete id="deleteWrongCardById" parameterType="int">
+		delete from exam_wrong_card where id = #{id}
+	</delete>
+	
+	<!--根据assign_id删除错题  -->
+	<delete id="deleteWrongCardByAssignId" parameterType="int">
+		delete from exam_wrong_card where exam_result_id = #{id}
+	</delete>
+	
+	<!--插入错题  -->
+	<insert id="insertWrongCard" parameterType="com.jftt.wifi.bean.ExamWrongCardBean">
+		insert exam_wrong_card(from_user_id,exam_result_id,question_id,user_answer,type,join_time,evaluation)
+		values(#{fromUserId},#{examResultId},#{questionId},#{userAnswer},#{type},now(),#{evaluation})
+	</insert>
+	
+	
+	<resultMap id="exerciseWrongCardVo" type="com.jftt.wifi.bean.vo.ExamWrongCardVo">
+		<result property="id" column="id"/>
+		<!-- <result property="paperId" column="paper_id"/> -->
+		<result property="wrongId" column="wrong_id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="title" column="title"/>
+		<result property="content" column="content"/>
+		<result property="type" column="type"/>
+		<result property="wrongType" column="wrong_type"/>
+		<result property="isMultimedia" column="is_multimedia"/>
+		<result property="assignId" column="assign_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="myAnswer" column="user_answer"/>
+		<result property="categoryName" column="category_name"/>
+	</resultMap>
+	<!--查询练习的错题集  -->
+	<select id="selectExerciseWrongByUserId" resultMap="exerciseWrongCardVo" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select	a.id wrong_id,a.question_id,a.exam_result_id assign_id,
+				a.from_user_id user_id,b.content,b.type,b.is_multimedia,
+				a.type wrong_type,a.user_answer,c.name category_name
+		from(select id,question_id,exam_result_id,from_user_id,type,user_answer from exam_wrong_card
+				where from_user_id = #{user_id}
+				and EXISTS(
+					select id from exam_question
+					where id = question_id
+					<if test="content != null and content != '' ">
+						AND content like CONCAT('%', #{content}, '%')
+					</if>
+					<!--首先判断是否是多媒体题，然后判断其它题型  -->
+					<if test="type != 0 ">
+						AND display_type = #{type}
+					</if>
+				)
+				<if test="question_id != 0">
+					AND question_id = #{question_id}
+				</if>
+				<if test="wrongType != null ">
+					AND type = #{wrongType}
+				</if>
+			) a
+		left join exam_question b
+		on a.question_id = b.id
+		left join exam_question_category c
+		on b.category_id = c.id
+		<if test="fromNum != null">
+			limit ${fromNum}, ${pageSize}
+		</if>
+	</select>
+	<!--查询练习的错题集条数  -->
+	<select id="selectExerciseWrongCount" resultType="int" parameterType="com.jftt.wifi.bean.ExamQueryConditionBean">
+		select count(1)
+		from(select id,question_id,exam_result_id,from_user_id,type,user_answer from exam_wrong_card
+				where from_user_id = #{user_id}
+				and EXISTS(
+					select id from exam_question
+					where id = question_id
+					<if test="content != null and content != '' ">
+						AND content like CONCAT('%', #{content}, '%')
+					</if>
+					<!--首先判断是否是多媒体题，然后判断其它题型  -->
+					<if test="type != 0 ">
+						AND display_type = #{type}
+					</if>
+				)
+				<if test="question_id != 0">
+					AND question_id = #{question_id}
+				</if>
+				<if test="wrongType != null ">
+					AND type = #{wrongType}
+				</if>
+			) a
+	</select>
+	
+	
+	<resultMap id="exerciseWrongDetail" type="com.jftt.wifi.bean.vo.ExamWrongCardVo">
+		<result property="id" column="id"/>
+		<result property="wrongId" column="wrong_id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="wrongType" column="wrong_type"/>
+		<result property="myAnswer" column="user_answer"/>
+		<association property="questionBean" column="question_id"
+		        javaType="com.jftt.wifi.bean.exam.QuestionBean"
+			    select="com.jftt.wifi.dao.ExamQuestionDaoMapper.selectQuestionById"/>
+	</resultMap>
+	<!--查询练习中的错题详情  -->
+	<select id="selectExerciseWrongDetail" parameterType="int" resultMap="exerciseWrongDetail">
+		select id wrong_id,question_id,exam_result_id,user_answer,type wrong_type
+		from exam_wrong_card
+		where id = #{id}
+	</select>
+	<!--查询选择题答案 order_num  -->
+	<select id="selectChoiceAnswer2" resultType="String" parameterType="java.util.HashMap">
+		select GROUP_CONCAT(b.order_num) 
+		from 
+			( select question_id from exam_wrong_card where id = #{id} ) a
+		left join exam_question_option b
+		on a.question_id = b.question_id
+		where b.id in( ${option_id} )
+	</select>
+	
+	<!--zhangchen end  -->
+</mapper>

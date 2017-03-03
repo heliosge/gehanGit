@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.OamTopicDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.OamTopicBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="no" property="no" jdbcType="VARCHAR" />
+     <result column="descr" property="descr" jdbcType="VARCHAR" />
+    <result column="cover_image" property="coverImage" jdbcType="VARCHAR" />
+     <result column="is_spread" property="isSpread" jdbcType="INTEGER" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+     <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="company_id" property="companyId" jdbcType="INTEGER" />
+    <result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+     <result column="category_id" property="categoryId" jdbcType="INTEGER" />
+      <result column="category_name" property="categoryName" jdbcType="VARCHAR" />
+      <collection column="id" property="industryList" select="selectIndustryByTopicId"/>
+  </resultMap>
+  
+  <!-- 根据id获取专题 -->
+  <select id="selectOamTopicById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+   select t.id, t.name, t.no, t.descr, cover_image, is_spread, status, create_time, create_user_id, t.company_id, t.sub_company_id, category_id, c.name category_name
+    from oam_topic t
+    left join oam_topic_category c on t.category_id = c.id
+    where t.id=#{id}
+  </select>
+  
+  <!-- luyunlong start -->
+  
+  <!-- where条件 -->
+    <sql id="whereConditions">
+        <trim prefix="where" prefixOverrides="AND">
+        	<if test="companyId != null and companyId != ''">
+                AND t.company_id = #{companyId} 
+            </if>
+            <if test="subCompanyId != null and subCompanyId != ''">
+                AND t.sub_company_id = #{subCompanyId} 
+            </if>
+            <if test="no != null and no != ''">
+                AND t.no = #{no} 
+            </if>
+            <if test="isSpread != null and isSpread != ''">
+                AND t.is_spread = #{isSpread} 
+            </if>
+             <if test="categoryIds != null and categoryIds != ''">
+                and t.category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+            <if test="name != null and name != '' ">
+            	AND t.name like CONCAT('%',#{name},'%') 
+            </if>
+            <if test="startTime != null and startTime != ''">
+				AND t.create_time &gt;= str_to_date(#{startTime},"%Y-%m-%d %T") 
+			</if>
+			<if test="endTime != null and endTime != ''">
+				AND t.create_time &lt;= str_to_date(#{endTime},"%Y-%m-%d %T") 
+			</if>
+			<if test="industryName != null and industryName != ''">
+				AND t.id in (select topic_id from oam_topic_industry where industry_id in (select id from manage_industry_category where name like '%${industryName}%'))
+			</if>
+        </trim>
+    </sql>
+  
+  <select id="selectOamTopicList" resultMap="BaseResultMap" parameterType="com.jftt.wifi.bean.vo.OamTopicVo" >
+    select  t.id, t.name, t.no, t.descr, cover_image, is_spread, status, create_time, create_user_id, t.company_id, t.sub_company_id, category_id, c.name category_name
+    from oam_topic t
+    left join oam_topic_category c on t.category_id = c.id
+    <include refid="whereConditions"/> 
+    order by create_time desc
+    <if test="pageSize != null and pageSize != ''">
+		limit ${fromNum},${pageSize} 
+	</if>
+  </select>
+  
+  
+  <resultMap id="IndustryResultMap" type="com.jftt.wifi.bean.ManageIndustryCategoryBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="descr" property="descr" jdbcType="VARCHAR" />
+    <result column="parent_id" property="parentId" jdbcType="INTEGER" />
+  </resultMap>
+  <select id="selectIndustryByTopicId" resultMap="IndustryResultMap">
+  	SELECT b.* 
+		FROM oam_topic_industry a
+		JOIN manage_industry_category b ON a.industry_id=b.id 
+	where a.topic_id=#{id}
+  </select>
+  
+  <select id="selectOamTopicCount" resultType="int" parameterType="com.jftt.wifi.bean.vo.OamTopicVo" >
+    select  count(1) from oam_topic t
+    <include refid="whereConditions"/> 
+  </select>
+  
+  <delete id="delete" parameterType="java.lang.Integer" >
+	  delete from manage_expand_field where id= #{id}
+  </delete>
+  
+  
+  <insert id="insertTopic" parameterType="com.jftt.wifi.bean.OamTopicBean"   useGeneratedKeys="true" keyProperty="id">
+    insert into oam_topic (name, no, descr, cover_image, is_spread, create_user_id, company_id, sub_company_id, category_id, share_status)
+    values (
+    #{name}, #{no}, #{descr}, #{coverImage}, #{isSpread}, #{createUserId}, #{companyId}, #{subCompanyId}, #{categoryId}, #{shareStatus}
+      )
+  </insert>
+  
+  <insert id="insertTopicAndCourse" parameterType="HashMap">
+  	insert into oam_topic_course(topic_id, course_id)
+  	values (
+  		#{topicId}, #{courseId}
+  	)
+  </insert>
+  
+  <insert id="insertTopicAndIndustry" parameterType="HashMap">
+  	insert into oam_topic_industry(topic_id, industry_id)
+  	values (
+  		#{topicId}, #{industryId}
+  	)
+  </insert>
+  
+  <delete id="deleteTopicAndCourse" parameterType="Integer">
+  	delete from oam_topic_course where topic_id=#{topicId}
+  </delete>
+  
+  <delete id="deleteTopicAndIndustry" parameterType="Integer">
+  	delete from oam_topic_industry where topic_id=#{topicId}
+  </delete>
+
+  <update id="updateTopic" parameterType="com.jftt.wifi.bean.OamTopicBean" >
+    update oam_topic
+    set name = #{name}, 
+	    no = #{no}, 
+	    descr = #{descr}, 
+	    cover_image = #{coverImage}, 
+	    is_spread = #{isSpread},
+		category_id = #{categoryId}	    
+	where id=#{id}
+  </update>
+  
+  <update id="spreadOamTopic" parameterType="Integer">
+  	update oam_topic
+  		set is_spread = 1
+  		where id=#{id}
+  </update>
+  
+   <update id="cancelSpreadOamTopic" parameterType="Integer">
+  	update oam_topic
+  		set is_spread = 2
+  		where id=#{id}
+  </update>
+  
+  <delete id="deleteOamTopic" parameterType="Integer">
+  	delete from oam_topic where id = #{id}
+  </delete>
+  
+  <resultMap id="OamBarResultMap" type="com.jftt.wifi.bean.OamBarBean" >
+    <id column="id" property="id" />
+    <result column="style" property="style" />
+    <result column="order_" property="order" />
+     <result column="type" property="type" />
+    <result column="spread_id" property="spreadId"/>
+     <result column="company_id" property="companyId"/>
+    <result column="sub_company_id" property="subCompanyId" />
+  </resultMap>
+  
+  <select id="selectOamBar" resultMap="OamBarResultMap" parameterType="HashMap">
+  	select id, spread_id,order_, type, style, company_id, sub_company_id
+  		from oam_bar a
+  	 	where company_id = #{companyId}
+  	 	<if test="spreadId != null and spreadId != ''">
+                AND spread_id = #{spreadId} and type = #{type}
+         </if>
+  </select>
+  
+  <update id="updateOamBarSpread" parameterType="com.jftt.wifi.bean.OamBarBean"> 
+  	update oam_bar
+  	set type=#{type},
+  		spread_id = #{spreadId}
+  	where id = #{id}
+  </update>
+  
+   <update id="updateBarSpreadOrder" parameterType="com.jftt.wifi.bean.OamBarBean"> 
+  	update oam_bar
+  	set type=#{type},
+  		spread_id = #{spreadId}
+  	where id=#{id}
+  </update>
+  
+    <update id="updateBarStyle" parameterType="com.jftt.wifi.bean.OamBarBean"> 
+  	update oam_bar
+  	set style = #{style}
+  	where sub_company_id=#{subCompanyId}
+  </update>
+  
+   <insert id="insertOamBarSpread" parameterType="com.jftt.wifi.bean.OamBarBean"> 
+  	insert oam_bar(spread_id,order_, type, company_id, sub_company_id, style)
+  	values(#{spreadId},#{order}, #{type}, #{companyId}, #{subCompanyId}, #{style})
+  </insert>
+  
+   <resultMap id="topicCategoryMap" type="com.jftt.wifi.bean.OamTopicCategoryBean" >
+    <id column="id" property="id" />
+    <result column="name" property="name" />
+    <result column="descr" property="descr" />
+    <result column="parent_id" property="parentId" />
+    <result column="company_id" property="companyId"/>
+    <result column="sub_company_id" property="subCompanyId"/>
+  </resultMap>
+  
+  <select id="selectOamTopicCategory" resultMap="topicCategoryMap">
+  	 select id,name,parent_id,company_id,sub_company_id, descr
+  	 from oam_topic_category where company_id=#{companyId} 
+  	 and sub_company_id=#{subCompanyId}
+  	 <if test="categoryId != null and categoryId != ''">
+                AND id =  #{categoryId}
+     </if>
+     <if test="name != null and name != ''">
+                AND name =  #{name}
+     </if>
+     <if test="parentId != null and parentId != ''">
+                AND parent_id =  #{parentId}
+     </if>  	
+  </select>
+  
+  <delete id="deleteOamBarSpreadById">
+  	delete from oam_bar where id =#{id}
+  </delete>
+  
+  <update id="spreadGame">
+  	update knowledge_contest_contest set is_spread = 1 where id = #{id}
+  </update>
+  
+   <update id="cancelSpreadGame">
+  	update knowledge_contest_contest set is_spread = 2 where id = #{id}
+  </update>
+  
+  <select id="selectChooseSpread" resultType="HashMap">
+  	SELECT distinct * FROM (
+		SELECT id,NAME,2 TYPE, company_id  FROM res_course WHERE company_id=#{companyId} AND is_spread=1 AND status != 1
+				UNION ALL
+				SELECT id,NAME,1 TYPE, company_id  FROM oam_topic WHERE company_id=#{companyId} AND is_spread=1
+				UNION ALL
+				SELECT id,NAME,3 TYPE, company_id  FROM knowledge_contest_contest WHERE company_id=#{companyId} AND is_spread=1
+				UNION ALL
+				SELECT a.id,a.name,1, sub_company_id  
+				FROM oam_topic a
+				JOIN oam_topic_industry b ON a.id=b.topic_id
+				WHERE b.industry_id=(SELECT industry FROM manage_company WHERE id=#{companyId}) 
+                AND is_spread=1
+				UNION ALL
+				SELECT id,NAME,1 TYPE, company_id  FROM oam_topic WHERE share_status=7 
+				<if test="companyId == 1">
+                	AND is_spread=1
+         		</if>
+				UNION ALL
+				SELECT id,NAME,2 TYPE, company_id  FROM res_course WHERE share_status=7 
+				<if test="companyId == 1">
+                	AND is_spread=1
+         		</if>
+		) a
+			where 1=1
+			<if test="name != null and name != ''">
+                AND a.name like '%${name}%'
+         	</if>
+        <if test="pageSize != null and pageSize != ''">
+                limit ${fromNum},${pageSize}
+         	</if> 
+  </select>
+  
+  <select id="selectChooseSpreadCount" resultType="int">
+	  select count(1) from (SELECT distinct * FROM (
+			SELECT id,NAME,2 TYPE, company_id  FROM res_course WHERE company_id=#{companyId} AND is_spread=1 AND status != 1
+				UNION ALL
+				SELECT id,NAME,1 TYPE, company_id  FROM oam_topic WHERE company_id=#{companyId} AND is_spread=1
+				UNION ALL
+				SELECT id,NAME,3 TYPE, company_id  FROM knowledge_contest_contest WHERE company_id=#{companyId} AND is_spread=1
+				UNION ALL
+				SELECT a.id,a.name,1, sub_company_id  
+				FROM oam_topic a
+				JOIN oam_topic_industry b ON a.id=b.topic_id
+				WHERE b.industry_id=(SELECT industry FROM manage_company WHERE id=#{companyId})
+                AND is_spread=1
+				UNION ALL
+				SELECT id,NAME,1 TYPE, company_id  FROM oam_topic WHERE share_status=7 
+				<if test="companyId == 1">
+                	AND is_spread=1
+         		</if>
+				UNION ALL
+				SELECT id,NAME,2 TYPE, company_id  FROM res_course WHERE share_status=7 
+				<if test="companyId == 1">
+                	AND is_spread=1
+         		</if>
+			) a
+			where 1=1
+			<if test="name != null and name != ''">
+                AND name like '%${name}%'
+         	</if>) b
+  </select>
+  
+  <delete id="deleteOamBarSpread" parameterType="com.jftt.wifi.bean.OamBarBean">
+  	delete from oam_bar where company_id=#{companyId} and order_ = #{order}
+  </delete>
+  
+  <delete id="deleteOamTopicCategoryById">
+  	delete from oam_topic_category where id=#{id}
+  </delete>
+  
+  <insert id="insertOamTopicCategory" parameterType="com.jftt.wifi.bean.OamTopicCategoryBean">
+  	insert into oam_topic_category(name,descr,company_id, sub_company_id,parent_id)
+  	 values(#{name}, #{descr}, #{companyId}, #{subCompanyId}, #{parentId})
+  </insert>
+  
+  <update id="updateOamTopicCategory" parameterType="com.jftt.wifi.bean.OamTopicCategoryBean">
+  	update oam_topic_category
+  		set name = #{name},
+  			descr = #{descr}
+  	where id=#{id}
+  </update>
+  
+  <delete id="deleteOamBarSpreadByTopicId">
+  	delete from oam_bar where company_id=#{companyId} and spread_id=#{spreadId} and type=#{type}
+  </delete>
+  
+  <!-- luyunlong end -->
+  
+  <!-- shenhaijun start -->
+  
+  <!-- 获取专题数量 -->
+  <select id="getSpecialTopicCount" resultType="java.lang.Integer">
+      SELECT COUNT(id) 
+        FROM oam_topic 
+        WHERE company_id = #{companyId} AND sub_company_id = #{subCompanyId} 
+          AND status &lt;&gt; #{deleteStatus} 
+  </select>
+  
+  <!-- shenhaijun end -->
+  
+</mapper>

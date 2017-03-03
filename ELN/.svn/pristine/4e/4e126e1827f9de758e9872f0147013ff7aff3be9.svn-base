@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.LearnPlanStageDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.LearnPlanStageBean" id="LearnPlanStageBeanMap">
+        <id property="id" column="id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="lecturers" column="lecturers"/>
+        <result property="learnTime" column="learn_time"/>
+        <result property="learnScore" column="learn_score"/>
+        <result property="orderNum" column="order_num"/>
+    </resultMap>
+    
+    <!-- 学习计划阶段vo（查看计划页面展示用） -->
+    <resultMap type="com.jftt.wifi.bean.vo.LearnPlanStageVo" id="LearnPlanStageVoMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="process" column="process"/>
+    </resultMap>
+    
+    <!-- 学习计划阶段课程vo（查看计划页面展示用） -->
+    <resultMap type="com.jftt.wifi.bean.vo.LearnPlanStageCourseVo" id="LearnPlanStageCourseVoMap">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="learnProcess" column="learn_process"/>
+    </resultMap>
+    
+    <!-- 根据id查询学习计划阶段 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="LearnPlanStageBeanMap">
+        select * from learn_plan_stage where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 查询出学习计划的所有阶段 -->
+    <select id="getLearnPlanStages" resultMap="LearnPlanStageVoMap">
+		SELECT DISTINCT lps.id,lps.name 
+		FROM learn_plan_stage lps  
+		WHERE lps.plan_id = #{learnPlanId} 
+		ORDER BY lps.order_num 
+    </select>
+    
+    <!-- 获取该阶段的所有课程 -->
+    <select id="getLearnPlanStageCourses" resultMap="LearnPlanStageCourseVoMap">
+		SELECT rc.id,rc.code,rc.name,lpscr.begin_time,lpscr.end_time,csr.learn_process 
+		FROM (SELECT * FROM learn_plan_stage_course_relation WHERE stage_id = #{learnPlanStageId}) as lpscr 
+		  LEFT JOIN res_course rc on lpscr.course_id = rc.id 
+		  LEFT JOIN (SELECT * FROM course_study_record WHERE user_id = #{userId}) csr on rc.id = csr.course_id 
+    </select>
+    
+    <!-- 查询每一阶段学完的课程数目 -->
+    <select id="getCompleteCourseCount" resultType="java.lang.Integer">
+    	SELECT IFNULL(COUNT(DISTINCT(csr.course_id)),0) 
+    	FROM learn_plan_stage_course_relation lpscr LEFT JOIN res_course rc ON lpscr.course_id = rc.id 
+    	  LEFT JOIN course_study_record csr ON rc.id = csr.course_id 
+    	WHERE lpscr.stage_id = #{stageId} AND csr.user_id = #{userId} AND csr.learn_process = 2 
+    </select>
+    
+    <!-- 查询每一阶段总共课程数目 -->
+    <select id="getToatlCourseCount" resultType="java.lang.Integer">
+    	SELECT IFNULL(COUNT(DISTINCT(rc.id)),0) 
+    	FROM learn_plan_stage_course_relation lpscr LEFT JOIN res_course rc ON lpscr.course_id = rc.id 
+    	WHERE lpscr.stage_id = #{stageId} AND (lpscr.is_disabled is null OR lpscr.is_disabled = 0)
+    </select>
+    
+    <!-- shenhaijun end -->
+     
+    <!-- zhangbocheng start -->
+       <!-- 查询出学习计划下的所有包含课程的阶段数目 -->
+    <select id="getLearnPlanStagesCount" resultType="int" >
+		SELECT COUNT(0)
+		  FROM learn_plan_stage lps 
+		  WHERE lps.plan_id = #{planId} 
+		  <trim>
+		    <if test="isHave!=null">
+		    AND (SELECT COUNT(0) FROM learn_plan_stage_course_relation lpsc WHERE lpsc.stage_id = lps.id ) > 0
+		    </if>
+		  </trim>
+    </select>
+       <!-- 查询出学习计划下的所有阶段 -->
+    <select id="getLearnPlanStageList" resultMap="LearnPlanStageBeanMap">
+		SELECT lps.id,lps.plan_id,lps.name,lps.learn_time,lps.learn_score,lps.description,lps.lecturers,lps.order_num 
+		  FROM learn_plan_stage lps 
+		  WHERE lps.plan_id = #{planId} 
+		  ORDER BY lps.order_num 
+    </select>
+          <!-- 检查重名 -->
+    <select id="checkName"  parameterType="Map"  resultType="Integer">
+		SELECT COUNT(0)
+		  FROM learn_plan_stage lps 
+		  WHERE lps.plan_id = #{planId} AND lps.name=#{name} 
+		  <if test="id!=null" >
+		  AND lps.id != #{id}
+		  </if>
+    </select>
+    
+    <!-- 添加阶段 -->
+     <insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.LearnPlanStageBean">
+
+     	insert into learn_plan_stage ( plan_id,name, description,lecturers,learn_time,learn_score,order_num,update_time )
+     	values( #{planId},#{name},#{description},#{lecturers},#{learnTime},#{learnScore},#{orderNum},now())
+     </insert>
+     <!-- 修改阶段 -->
+      <update id="update" parameterType="com.jftt.wifi.bean.LearnPlanStageBean">
+     update learn_plan_stage
+     set 
+
+
+
+     <if test="name !=null">
+      name=#{name}, 
+     </if>
+     <if test="lecturers !=null">
+      lecturers=#{lecturers},
+     </if>
+     <if test="description !=null">
+     description=#{description}, 
+     </if>
+     <if test="learnTime !=null">
+     learn_time=#{learnTime},
+     </if>
+     <if test="learnScore !=null">
+     learn_score=#{learnScore},
+     </if>
+      <if test="orderNum !=null">
+       order_num=#{orderNum},
+     </if>
+        plan_id=#{planId},
+        update_time=now()
+        where id = #{id}
+    </update>
+     
+      <!-- 删除阶段 -->
+     <delete id="deleteById" parameterType="int">
+     	delete from learn_plan_stage where id = #{id};
+     </delete>
+     
+       <!-- 获取最大的排序字段order_num -->
+     <select id="getMaxOrderNum"  resultType="Integer">
+      SELECT MAX(order_num) FROM  learn_plan_stage where  plan_id = #{planId}
+     </select>
+     <!-- 获取本身，最大，最小的order_num -->
+     <select id="getOrderNum"  resultType="Map">
+       SELECT a.order_num orderNum,(SELECT MAX(order_num) FROM  learn_plan_stage where  plan_id = a.plan_id) maxNum,
+       (SELECT MIN(order_num) FROM  learn_plan_stage where plan_id = a.plan_id) minNum
+        FROM learn_plan_stage a where a.id = #{id}
+     </select>
+       <!-- 获取自己上一级的order_num -->
+     <select id="getUpStage"  resultMap="LearnPlanStageBeanMap">
+      SELECT * FROM learn_plan_stage 
+      WHERE plan_id = #{planId} AND order_num = ( SELECT MAX(order_num) FROM learn_plan_stage 
+            WHERE plan_id =  #{planId} AND  #{orderNum} > order_num )
+     
+     </select>
+        <!-- 获取自己下一级的order_num -->
+     <select id="getDownStage"  resultMap="LearnPlanStageBeanMap">
+      SELECT * FROM learn_plan_stage 
+      WHERE plan_id = #{planId} AND order_num = ( SELECT MIN(order_num) FROM learn_plan_stage 
+            WHERE plan_id =  #{planId} AND   order_num > #{orderNum} )
+     </select>
+    
+    <!-- zhangbocheng end -->
+    
+</mapper>

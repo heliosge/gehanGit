@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ResSectionExamDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.ResSectionExamBean" id="ResSectionExamBeanMap">
+        <id property="id" column="id"/>
+        <result property="sectionId" column="section_id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="examDuration" column="exam_duration"/>
+        <result property="examTimes" column="exam_times"/>
+        <result property="passPercent" column="pass_percent"/>
+    </resultMap>
+    
+    <!-- 章节测试vo -->
+    <resultMap type="com.jftt.wifi.bean.vo.SectionExamVo" id="SectionExamVoMap">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="totalTestDuration" column="total_test_duration"/>
+        <result property="testTimes" column="test_times"/>
+        <result property="permitTestTimes" column="permit_test_times"/>
+        <result property="sectionId" column="section_id"/>
+        <result property="examDuration" column="exam_duration"/>
+        <result property="passPercent" column="pass_percent"/>
+        <result property="passScore" column="pass_score"/>
+        <result property="maxScore" column="max_score"/>
+    </resultMap>
+    
+    <!-- 根据id查询章节测试关系 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="ResSectionExamBeanMap">
+        select * from res_section_exam where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据章节查询所有测试及测试记录 -->
+    <select id="getCourseTest" resultMap="SectionExamVoMap">
+		SELECT DISTINCT exam.id,exam.rsExamId,exam.title,exam.exam_times AS permit_test_times,exam.section_id,exam.exam_duration,exam.pass_percent,
+		    IFNULL(record.total_test_duration,0) AS total_test_duration,
+		    IFNULL(record.test_times,0) AS test_times, 
+		    IFNULL(record.pass_times,0)passTimes,
+		    IFNULL(record.max_score,0)maxScore,exam.total_score totalScore,
+		    ROUND(IFNULL((exam.total_score * exam.pass_percent),0)/100) pass_score
+		  FROM 
+		    (SELECT exam_paper.id,res_section_exam.id rsExamId, exam_paper.title,exam_paper.total_score, res_section_exam.exam_times,res_section_exam.section_id,res_section_exam.exam_duration,res_section_exam.pass_percent 
+		      FROM exam_paper LEFT JOIN res_section_exam ON exam_paper.id = res_section_exam.exam_id 
+		        LEFT JOIN res_section ON res_section_exam.section_id = res_section.id 
+		      WHERE res_section.course_id = #{courseId} AND exam_paper.is_deleted = 0 AND exam_paper.is_enabled = 1) AS exam 
+		    LEFT JOIN 
+		    (SELECT exam_id,section_id,total_test_duration,test_times,pass_times,max_score
+		      FROM course_exam_record 
+		      WHERE course_id = #{courseId} AND user_id = #{userId}) AS record 
+		    ON exam.id = record.exam_id AND exam.section_id = record.section_id
+    </select>
+    
+    <!-- 根据章节查询所有测试情况 -->
+    <select id="getSectionTests" resultMap="SectionExamVoMap">
+    	SELECT DISTINCT exam.id,exam.rsExamId,exam.title,exam.exam_times AS permit_test_times,exam.section_id,
+    	    exam.exam_duration,exam.pass_percent, 
+		    IFNULL(record.total_test_duration,0) AS total_test_duration,
+		    IFNULL(record.test_times,0) AS test_times,
+		    IFNULL(record.pass_times,0)passTimes, 
+		    exam.total_score totalScore,
+		    ROUND(IFNULL((exam.total_score * exam.pass_percent),0)/100) pass_score,
+		    IFNULL(record.max_score,0) max_score 
+		  FROM 
+		    (SELECT exam_paper.id,res_section_exam.id rsExamId, exam_paper.title,exam_paper.total_score,res_section_exam.exam_times,
+		        res_section_exam.section_id,res_section_exam.exam_duration,res_section_exam.pass_percent 
+		      FROM exam_paper LEFT JOIN res_section_exam ON exam_paper.id = res_section_exam.exam_id 
+		      WHERE res_section_exam.section_id = #{sectionId} ) AS exam 
+		    LEFT JOIN 
+		    (SELECT exam_id,total_test_duration,test_times,max_score,pass_times 
+		      FROM course_exam_record 
+		      WHERE section_id = #{sectionId} AND user_id = #{userId}) AS record 
+		    ON exam.id = record.exam_id 
+    </select>
+    <!-- shenhaijun end -->
+    
+    
+    <!-- chenrui start -->
+    <!-- 章节课程关系表录入 -->
+    <insert id="inserRelate">
+    	insert into(section_id,exam_id,exam_duration,exam_times,pass_percent)
+    	values(#{sectionId},#{examId},#{examDuration},#{examTimes},#{passPercent})
+    </insert>
+    
+    <!-- chenrui end -->
+</mapper>

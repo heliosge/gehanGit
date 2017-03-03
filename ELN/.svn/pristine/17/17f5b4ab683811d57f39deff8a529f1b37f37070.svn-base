@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.IntegralCommodityOrderDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.IntegralCommodityOrderBean" id="IntegralCommodityOrderBeanMap">
+        <id property="id" column="id"/>
+        <result property="commodityId" column="commodity_id"/>
+        <result property="commodityCount" column="commodity_count"/>
+        <result property="allIntegral" column="all_integral"/>
+        <result property="userId" column="user_id"/>
+        <result property="descr" column="descr"/>
+        <result property="phoneNum" column="phone_num"/>
+        <result property="address" column="address"/>
+        <result property="userRealName" column="user_real_name"/>
+        <result property="postcode" column="postcode"/>
+        <result property="logisticsCompanyId" column="logistics_company_id"/>
+        <result property="logisticsNumber" column="logistics_number"/>
+        <result property="logisticsUserId" column="logistics_user_id"/>
+        <result property="logisticsTime" column="logistics_time"/>
+        <result property="status" column="status"/>
+         <result property="createTime" column="create_time"/>
+        <result property="commodityName" column="commodityName"/>
+    </resultMap>
+    
+      <resultMap type="com.jftt.wifi.bean.vo.IntegralCommodityOrderVo" id="IntegralCommodityOrderVoMap">
+          <id property="id" column="id"/>
+        <result property="commodityId" column="commodity_id"/>
+        <result property="commodityCount" column="commodity_count"/>
+        <result property="allIntegral" column="all_integral"/>
+        <result property="userId" column="user_id"/>
+        <result property="descr" column="descr"/>
+        <result property="phoneNum" column="phone_num"/>
+        <result property="address" column="address"/>
+        <result property="userRealName" column="user_real_name"/>
+        <result property="postcode" column="postcode"/>
+        <result property="logisticsCompanyId" column="logistics_company_id"/>
+        <result property="logisticsNumber" column="logistics_number"/>
+        <result property="logisticsUserId" column="logistics_user_id"/>
+        <result property="logisticsTime" column="logistics_time"/>
+        <result property="status" column="status"/>
+         <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    
+    <!-- zhangbocheng start -->
+    
+       <sql id="whereConditions">
+        <trim>
+          
+             <if test="status != null  ">
+            	  AND a.status = #{status} 
+            </if>
+            
+            <if test="name != null and name != '' ">
+            	  AND b.name like CONCAT('%', #{name}, '%')
+            </if>
+             <if test="userRealName != null and userRealName != '' ">
+            	  AND a.user_real_name like CONCAT('%', #{userRealName}, '%')
+            </if>
+            <if test="beginTime != null and beginTime != '' ">
+            	  AND a.create_time >= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != '' ">
+                <![CDATA[  AND a.create_time <= #{endTime}]]>
+            	  
+            </if>
+  
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+              <if test="userIds != null and userIds != ''">
+            	and a.user_id in(
+            		<foreach collection="userIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+        </trim>
+    </sql>
+    
+    
+    <select id="getById" resultMap="IntegralCommodityOrderBeanMap">
+    select * from integral_commodity_order where id = #{id}
+    </select>
+    <select id="getDetailById" resultMap="IntegralCommodityOrderVoMap">
+    select a.id,a.commodity_id,a.user_id,a.commodity_count,a.all_integral,
+    a.descr,a.phone_num,a.address,a.user_real_name,a.postcode,
+             DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i') create_time,
+             DATE_FORMAT(a.logistics_time, '%Y-%m-%d %H:%i') logistics_time,a.logistics_company_id,
+             a.logistics_number,a.status,
+             b.code,b.name,b.integral,b.cover_image coverImage,b.stock,
+             c.name as logisticsCompanyName,c.port,c.code logisticsCompanyCode
+     from integral_commodity_order a
+     left join integral_commodity b on a.commodity_id = b.id
+     left join logistics_company c on a.logistics_company_id= c.id
+      where a.id = #{id}
+    </select>
+    
+      <!-- 新增积分商品 -->
+     <insert id="insertIntegralCommodityOrder" parameterType="com.jftt.wifi.bean.IntegralCommodityOrderBean" useGeneratedKeys="true" keyProperty="id">
+     	insert into integral_commodity_order(
+     		 commodity_id,user_id,commodity_count,all_integral,
+             descr,phone_num,address,user_real_name,postcode,
+             create_time,status,is_delete
+     	)values(
+     		#{commodityId},#{userId},#{commodityCount},#{allIntegral},
+             #{descr},#{phoneNum},#{address},#{userRealName},#{postcode},
+             now(),0,0
+     	)
+     </insert>
+     
+     <!-- 修改积分商品 -->
+     <update id="updateIntegralCommodityOrder" parameterType="com.jftt.wifi.bean.IntegralCommodityOrderBean">
+     	update 
+     	<if test="commodityId!=null">
+     	  commodity_id =#{commodityId},
+     	</if>
+     	<if test="userId!=null">
+     	   user_id=#{userId},
+     	 </if>
+     	<if test="commodityCount!=null">
+     	commodity_count=#{commodityCount},
+     	</if>
+     	<if test="allIntegral!=null">
+     	  all_integral=#{allIntegral},
+     	</if>  
+     	<if test="descr!=null">
+     	  descr=descr,
+     	</if>  
+     	<if test="phoneNum!=null">
+     	phone_num=#{phoneNum},
+     	</if>  
+     	<if test="address!=null">
+     	 address=#{address},
+     	</if>  
+     	<if test="userRealName!=null">
+     	ser_real_name=#{userRealName},
+     	</if>  
+     	<if test="postcode!=null">
+     	 postcode=#{postcode},
+     	</if>  
+     	<if test="status!=null">
+     	status=#{status},
+     	</if>  
+     	<if test="logisticsCompanyId!=null">
+     	logistics_company_id=#{logisticsCompanyId},
+     	</if>  
+     	<if test="logisticsNumber!=null">
+     	logistics_number=#{logisticsNumber},
+     	</if>  
+     	
+     	is_delete =0
+     	    
+     	where id = #{id}
+     </update>
+     
+       <!-- 删除积分商品兑换记录 -->
+     <update id="deleteIntegralCommodityOrder" >
+     	update integral_commodity_order
+     	set is_delete = 1
+     	where id = #{id}
+     </update>
+     
+     <!-- 查询list -->
+     <select id="selectIntegralCommodityOrderList" parameterType="com.jftt.wifi.bean.vo.IntegralCommodityOrderVo" resultMap="IntegralCommodityOrderVoMap">
+      select a.id,a.commodity_id,a.user_id,a.commodity_count,a.all_integral,
+             a.descr,a.phone_num,a.address,a.user_real_name,a.postcode,
+             DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i') create_time,
+             DATE_FORMAT(a.logistics_time, '%Y-%m-%d %H:%i') logistics_time,a.logistics_company_id,
+             a.logistics_number,a.status,
+             b.code,b.name,b.integral,b.cover_image coverImage,b.stock
+       from integral_commodity_order a
+       left Join integral_commodity b on a.commodity_id = b.id
+       
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      order by a.id desc
+      <if test="pageIndex!=null and pageSize!=null">
+      limit #{pageIndex},#{pageSize}
+      </if>
+     </select>
+     
+          <!-- 查询总数目 -->
+     <select id="selectIntegralCommodityOrderCount" parameterType="com.jftt.wifi.bean.vo.IntegralCommodityOrderVo" resultType="Integer">
+      select count(0)
+       from integral_commodity_order  a
+       left Join integral_commodity b on a.commodity_id = b.id
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      
+     </select>
+     
+     
+     
+     <!-- 发货 -->
+     <update id="post" parameterType="com.jftt.wifi.bean.IntegralCommodityOrderBean">
+        update integral_commodity_order
+     	set status = 1,
+     	logistics_company_id=#{logisticsCompanyId},
+     	logistics_number=#{logisticsNumber},
+     	logistics_user_id =#{logisticsUserId},
+     	logistics_time = now()
+     	where id = #{id}
+     </update>
+     
+
+
+    
+    <!-- zhangbocheng end -->
+    
+    
+    <!-- chenrui start -->
+    
+    <insert id="doExchange">
+    
+    	insert into integral_commodity_order(
+     		 commodity_id,user_id,commodity_count,all_integral,
+             descr,phone_num,address,user_real_name,postcode,
+             create_time,status,is_delete
+     	)values(
+     		#{commodityId},#{userId},#{commodityCount},#{allIntegral},
+             #{descr},#{phoneNum},#{address},#{userRealName},#{postcode},
+             now(),0,0
+     	)
+    </insert>
+    <sql id="where_getUserExchangeRecords">
+    	where ico.is_delete = 0 and ico.user_id = #{userId}
+    	<if test="name != null and name != ''">
+    		and ic.name like CONCAT('%',#{name},'%');
+    	</if>
+    	<if test="status != null and status != ''">
+    		and ico.status = #{status}
+    	</if>
+    	<if test="startTime != null and startTime != ''">
+    		and DATE_FORMAT(ico.create_time,'%Y-%m-%d')&gt;=#{startTime}
+    	</if>
+    	<if test="endTime != null and endTime != ''">
+    		and DATE_FORMAT(ico.create_time,'%Y-%m-%d')&lt;=#{endTime}
+    	</if>
+    </sql>
+    <!-- 获取用户兑换记录 -->
+    <select id="getUserExchangeRecordsCount" resultType="int">
+    	select count(0) from integral_commodity_order ico
+    	<include refid="where_getUserExchangeRecords"></include>
+    </select>
+    
+    <select id="getUserExchangeRecords" resultMap="IntegralCommodityOrderBeanMap">
+    	select ic.name commodityName,ico.* from integral_commodity_order ico
+    	left join integral_commodity ic on(ico.commodity_id=ic.id)
+    	<include refid="where_getUserExchangeRecords"></include>
+    	order by ico.create_time desc
+    	limit ${fromNum},${pageSize}
+    </select>
+    
+    <!--  -->
+    <update id="doCheckProduct">
+    	update integral_commodity_order set status=2 where id=#{orderId}
+    </update>
+    <!-- 获取订单详情 -->
+    <select id="getOrderDetailByOrderId" resultMap="IntegralCommodityOrderBeanMap">
+    	select ic.name commodityName,ico.* from integral_commodity_order ico
+    	left join integral_commodity ic on(ico.commodity_id=ic.id)
+    	where ico.id=#{orderId}
+    </select>
+    <!-- chenrui end -->
+</mapper>

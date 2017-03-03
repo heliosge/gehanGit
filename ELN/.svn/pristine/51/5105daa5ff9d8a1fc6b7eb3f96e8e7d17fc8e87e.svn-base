@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.OamBarDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.OamBarBean" id="OamBarBeanMap">
+        <id property="id" column="id"/>
+        <result property="style" column="style"/>
+        <result property="spreadId" column="spread_id"/>
+        <result property="order" column="order"/>
+        <result property="type" column="type"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+    </resultMap>
+    
+    <!-- 学员首页展示用vo -->
+    <resultMap type="com.jftt.wifi.bean.vo.IndexShowVo" id="IndexShowVoMap">
+        <id property="spreadId" column="spread_id"/>
+        <result property="coverImg" column="cover_img"/>
+        <result property="name" column="name"/>
+        <result property="order" column="order_"/>
+        <result property="type" column="type"/>
+    </resultMap>
+    
+    <!-- 根据id获取运维栏 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="OamBarBeanMap">
+        SELECT * FROM oam_bar WHERE ID = #{id} 
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 获取该公司的所有推广模块 -->
+    <select id="getBarsByCompanyId" resultMap="IndexShowVoMap">
+        SELECT ob.spread_id,ob.order_,ob.type 
+          FROM oam_bar ob 
+          WHERE ob.company_id = #{companyId} AND ob.sub_company_id = #{subCompanyId} 
+            AND ob.style = #{style} 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+</mapper>

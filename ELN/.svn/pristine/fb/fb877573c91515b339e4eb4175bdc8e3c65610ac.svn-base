@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.LearnPlanAssignmentDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.LearnPlanAssignmentBean" id="LearnPlanAssignmentBeanMap">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="assignTime" column="assign_time"/>
+        <result property="status" column="status"/>
+    </resultMap>
+    
+    <!-- 学员学习计划页面展示用vo -->
+    <resultMap type="com.jftt.wifi.bean.vo.LearnPlanVo" id="LearnPlanVoMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="type" column="type"/>
+        <result property="status" column="status"/>
+        <result property="nameOrType" column="name_or_type"/>
+        <result property="userId" column="user_id"/>
+    </resultMap>
+    
+    <!-- 根据id获取用户学习计划 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="LearnPlanAssignmentBeanMap">
+        select * from learn_plan_assignment where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 查询学习计划数目 -->
+    <select id="getLearnPlanCount" parameterType="com.jftt.wifi.bean.vo.LearnPlanVo" resultType="java.lang.Integer">
+	    SELECT COUNT(lpa.plan_id) 
+	      FROM learn_plan_assignment lpa LEFT JOIN learn_plan lp ON lpa.plan_id = lp.id 
+		  WHERE lpa.user_id = #{userId} AND lp.is_published = 1
+		    <trim>
+		        <if test="nameOrType != null and nameOrType != '' ">
+		            AND ((lp.name like CONCAT('%',#{nameOrType},'%')) OR (lp.type like CONCAT('%',#{nameOrType},'%'))) 
+		        </if>
+		        <if test="status != null">
+		            AND lpa.status = #{status} 
+		        </if>
+		    </trim> 
+    </select>
+    
+    <!-- 根据条件查询该学员的学习计划 -->
+    <select id="getLearnPlansByConditions" resultMap="LearnPlanVoMap">
+		SELECT lp.id,lp.name,lp.cover_image,lp.type,lpa.status 
+		  FROM learn_plan_assignment lpa LEFT JOIN learn_plan lp ON lpa.plan_id = lp.id 
+		  WHERE lpa.user_id = #{learnPlanVo.userId}  AND lp.is_published = 1
+		    <trim>
+		        <if test="learnPlanVo.nameOrType != null and learnPlanVo.nameOrType != '' ">
+		            AND ((lp.name like CONCAT('%',#{learnPlanVo.nameOrType},'%')) OR (lp.type like CONCAT('%',#{learnPlanVo.nameOrType},'%'))) 
+		        </if>
+		        <if test="learnPlanVo.status != null">
+		            AND lpa.status = #{learnPlanVo.status} 
+		        </if>
+		    </trim> 
+		  ORDER BY lp.create_time DESC 
+		  LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- 更新学习计划状态 -->
+    <update id="updateLearnPlanStatus" parameterType="com.jftt.wifi.bean.LearnPlanAssignmentBean">
+    	UPDATE learn_plan_assignment 
+    	  SET status = 2 
+    	  WHERE id = (SELECT plan.id FROM (SELECT DISTINCT(id) FROM learn_plan_assignment WHERE user_id = #{userId} AND plan_id = #{learnPlanId}) plan) 
+    </update>
+    
+    <!-- shenhaijun end -->
+    
+     <!-- zhangbocheng start -->
+          <!-- 根据条件查询该学习计划下所有学员 -->
+    <select id="getLearnPlanAssignmentCountByPlanId"  resultType="int">
+		SELECT count(0) 
+		  FROM learn_plan_assignment lpa 
+		  WHERE lpa.plan_id = #{planId} 
+		
+		         <if test="userIds != null and userIds !='' ">
+		            AND lpa.user_id in (${userIds})  
+		        </if>
+		    
+    </select>
+     <!-- 根据条件查询该学习计划下所有学员 -->
+    <select id="getLearnPlanAssignmentListByPlanId"  resultType="com.jftt.wifi.bean.vo.LearnPlanAssignmentVo">
+		SELECT lpa.id,lpa.user_id userId,lpa.plan_id planId,lpa.status 
+		  FROM learn_plan_assignment lpa 
+		  WHERE lpa.plan_id = #{planId} 
+		 
+		        <if test="userIds != null and userIds !='' ">
+		            AND lpa.user_id in (${userIds})  
+		        </if>
+		
+		    ORDER BY lpa.id DESC 
+		    <if test="page!=null and pageSize !=null ">
+	        LIMIT #{page},#{pageSize}
+	        </if>     
+    </select>
+    
+      <!-- 根据条件查询该学习计划阶段下所有学员的进度 -->
+ <select id="getLearnPlanStudentProcess"  resultType="com.jftt.wifi.bean.vo.LearnPlanAssignmentVo">
+     SELECT a.id,a.user_id userId,a.plan_id planId,a.status,b.id stageId,b.name stageName,b.order_num,b.learn_time,b.learn_score ,
+     (SELECT COUNT(0) totalCourse FROM learn_plan_stage_course_relation WHERE stage_id =b.id) totalCourse,
+     (SELECT COUNT(0) endCourse  FROM course_study_record csr
+     LEFT JOIN learn_plan_stage_course_relation lp1 ON lp1.course_id = csr.course_id
+     WHERE csr.learn_process = 2 AND lp1.stage_id =b.id and csr.user_id =a.user_id) endCourse
+     FROM learn_plan_assignment a
+     LEFT JOIN learn_plan_stage b  on a.plan_id = b.plan_id and get_stage_id(a.user_id,#{planId}) = b.id
+     where a.plan_id=#{planId}
+     <if test="userIds!=null and userIds !='' ">
+	    AND a.user_id in (${userIds})
+	  </if>
+     <if test="stageId!=null">
+
+         and b.id = #{stageId}
+     </if>
+     <if test="status!=null">
+
+         and a.status = #{status}
+     </if>
+	  <if test="page!=null and pageSize !=null ">
+	    LIMIT #{page},#{pageSize}
+	  </if>
+    </select>
+    
+        <!-- 根据条件查询该学习计划阶段下所有学员的数目 -->
+ <select id="getLearnPlanStudentCount"  resultType="int">
+     SELECT count(0)
+     FROM learn_plan_assignment a
+     LEFT JOIN learn_plan_stage b  on a.plan_id = b.plan_id and get_stage_id(a.user_id,#{planId}) = b.id
+     where a.plan_id=#{planId}
+	  <if test="userIds!=null and userIds !='' ">
+	    AND a.user_id in (${userIds})
+	  </if>
+     <if test="stageId!=null">
+
+         and b.id = #{stageId}
+     </if>
+     <if test="status!=null">
+
+         and a.status = #{status}
+     </if>
+    </select>
+    
+     <!-- 根据条件查询数目 -->
+    <select id="getCountByMap" parameterType="Map" resultType="int">
+        select count(0) from learn_plan_assignment where plan_id = #{planId}
+        <trim>
+           <if test="userId!=null">
+           AND user_id = #{userId} 
+           </if>
+             <if test="userIds != null and userIds !='' ">
+		            AND user_id in (${userIds})  
+		        </if>
+        </trim>
+    </select>
+    
+     <!-- 重复查询 -->
+    <select id="getCountByBean" parameterType="com.jftt.wifi.bean.LearnPlanAssignmentBean" resultType="int">
+        select count(0) from learn_plan_assignment where user_id = #{userId} and plan_id =#{planId}
+    </select>
+     <!-- 插入人员 -->
+     <insert id="insertByUserId" useGeneratedKeys="true" keyProperty="id" parameterType="com.jftt.wifi.bean.LearnPlanAssignmentBean">
+     	insert into learn_plan_assignment (user_id, plan_id,assign_time, status )
+     	values(#{userId}, #{planId},now(),1)
+     </insert>
+     
+      <!-- 删除人员 -->
+     <delete id="deleteById" parameterType="int">
+     	delete from learn_plan_assignment where id = #{id};
+     </delete>
+     <!-- zhangbocheng end -->
+    
+</mapper>

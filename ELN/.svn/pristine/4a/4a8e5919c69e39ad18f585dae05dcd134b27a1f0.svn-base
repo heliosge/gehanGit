@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManagePageDaoMapper">
+
+	<resultMap id="ManagePageBean" type="com.jftt.wifi.bean.ManagePageBean">
+		<id property="id" column="id"/>
+		<result property="parentId" column="parent_id"/>
+		<result property="name" column="name"/>
+		<result property="url" column="url"/>
+		<result property="levelType" column="level_type"/>
+		<result property="levelIndex" column="level_index"/>
+		<result property="deleteFlag" column="delete_flag"/>
+		<result property="descr" column="descr"/>
+	</resultMap>
+	
+	<!-- 获取全部权限 -->
+	<select id="getAllManagePage" resultMap="ManagePageBean">
+		select * from manage_page where delete_flag = 0 
+			<if test="isPulian != null and isPulian != ''">
+				and	is_pulian = #{isPulian}
+			</if>
+		order by level_type, level_index
+	</select>
+	
+	<!-- 获取某个角色的权限 -->
+	<select id="getManagePageByUserId" parameterType="long" resultMap="ManagePageBean">
+		select * from manage_page where id in
+			(select page_id from manage_role_page where role_id = #{roleId} and delete_flag = 0 )
+			and delete_flag = 0 order by level_type, level_index
+	</select>
+	
+	<!-- 获取某个用户的权限页面 -->
+	<select id="getManagePageByUser" parameterType="long" resultMap="ManagePageBean">
+		select * from manage_page where id in
+			(select page_id from manage_role_page where role_id in(select role_id from manage_user_role where user_id = ${userId}) and delete_flag = 0
+			and role_id in (select id from manage_role where status = 1))
+			and delete_flag = 0 order by level_type, level_index
+	</select>
+	
+	<!-- 删除某个角色的权限页面 -->
+	<delete id="deleteManagePageByUserId" parameterType="long">
+		delete from manage_role_page where role_id = ${roleId}
+	</delete>
+	
+	<!-- 给角色加页面 -->
+	<insert id="addRolesManagePage">
+		insert into manage_role_page(role_id, page_id)
+			values
+			<foreach collection="list" item="tag" index="index" separator=",">
+				(#{tag.roleId}, #{tag.pageId})
+			</foreach>
+	</insert>
+	
+	<!-- 增加页面 -->
+	<insert id="addManagePage" parameterType="com.jftt.wifi.bean.ManagePageBean" useGeneratedKeys="true" keyProperty="id">
+		insert into manage_page(parent_id, name, url, level_type, level_index, delete_flag)
+		values(#{parentId, jdbcType=NUMERIC}, #{name, jdbcType=VARCHAR}, #{url, jdbcType=VARCHAR},
+			   #{levelType, jdbcType=NUMERIC}, #{levelIndex, jdbcType=NUMERIC}, #{deleteFlag, jdbcType=NUMERIC})
+	</insert>
+	
+	<!-- 删除页面 -->
+	<insert id="delManagePageById" parameterType="long">
+		delete from manage_page where id = #{id, jdbcType=NUMERIC}
+	</insert>
+	
+	<!-- 升级页面 -->
+	<update id="updateManagePageById" parameterType="com.jftt.wifi.bean.ManagePageBean">
+		update manage_page set 
+			<trim suffixOverrides=",">
+				<if test="name != null ">
+					name = #{name},
+				</if>
+				<if test="url != null ">
+					url = #{url},
+				</if>
+				<if test="levelIndex != null and levelIndex != 0 ">
+					level_index = #{levelIndex, jdbcType=NUMERIC},
+				</if>
+			</trim>
+		where id = #{id, jdbcType=NUMERIC}
+	</update>
+	
+	<select id="getManagePageByMap" resultMap="ManagePageBean">
+		select * from manage_page where delete_flag = 0 
+			and #{url} like concat('%',url) and url != ''
+			limit 1
+	</select>
+	
+	<select id="checkManagePageByUser" resultMap="ManagePageBean">
+		select * from manage_page where id in
+			(select page_id from manage_role_page where role_id in(select role_id from manage_user_role where user_id = ${userId}) and delete_flag = 0
+			and role_id in (select id from manage_role where status = 1))
+			and delete_flag = 0 and id = #{pageId}
+			limit 1
+	</select>
+	
+	<!-- shenhaijun start -->
+	
+	<!-- 获取专题问答管理员用户id列表 -->
+	<select id="getManageThematicAskRoles" resultType="java.lang.Integer">
+		SELECT mur.user_id 
+		FROM manage_user_role mur LEFT JOIN manage_role mr ON mur.role_id = mr.id 
+		  LEFT JOIN manage_role_page mrp ON mr.id = mrp.role_id 
+		  LEFT JOIN manage_page mp ON mrp.page_id = mp.id 
+		WHERE mp.url = #{limitsUrl} AND mp.delete_flag != 1 
+		  AND mr.company_id = #{companyId} AND mr.sub_company_id = #{subCompanyId} 
+	</select>
+	
+	<!-- shenhaijun end -->
+	
+</mapper>

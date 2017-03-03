@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MallOrderDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.MallOrderBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="code" property="code" jdbcType="VARCHAR" />
+    <result column="user_id" property="userId" jdbcType="INTEGER" />
+    <result column="commodity_type" property="commodityType" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="user_real_name" property="userRealName" jdbcType="VARCHAR" />
+    <result column="invoice_title" property="invoiceTitle" jdbcType="VARCHAR" />
+    <result column="invoice_phone" property="invoicePhone" jdbcType="VARCHAR" />
+    <result column="invoice_address" property="invoiceAddress" jdbcType="VARCHAR" />
+    <result column="invoice_postcode" property="invoicePostcode" jdbcType="VARCHAR" />
+    <result column="type" property="type" jdbcType="INTEGER" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="invoice_status" property="invoiceStatus" jdbcType="INTEGER" />
+    <result column="pay_status" property="payStatus" jdbcType="INTEGER" />
+    <result column="gathering_status" property="gatheringStatus" jdbcType="INTEGER" />
+    <result column="post_user_name" property="postUserName" jdbcType="VARCHAR" />
+    <result column="post_user_id" property="postUserId" jdbcType="INTEGER" />
+    <result column="invoice_user_id" property="invoiceUserId" jdbcType="INTEGER" />
+    <result column="logistics_company_id" property="logisticsCompanyId" jdbcType="INTEGER" />
+    <result column="logistics_number" property="logisticsNumber" jdbcType="VARCHAR" />
+    <result column="logistics_user_id" property="logisticsUserId" jdbcType="INTEGER" />
+    <result column="pay_user_name" property="payUserName" jdbcType="VARCHAR" />
+    <result column="pay_user_id" property="payUserId" jdbcType="INTEGER" />
+    <result column="pay_time" jdbcType="TIMESTAMP" property="payTime" />
+    <result column="company_name" jdbcType="VARCHAR" property="companyName" />
+    <result column="contact_way" jdbcType="VARCHAR" property="contactWay" />
+    <result column="is_need_invoice" jdbcType="INTEGER" property="isNeedInvoice" />
+    <result column="evaluation" jdbcType="VARCHAR" property="evaluation" />
+    <result column="gathering_user_name" property="gatheringUserName" jdbcType="VARCHAR" />
+    <result column="gathering_user_id" property="gatheringUserId" jdbcType="INTEGER" />
+    <result column="remarks" property="remarks"  jdbcType="VARCHAR" />
+    <result column="invalid_time" property="invalidTime" jdbcType="TIMESTAMP" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+    
+    <result column="productIds" property="productIds"  jdbcType="VARCHAR" />
+    <result column="productNames" property="productNames"  jdbcType="VARCHAR" />
+  </resultMap>
+  <resultMap id="MallOrderDetailsPageVo" type="com.jftt.wifi.bean.vo.MallOrderDetailsPageVo" extends="BaseResultMap">
+  	<collection property="relateProducts" select="com.jftt.wifi.dao.MallOrderRelateDaoMapper.getRelateProducts" column="id"></collection>
+  </resultMap>
+  
+  
+      <resultMap id="MallOrderVoMap" type="com.jftt.wifi.bean.vo.MallOrderVo" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="code" property="code" jdbcType="VARCHAR" />
+    <result column="user_id" property="userId" jdbcType="INTEGER" />
+    <result column="commodity_type" property="commodityType" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="user_real_name" property="userRealName" jdbcType="VARCHAR" />
+    <result column="invoice_title" property="invoiceTitle" jdbcType="VARCHAR" />
+    <result column="invoice_phone" property="invoicePhone" jdbcType="VARCHAR" />
+    <result column="invoice_address" property="invoiceAddress" jdbcType="VARCHAR" />
+    <result column="invoice_postcode" property="invoicePostcode" jdbcType="VARCHAR" />
+    <result column="type" property="type" jdbcType="INTEGER" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="invoice_status" property="invoiceStatus" jdbcType="INTEGER" />
+    <result column="pay_status" property="payStatus" jdbcType="INTEGER" />
+    <result column="gathering_status" property="gatheringStatus" jdbcType="INTEGER" />
+    <result column="post_user_name" property="postUserName" jdbcType="VARCHAR" />
+    <result column="post_user_id" property="postUserId" jdbcType="INTEGER" />
+    <result column="invoice_user_id" property="invoiceUserId" jdbcType="INTEGER" />
+    <result column="logistics_company_id" property="logisticsCompanyId" jdbcType="INTEGER" />
+    <result column="logistics_number" property="logisticsNumber" jdbcType="VARCHAR" />
+    <result column="logistics_user_id" property="logisticsUserId" jdbcType="INTEGER" />
+    <result column="pay_user_name" property="payUserName" jdbcType="VARCHAR" />
+    <result column="pay_user_id" property="payUserId" jdbcType="INTEGER" />
+    <result column="pay_time" jdbcType="TIMESTAMP" property="payTime" />
+    <result column="company_name" jdbcType="VARCHAR" property="companyName" />
+    <result column="contact_way" jdbcType="VARCHAR" property="contactWay" />
+    <result column="is_need_invoice" jdbcType="INTEGER" property="isNeedInvoice" />
+    <result column="evaluation" jdbcType="VARCHAR" property="evaluation" />
+    <result column="gathering_user_name" property="gatheringUserName" jdbcType="VARCHAR" />
+    <result column="gathering_user_id" property="gatheringUserId" jdbcType="INTEGER" />
+    <result column="remarks" jdbcType="VARCHAR" property="remarks" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    id, code, user_id, commodity_type, price, user_real_name, invoice_title, invoice_phone, 
+    invoice_address, invoice_postcode, type, status, invoice_status, pay_status, gathering_status, 
+    post_user_name, post_user_id, invoice_user_id, logistics_company_id, logistics_number, 
+    logistics_user_id, pay_user_name, pay_user_id, pay_time, company_name, contact_way, 
+    is_need_invoice, evaluation,gathering_user_name, gathering_user_id, remarks,
+    create_time, update_time, is_delete
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from mall_order
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  
+  <!-- chenrui start -->
+  
+  <!-- 生成订单 -->
+   <insert id="addMallOrder">
+    insert into mall_order
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="code != null" >
+        code,
+      </if>
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="commodityType != null" >
+        commodity_type,
+      </if>
+      <if test="price != null" >
+        price,
+      </if>
+      <if test="userRealName != null" >
+        user_real_name,
+      </if>
+      <if test="invoiceTitle != null" >
+        invoice_title,
+      </if>
+      <if test="invoicePhone != null" >
+        invoice_phone,
+      </if>
+      <if test="invoiceAddress != null" >
+        invoice_address,
+      </if>
+      <if test="invoicePostcode != null" >
+        invoice_postcode,
+      </if>
+      <if test="type != null" >
+        type,
+      </if>
+        status,
+        invalid_time,
+      <if test="invoiceStatus != null" >
+        invoice_status,
+      </if>
+      <if test="payStatus != null" >
+        pay_status,
+      </if>
+      <if test="gatheringStatus != null" >
+        gathering_status,
+      </if>
+      <if test="postUserName != null" >
+        post_user_name,
+      </if>
+      <if test="postUserId != null" >
+        post_user_id,
+      </if>
+      <if test="invoiceUserId != null" >
+        invoice_user_id,
+      </if>
+      <if test="logisticsCompanyId != null" >
+        logistics_company_id,
+      </if>
+      <if test="logisticsNumber != null" >
+        logistics_number,
+      </if>
+      <if test="logisticsUserId != null" >
+        logistics_user_id,
+      </if>
+      <if test="payUserName != null" >
+        pay_user_name,
+      </if>
+      <if test="payUserId != null" >
+        pay_user_id,
+      </if>
+      <if test="payTime != null">
+        pay_time,
+      </if>
+      <if test="companyName != null">
+        company_name,
+      </if>
+      <if test="contactWay != null">
+        contact_way,
+      </if>
+      <if test="isNeedInvoice != null">
+        is_need_invoice,
+      </if>
+      <if test="evaluation != null">
+        evaluation,
+      </if>
+      <if test="gatheringUserName != null" >
+        gathering_user_name,
+      </if>
+      <if test="gatheringUserId != null" >
+        gathering_user_id,
+      </if>
+       <if test="remarks != null">
+        remarks,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="code != null" >
+        #{code},
+      </if>
+      <if test="userId != null" >
+        #{userId},
+      </if>
+      <if test="commodityType != null" >
+        #{commodityType},
+      </if>
+      <if test="price != null" >
+        #{price},
+      </if>
+      <if test="userRealName != null" >
+        #{userRealName},
+      </if>
+      <if test="invoiceTitle != null" >
+        #{invoiceTitle},
+      </if>
+      <if test="invoicePhone != null" >
+        #{invoicePhone},
+      </if>
+      <if test="invoiceAddress != null" >
+        #{invoiceAddress},
+      </if>
+      <if test="invoicePostcode != null" >
+        #{invoicePostcode},
+      </if>
+      <if test="type != null" >
+        #{type},
+      </if>
+        0,
+        (SELECT DATE_ADD(now(), INTERVAL 30 MINUTE) from DUAL),
+      <if test="invoiceStatus != null" >
+        #{invoiceStatus},
+      </if>
+      <if test="payStatus != null" >
+        #{payStatus},
+      </if>
+      <if test="gatheringStatus != null" >
+        #{gatheringStatus},
+      </if>
+      <if test="postUserName != null" >
+        #{postUserName},
+      </if>
+      <if test="postUserId != null" >
+        #{postUserId},
+      </if>
+      <if test="invoiceUserId != null" >
+        #{invoiceUserId},
+      </if>
+      <if test="logisticsCompanyId != null" >
+        #{logisticsCompanyId},
+      </if>
+      <if test="logisticsNumber != null" >
+        #{logisticsNumber},
+      </if>
+      <if test="logisticsUserId != null" >
+        #{logisticsUserId},
+      </if>
+      <if test="payUserName != null" >
+        #{payUserName},
+      </if>
+      <if test="payUserId != null" >
+        #{payUserId},
+      </if>
+      <if test="payTime != null">
+        #{payTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="companyName != null">
+        #{companyName,jdbcType=VARCHAR},
+      </if>
+      <if test="contactWay != null">
+        #{contactWay,jdbcType=VARCHAR},
+      </if>
+      <if test="isNeedInvoice != null">
+        #{isNeedInvoice,jdbcType=INTEGER},
+      </if>
+      <if test="evaluation != null">
+        #{evaluation,jdbcType=VARCHAR},
+      </if>
+      <if test="gatheringUserName != null">
+        #{gatheringUserName,jdbcType=VARCHAR},
+      </if>
+      <if test="gatheringUserId != null">
+        #{gatheringUserId,jdbcType=INTEGER},
+      </if>
+      <if test="remarks != null">
+        #{remarks,jdbcType=VARCHAR},
+      </if>
+    </trim>
+    <selectKey keyProperty="id" resultType="int">
+    	SELECT LAST_INSERT_ID() as id
+    </selectKey>
+  </insert>
+  <sql id="where_getBuyRecords">
+	 	 where mo.user_id=#{userId} and mo.is_delete=0
+	  	<if test="orderCode != null and orderCode != ''">
+	  		and mo.code like CONCAT('%',#{orderCode},'%')
+	  	</if>
+	  	<if test="courseName != null and courseName != ''">
+	  		and mor.commodity_name like CONCAT('%',#{courseName},'%')
+	  	</if>
+	  	<if test="orderCreateStartTime != null and orderCreateStartTime != ''">
+			and DATE_FORMAT(mo.create_time,'%Y-%m-%d')&gt;=#{orderCreateStartTime}
+		</if>
+		<if test="orderCreateEndTime != null and orderCreateEndTime != ''">
+			and DATE_FORMAT(mo.create_time,'%Y-%m-%d')&lt;=#{endTime}
+		</if>
+		<if test="priceFrom != null and priceFrom != ''">
+			and mor.price&gt;=#{priceFrom}
+		</if>
+		<if test="priceTo != null and priceTo != ''">
+			and mor.price&lt;=#{priceTo}
+		</if>
+		<if test="buyStatus != null and buyStatus != ''">
+	  		and mo.status = #{buyStatus}
+	  	</if>
+	  	<if test="invoiceStatus != null and invoiceStatus != ''">
+	  		and mo.invoice_status = #{invoiceStatus}
+	  	</if>
+  </sql>
+  
+  <!-- 获取购买记录所有  用于导出 -->
+  <select id="exportBuyRecords" resultMap="BaseResultMap">
+	 	 select mo.*,group_concat(relate_id) productIds,group_concat(commodity_name) productNames  
+	  	from mall_order mo 
+	  	left join  mall_order_relate mor on mo.id=mor.order_id
+	  	where mo.user_id=#{userId} and mo.is_delete=0
+	  	group by mo.id
+	  	order by mo.create_time desc
+  </select>
+  
+  <!-- 获取购买记录 -->
+  <select id="getBuyRecords" resultMap="BaseResultMap">
+  	select mo.*,group_concat(relate_id) productIds,group_concat(commodity_name) productNames  
+  	from mall_order mo 
+  	left join  mall_order_relate mor on mo.id=mor.order_id
+  	<include refid="where_getBuyRecords"></include>
+  	group by mo.id
+  	order by mo.create_time desc
+  	limit ${fromNum},${pageSize}
+  </select>
+  <select id="getBuyRecordsCount" resultType="int">
+  	select IFNULL((select count(0)
+  	from mall_order mo 
+  	left join  mall_order_relate mor on mo.id=mor.order_id
+  	<include refid="where_getBuyRecords"></include>
+  	),0) from dual
+  </select>
+  <!-- 更新订单状态 -->
+  <update id="updateMallOrderStatus">
+  	update mall_order set status=#{status} where id=#{orderId}
+  </update>
+  
+  <!-- 购买记录删除 -->
+  <update id="deleteBuyRecordsByIds">
+  	update mall_order set is_delete=1 where find_in_set(id,#{ids})
+  </update>
+  
+  <!-- 评价订单 -->
+  <update id="giveOrderEvaluate">
+  	update mall_order set status = 3,evaluation=#{contents} where id=#{id}
+  </update>
+  <!-- 获取订单详情 -->
+  <select id="getOrderDetailsById" resultMap="MallOrderDetailsPageVo">
+  	select 
+    <include refid="Base_Column_List" />
+    from mall_order
+    where id = #{id}
+  </select>
+  <!-- 更新购买后状态和 支付时间 -->
+  <update id="updateStatusAndPayTime">
+  	update mall_order set status = 2,pay_time=now() where id=#{orderId}
+  </update>
+  
+  <select id="checkUserCanEvaluate" resultType="int">
+  	select count(0) from mall_sell_record msr
+	where msr.course_id =#{courseId} and msr.buy_user_id = #{userId}
+  </select>
+  
+  
+  <update id="checkeOrdelInvalidTime">
+  	update mall_order set status = 4 where now()&gt;invalid_time and status = 0
+  </update>
+  
+  <select id="checkTopicIsBuyed" resultType="int">
+  	select count(0) from  mall_order mo
+  	left join mall_order_relate mor on(mo.id = mor.order_id)
+  	where mo.commodity_type = 2 and mo.user_id = #{userId} and (mo.status BETWEEN 1 and 3)
+  	 and mor.commodity_type = 2 and mor.relate_id = #{mallTopicId}
+  </select>
+  
+  <!-- chenrui end -->
+  
+  
+   <!-- zhangbocheng start -->
+  
+  <sql id="orderSellWhere">
+        <trim>
+            <if test="code != null and code != '' ">
+            	  AND a.code like CONCAT('%', #{code}, '%')
+            </if>
+            <if test="courseName != null and courseName != '' ">
+            	  AND 
+            	  (select count(0) from mall_order_relate mor 
+            	  left join mall_course mc on mor.relate_id = mc.id 
+            	  left join res_course rc on mc.course)id = rc.id 
+            	  where mor.order_id = a.id and  rc.name CONCAT('%', #{courseName}, '%') )>0
+            </if>
+             <if test="topicName != null and topicName != '' ">
+            	  AND 
+            	  (select count(0) from mall_order_relate mor 
+            	  left join mall_topic mt on mor.relate_id = mt.id 
+            	  where mor.order_id = a.id and  mt.name CONCAT('%', #{topicName}, '%') )>0
+            </if>
+            <if test="name!=null and name!=''">
+            AND  b.names like CONCAT('%',#{name},'%')
+            </if>
+            <if test="beginTime != null and beginTime!=''  ">
+            	  AND a.create_time >= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != '' ">
+                <![CDATA[  AND a.create_time <= #{endTime}]]>
+            </if>
+              <if test="beginPrice != null and beginPrice !=''  ">
+            	  AND a.price >= #{beginPrice}
+            </if>
+            <if test="endPrice != null and endPrice != '' ">
+                <![CDATA[  AND a.price <= #{endPrice}]]>
+            </if>
+  
+           <if test="status!= null  ">
+            	  AND a.status = #{status} 
+            </if>
+             <if test="invoiceStatus !=null  ">
+            	  AND a.invoice_status = #{invoiceStatus} 
+            </if>
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+         
+        </trim>
+    </sql>
+  
+  
+  <!-- 课程销售记录 -->
+  <select id="selectCourseOrderSellRecord" parameterType="com.jftt.wifi.bean.vo.MallOrderVo" resultMap="MallOrderVoMap">
+  select a.id,a.code,a.user_id,a.commodity_type,a.price,a.user_real_name,a.invoice_title,
+    a.invoice_phone,a.invoice_address,a.invoice_postcode,a.type,a.status,a.invoice_status,a.is_need_invoice isNeedInvoice,DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i') createTime,a.company_name companyName,b.relateIds,b.names,b.sellCompanyName
+  from mall_order a
+  left join (select GROUP_CONCAT(mc.id SEPARATOR ',') relateIds, GROUP_CONCAT(rc.name SEPARATOR ',') names,mor.order_id,GROUP_CONCAT(mco.name SEPARATOR ',') sellCompanyName  from mall_order_relate mor
+   left join mall_course mc on mor.relate_id = mc.id 
+   left join res_course rc on mc.course_id = rc.id 
+   left join manage_company mco on rc.company_id = mco.id
+   where mor.commodity_type = 1 GROUP BY mor.order_id
+   
+   ) b on a.id = b.order_id
+  where  a.commodity_type = 1
+  <include refid="orderSellWhere"></include>
+  order by a.id desc
+  <if test="pageIndex!=null and pageSize!=null">
+  limit ${pageIndex},${pageSize}
+  </if> 
+  
+  </select>
+  
+  <select id="selectCourseOrderSellRecordCount" parameterType="com.jftt.wifi.bean.vo.MallOrderVo" resultType="Integer">
+  select count(0)
+  from mall_order a
+  left join (select GROUP_CONCAT(mc.id SEPARATOR ',') relateIds, GROUP_CONCAT(rc.name SEPARATOR ',') names,mor.order_id  from mall_order_relate mor
+   left join mall_course mc on mor.relate_id = mc.id 
+   left join res_course rc on mc.course_id = rc.id where mor.commodity_type = 1 GROUP BY mor.order_id) b on a.id = b.order_id 
+  where  a.commodity_type = 1
+  <include refid="orderSellWhere"></include>
+ </select>
+ 
+ <!-- 查询订单中所有课程 -->
+ <select id="selectCourseListByOrderId" resultType="com.jftt.wifi.bean.vo.MallCourseVo" >
+ select b.id,b.price,b.cheap_price cheapPrice ,c.name,c.code,c.company_id ,d.name companyName
+ from mall_order_relate a
+ left join mall_course b on a.relate_id = b.id 
+ left join res_course c on c.id = b.course_id
+ left join manage_company d on d.id = c.company_id
+ where a.order_id =#{id} and a.commodity_type = 1
+ </select>
+ 
+    <!-- 订单详情 -->
+     <select id="getOrderDetailById" resultMap="MallOrderVoMap">
+    select a.id,a.code,a.user_id,a.commodity_type,a.price,a.user_real_name,a.invoice_title,
+    a.invoice_phone,a.invoice_address,a.invoice_postcode,a.type,a.status,a.invoice_status,
+    DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i') createTime,DATE_FORMAT(a.pay_time, '%Y-%m-%d %H:%i') payTime,
+    a.company_name,a.contact_way,a.is_need_invoice,a.evaluation,a.remarks,a.is_delete,
+    DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i') update_time,a.post_user_name,a.post_user_id,
+    a.invoice_user_id ,a.logistics_company_id,a.logistics_number,a.logistics_user_id,
+     DATE_FORMAT(a.logistics_time, '%Y-%m-%d %H:%i') logisticsTime,
+     b.name as logisticsCompanyName,b.port logisticsPort,b.code logisticsCompanyCode
+     from mall_order a
+     left join logistics_company b on a.logistics_company_id= b.id
+      where a.id = #{id}
+    </select>
+ 
+ <!-- 发货 -->
+ <update id ="delivery" parameterType="com.jftt.wifi.bean.vo.MallOrderVo">
+   update mall_order 
+   set status = 2,
+   post_user_name=#{postUserName},
+   post_user_id =#{postUserId},
+   update_time =now()
+   where id =#{id}
+ </update>
+ 
+  <!-- 邮寄发票 -->
+ <update id ="postInvoice" parameterType="com.jftt.wifi.bean.vo.MallOrderVo">
+   update mall_order 
+   set invoice_status = 1,
+   logistics_company_id = #{logisticsCompanyId},
+   logistics_number =#{logisticsNumber},
+   logistics_user_id=#{logisticsUserId},
+   logistics_time=now(),
+   update_time =now()
+   where id =#{id}
+ </update>
+ 
+  <!-- 失效 -->
+ <update id ="doInvalid" >
+   update mall_order 
+   set status =4,
+   update_time =now()
+   where id =#{id}
+ </update>
+ 
+ 
+ <!-- 专题销售记录 -->
+  <select id="selectTopicOrderSellRecord" parameterType="com.jftt.wifi.bean.vo.MallOrderVo" resultMap="MallOrderVoMap" >
+  select a.id,a.code,a.user_id,a.commodity_type,a.price,a.user_real_name,a.invoice_title,
+    a.invoice_phone,a.invoice_address,a.invoice_postcode,a.type,a.status,a.is_need_invoice isNeedInvoice,a.invoice_status,
+    DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i') createTime,b.relateIds,
+  b.names
+  from mall_order a
+  left join  (select GROUP_CONCAT(mt.id SEPARATOR ',') relateIds, GROUP_CONCAT(mt.name SEPARATOR ',') names, mor.order_id
+             from mall_order_relate mor
+             left join mall_topic mt on mor.relate_id = mt.id where mor.commodity_type = 2 GROUP BY mor.order_id) b on b.order_id = a.id
+  where  a.commodity_type = 2
+  <include refid="orderSellWhere"></include>
+  order by a.id desc
+  <if test="pageIndex!=null and pageSize!=null">
+  limit ${pageIndex},${pageSize}
+  </if> 
+  
+  </select>
+  
+  <select id="selectTopicOrderSellRecordCount" parameterType="com.jftt.wifi.bean.vo.MallOrderVo" resultType="Integer">
+  select count(0)
+  from mall_order a
+  left join  (select GROUP_CONCAT(mt.id SEPARATOR ',') relateIds, GROUP_CONCAT(mt.name SEPARATOR ',') names, mor.order_id
+             from mall_order_relate mor
+             left join mall_topic mt on mor.relate_id = mt.id where mor.commodity_type = 2 GROUP BY mor.order_id) b on b.order_id = a.id
+  where  a.commodity_type = 2
+  <include refid="orderSellWhere"></include>
+ </select>
+ 
+ 
+ 
+ 
+ <!-- 课程销售详情 -->
+ 
+ <select id="selectCourseSellRecord" parameterType="com.jftt.wifi.bean.vo.MallOrderVo">
+   select  d.id 
+   from mall_order_relate a
+   left join mall_order b on a.order_id = b.id
+   left join mall_course c on a.relate_id = c.id
+   left join res_course d on c.course_id = d.id
+   where a.commodity_type = 1 
+ 
+ </select>
+ 
+ <!-- 查询订单中所有专题 -->
+ <select id="selectTopicListByOrderId" resultType="com.jftt.wifi.bean.vo.MallTopicVo" >
+ select b.id,b.name,b.code,b.price,b.cheap_price cheapPrice
+ from mall_order_relate a
+ left join mall_topic b on a.relate_id = b.id 
+ where a.order_id =#{id} and a.commodity_type = 2
+ </select>
+  
+   <!-- zhangbocheng end -->
+</mapper>

@@ -1,0 +1,984 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ResCourseDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.ResCourseBean" id="ResCourseBeanMap">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+         <result property="categoryName" column="category_name"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="learnTime" column="learn_time"/>
+        <result property="learnScore" column="learn_score"/>
+        <result property="tags" column="tags"/>
+        <result property="crowd" column="crowd"/>
+        <result property="frontImage" column="front_image"/>
+        <result property="outline" column="outline"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="companyId" column="company_id"/>
+        <result property="companyName" column="company_name"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="shareStatus" column="share_status"/>
+        <result property="shareTime" column="share_time"/>
+        <result property="status" column="status"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="isSpread" column="is_spread"/>
+        <result property="isFeatured" column="is_featured"/>
+        <result property="typeName" column="type_name"/>
+        <result property="checkReason" column="check_reason"/>
+        <result property="mallStatus" column="mall_status"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.ResCourseVo" id="ResCourseVoMap">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="name" column="name"/>
+        <result property="frontImage" column="front_image"/>
+        <result property="createTime" column="create_time"/>
+        <result property="averageScore" column="average_score"/>
+        <result property="evaluatorNum" column="evaluator_num"/>
+        <result property="studentNum" column="student_num"/>
+        <result property="startLearnTime" column="start_learn_time"/>
+    	<result property="lastLearnTime" column="last_learn_time"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.CourseStudyVo" id="CourseStudyVoMap">
+    	<id property="id" column="id"/>
+    	<result property="name" column="name"/>
+    	<result property="avgScore" column="avg_score"/>
+    	<result property="evaluatorCount" column="evaluator_count"/>
+    	<result property="createTime" column="create_time"/>
+    	<result property="sectionName" column="section_name"/>
+    	<result property="wareName" column="ware_name"/>
+    	<result property="studentNum" column="student_num"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.CourseVoForPost" id="CourseVoForPostMap">
+    	<id property="id" column="id"/>
+    	<result property="name" column="name"/>
+    	<result property="categoryName" column="category_name"/>
+    	<result property="courseType" column="course_type"/>
+    	<result property="learnProcess" column="learn_process"/>
+    </resultMap>
+    
+    <!-- 根据id查询课程 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="ResCourseBeanMap">
+        select * from res_course where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- where条件 -->
+    <sql id="whereConditions">
+        <trim>
+            <if test="resCourseVo.name != null and resCourseVo.name != '' ">
+            	AND rc.name like CONCAT('%',#{resCourseVo.name},'%') 
+            </if>
+            <if test="resCourseVo.categoryId != null and resCourseVo.categoryOrType != null">
+            	<if test="resCourseVo.childCategoryIdList != null and resCourseVo.childCategoryIdList.size() &gt; 0">
+	            	<choose>
+	            		<when test="resCourseVo.categoryOrType == 1">
+	            			AND rc.category_id IN <foreach collection="resCourseVo.childCategoryIdList" item="categoryId" open="(" separator="," close=")">#{categoryId}</foreach>
+	            		</when>
+	            		<when test="resCourseVo.categoryOrType == 2">
+	            			AND rc.id IN (SELECT course_id FROM res_course_2_type WHERE type_id IN <foreach collection="resCourseVo.childCategoryIdList" item="categoryId" open="(" separator="," close=")">#{categoryId}</foreach>)
+	            		</when>
+	            	</choose>
+            	</if>
+            	<if test="resCourseVo.childCategoryIdList == null or resCourseVo.childCategoryIdList.size() &lt;= 0">
+            		<choose>
+            			<when test="resCourseVo.categoryOrType == 1">
+            				AND rc.category_id = #{resCourseVo.categoryId}
+            			</when>
+            			<when test="resCourseVo.categoryOrType == 2">
+            				AND rc.id = (SELECT course_id FROM res_course_2_type WHERE type_id = #{resCourseVo.categoryId})
+            			</when>
+            		</choose>
+            	</if>
+            </if>
+        </trim>
+        <!-- <trim>
+            <if test="resCourseVo.categoryId != null">
+                AND rc.category_id = #{resCourseVo.categoryId} 
+            </if>
+            <if test="resCourseVo.name != null and resCourseVo.name != '' ">
+            	AND rc.name like CONCAT('%',#{resCourseVo.name},'%') 
+            </if>
+        </trim> -->
+    </sql>
+    
+    <!-- 根据条件查询课程 -->
+    <select id="getCoursesByConditions" resultMap="ResCourseVoMap">
+		SELECT rc.id, rc.name, rc.front_image, rc.create_time,
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num 
+		  FROM res_course rc 
+		  WHERE (rc.company_id = #{companyId} AND rc.sub_company_id = #{subCompanyId} AND rc.status = 2 <include refid="whereConditions"/>) 
+		    OR (rc.company_id = #{companyId} AND rc.share_status IN (4,7) AND rc.status = 2 <include refid="whereConditions"/>) 
+		ORDER BY ${sortName} ${sortOrder} 
+		LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- 根据开放人群查询全部课程 -->
+    <select id="getCoursesByOpenCrowd" resultMap="ResCourseVoMap">
+ 		SELECT DISTINCT rc.id, rc.name, rc.front_image, rc.create_time,
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num 
+		FROM res_course_open_crowd rcoc LEFT JOIN res_course rc ON rcoc.course_id = rc.id 
+		WHERE 
+		  <!-- 课程开放类型 -->
+		  (rcoc.open_type = 1 AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>)
+		  OR (rcoc.open_type = 2 AND rcoc.open_crow_id = #{postId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>)
+		  <if test="groupIds != null and groupIds.size()>0">
+		  	OR (rcoc.open_type = 3 AND rcoc.open_crow_id IN <foreach collection="groupIds" item="groupId" open="(" separator="," close=")">#{groupId}</foreach> 
+		    	AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>)
+		  </if>
+		  OR (rcoc.open_type = 4 AND rcoc.open_crow_id = #{deptId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>)
+		ORDER BY ${sortName} ${sortOrder} 
+		LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- 根据条件查询课程数目 -->
+    <select id="getCoursesCount" resultType="java.lang.Integer">
+    	SELECT COUNT(0) 
+    	  FROM res_course rc 
+    	  WHERE (rc.company_id = #{companyId} AND rc.sub_company_id = #{subCompanyId} AND rc.status = 2 <include refid="whereConditions"/>) 
+    	    OR (rc.company_id = #{companyId} AND rc.share_status IN (4,7) AND rc.status = 2 <include refid="whereConditions"/>) 
+    </select>
+    
+    <!-- 根据开放人群查询课程数量 -->
+    <select id="getCourseCountByOpenCrowd" resultType="java.lang.Integer">
+		SELECT COUNT(DISTINCT(rc.id)) 
+		FROM res_course_open_crowd rcoc LEFT JOIN res_course rc ON rcoc.course_id = rc.id 
+		WHERE 
+		  <!-- 课程开放类型 -->
+		  (rcoc.open_type = 1 AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>)
+		  OR (rcoc.open_type = 2 AND rcoc.open_crow_id = #{postId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>)
+		  <if test="groupIds != null and groupIds.size()>0">
+		  	OR (rcoc.open_type = 3 AND rcoc.open_crow_id IN <foreach collection="groupIds" item="groupId" open="(" separator="," close=")">#{groupId}</foreach> 
+		    	AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>)
+		  </if>
+		  OR (rcoc.open_type = 4 AND rcoc.open_crow_id = #{deptId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 <include refid="whereConditions"/>) 
+    </select>
+    
+    <!-- 根据条件查询我的课程数目 -->
+    <select id="getMyCoursesCount" resultType="java.lang.Integer">
+    	SELECT IFNULL(COUNT(csr.course_id),0) 
+    	  FROM course_study_record csr JOIN res_course rc ON csr.course_id = rc.id 
+    	  WHERE user_id = #{userId} AND learn_process = #{learnProcess} AND rc.status = 2
+    	  <include refid="whereConditions"/>
+    </select>
+    
+    <!-- 根据条件获取我的课程（按照开始学习时间降序排序） -->
+    <select id="getMyCourses" resultMap="ResCourseVoMap">
+		SELECT rc.id, rc.name, rc.front_image, rc.create_time, 
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score, 
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num, 
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num 
+		  FROM course_study_record csr JOIN res_course rc ON csr.course_id = rc.id 
+		  WHERE csr.user_id = #{userId} AND csr.learn_process = #{learnProcess} AND rc.status = 2
+		  <include refid="whereConditions"/> 
+		  ORDER BY csr.this_learn_time DESC 
+		  LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- 获取我的课程（新） -->
+    <select id="getMyCoursesNew" resultMap="ResCourseVoMap">
+    	SELECT rc.id,rc.name,
+    	DATE_FORMAT(csr.start_time,'%Y-%m-%d %H:%I:%S') start_learn_time,
+    	DATE_FORMAT(csr.this_learn_time,'%Y-%m-%d %H:%I:%S') last_learn_time   
+    	FROM course_study_record csr JOIN res_course rc ON csr.course_id = rc.id 
+		WHERE csr.user_id = #{userId} AND csr.learn_process = #{learnProcess} AND rc.status = 2 
+		<if test="searchContent != null and searchContent.trim() != '' ">
+			AND rc.name like CONCAT('%',#{searchContent},'%') 
+		</if>
+		ORDER BY csr.this_learn_time DESC 
+		LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- 获取该学员该课程的所有课件学习进度 -->
+    <select id="getProgresses" resultType="java.lang.Integer">
+    	SELECT cwr.progress_percent 
+    	FROM course_ware_record cwr 
+    	WHERE user_id = #{userId} AND course_id = #{courseId} 
+    </select>
+   	
+   	<!-- 获取该课程课件的数量 -->
+   	<select id="getCourseWareSize" resultType="java.lang.Integer">
+   		SELECT COUNT(DISTINCT(rc.id)) 
+   		FROM res_section rs LEFT JOIN res_section_courseware rsc ON rs.id = rsc.section_id 
+   		  LEFT JOIN res_courseware rc ON rsc.courseware_id = rc.id 
+   		WHERE rs.course_id = #{courseId} AND rc.delete_flag != 2 
+   	</select>
+   	
+   	<!-- 根据课程id查询开放类型 -->
+   	<resultMap type="com.jftt.wifi.bean.ResCourseOpenCrowdBean" id="ResCourseOpenCrowdBeanMap">
+   		<id property="id" column="id"/>
+   		<result property="courseId" column="course_id"/>
+   		<result property="openType" column="open_type"/>
+   		<result property="openCrowId" column="open_crow_id"/>
+   	</resultMap>
+   	
+    <select id="getOpenCrowdsByCourseId" resultMap="ResCourseOpenCrowdBeanMap">
+    	SELECT rcoc.id,rcoc.course_id,rcoc.open_type,rcoc.open_crow_id 
+    	FROM res_course_open_crowd rcoc 
+    	WHERE rcoc.course_id = #{courseId}
+    </select>
+    
+    <!-- 获取公司的课程数量 -->
+    <select id="getCourseCountByCompanyId" resultType="java.lang.Integer">
+        SELECT COUNT(id) 
+          FROM res_course 
+          WHERE company_id = #{companyId} AND sub_company_id = #{subCompanyId} 
+            AND status &lt;&gt; #{deleteStatus} 
+    </select>
+    
+    <!-- 获取我的学时 -->
+    <select id="getMyStudyHours" resultType="java.lang.Integer">
+        SELECT IFNULL(SUM(rc.learn_time),0) 
+          FROM course_study_record csr LEFT JOIN res_course rc ON csr.course_id = rc.id 
+          WHERE csr.user_id = #{userId} AND csr.learn_process = #{learnProcess} 
+    </select>
+    
+    <!-- 获取精选课程 -->
+    <select id="getFeatureCourses" resultMap="ResCourseVoMap">
+		SELECT rc.id,rc.name,rc.front_image,
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) as average_score 
+		  FROM res_course rc 
+		  WHERE rc.company_id = #{companyId} AND rc.sub_company_id = #{subCompanyId} 
+		    AND rc.is_featured = #{isFeatured} AND rc.status &lt;&gt; #{status} 
+    </select>
+    
+    <!-- 获取课程学习页面课程详情 -->
+    <select id="getCourseDetailForStudy" resultMap="CourseStudyVoMap">
+    	SELECT rc.id,rc.name,rc.create_time,
+    	    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) avg_score,
+    	    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_count,
+    	    (SELECT name FROM res_section WHERE id = #{sectionId}) section_name,
+    	    (SELECT name FROM res_courseware WHERE id = #{courseWareId}) ware_name,
+    	    (SELECT IFNULL(COUNT(DISTINCT(user_id)),0) FROM course_study_record WHERE course_id = rc.id) student_num 
+    	  FROM res_course rc 
+    	  WHERE rc.id = #{courseId} 
+    </select>
+    
+    <!-- 获取岗位课程数量 -->
+    <select id="getPostCoursesCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+    	SELECT COUNT(DISTINCT(course_id)) 
+    	  FROM post_course_relation pcr 
+    	  WHERE pcr.post_id = #{postId} 
+    </select>
+    
+    <!-- 获取岗位所有课程 -->
+    <select id="getPostCourses" resultMap="CourseVoForPostMap">
+    	SELECT rc.id,rc.name,pcr.course_type,
+    	    (
+    	    SELECT res_course_category.name FROM res_course LEFT JOIN res_course_category 
+    	        ON res_course.category_id = res_course_category.id 
+    	      WHERE res_course.id = rc.id 
+    	    ) category_name,
+    	    (SELECT learn_process FROM course_study_record WHERE course_id = rc.id AND user_id = #{userId}) learn_process 
+    	  FROM post_course_relation pcr LEFT JOIN res_course rc ON pcr.course_id = rc.id 
+    	  WHERE pcr.post_id = #{postId} AND pcr.is_deleted = 0 
+		  LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- 获取普连课程数量 -->
+    <select id="getPulianCoursesCount" resultType="java.lang.Integer">
+    	SELECT COUNT(0) 
+    	  FROM res_course rc 
+    	  WHERE rc.company_id = #{companyId} AND rc.status = 2
+    	  <trim>
+            <if test="searchCategoryId != null">
+                AND rc.category_id = #{searchCategoryId} 
+            </if>
+            <if test="searchContent != null and searchContent != '' ">
+            	AND rc.name like CONCAT('%',#{searchContent},'%') 
+            </if>
+          </trim>
+    </select>
+    
+    <!-- 获取普连课程 -->
+    <select id="getPulianCourses" resultMap="ResCourseVoMap">
+    	SELECT rc.id, rc.name, rc.front_image, rc.create_time,
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num 
+		  FROM res_course rc 
+		  WHERE rc.company_id = #{companyId} AND rc.status = 2 
+	      <trim>
+            <if test="searchCategoryId != null">
+              AND rc.category_id = #{searchCategoryId} 
+            </if>
+            <if test="searchContent != null and searchContent != '' ">
+          	  AND rc.name like CONCAT('%',#{searchContent},'%') 
+            </if>
+          </trim> 
+		  ORDER BY ${sortName} ${sortOrder} 
+		  LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+    <!-- luyunlong start -->
+    
+      <sql id="courseConditions">
+        <trim>
+            <if test="companyId != null and companyId != ''">
+                AND a.company_id = #{companyId} 
+            </if>
+             <if test="sonCompanyId != null and sonCompanyId != ''">
+                AND a.sub_company_id in (${sonCompanyId})
+            </if>
+            <if test="subCompanyId != null and subCompanyId != '' ">
+            	  AND a.sub_company_id = #{subCompanyId} 
+            </if>
+             <if test="status != null and status != '' ">
+            	  AND status = #{status} 
+            </if>
+            <if test="code != null and code != '' ">
+            	  AND code = #{code} 
+            </if>
+            <if test="name != null and name != '' ">
+            	  AND a.name = #{name} 
+            </if>
+            <if test="likeName != null and likeName != '' ">
+            	  AND a.name like '%${likeName}%'
+            </if>
+            <if test="type != null and type != '' ">
+            	  AND type = #{type} 
+            </if>
+            <if test="shareStatus != null and shareStatus != '' ">
+            	  AND share_status in (${shareStatus}) 
+            </if>
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+            <if test="mallStatus != null and mallStatus != '' ">
+            	AND mall_status = #{mallStatus}
+            </if>
+            <!-- mallStatus为0 查询购买的课程 -->
+            <if test="mallStatus!=null and mallStatus == 0 ">
+                AND mall_status in (3,4)
+            </if>
+              <if test="categoryIds != null and categoryIds != ''">
+            	and category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+              <if test="typeIds != null and typeIds != ''">
+            	and a.id in(
+            	select course_id from res_course_2_type where type_id in(
+            		<foreach collection="typeIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	))
+            </if>
+        </trim>
+    </sql>
+    
+    <!-- 查询课程 -->
+    <select id="selectCourseById" parameterType="HashMap" resultMap="ResCourseBeanMap">
+        select a.*,b.name category_name, c.teacher_name from 
+        res_course a
+        left join res_course_category b on b.id=a.category_id
+        left join res_teacher c on a.teacher_id=c.teacher_id
+         where a.id = #{id}
+    </select>
+    
+    <select id="selectOamCourseByTopic" resultMap="ResCourseBeanMap">
+    	 select a.*,b.name category_name from 
+        res_course a
+        left join res_course_category b on b.id=a.category_id 
+        left join oam_topic_course c on c.course_id=a.id
+        where c.topic_id=#{topicId}
+    </select>
+    
+    <!-- 查询课程 -->
+    <select id="selectCourseList" parameterType="com.jftt.wifi.bean.vo.CourseVo" resultMap="ResCourseBeanMap">
+    	select a.*,b.name category_name, c.teacher_name , d.name company_name
+    	  <if test="typeIds != null and typeIds != ''">
+            	,(select group_concat(name) from res_course_type where id in(
+            		<foreach collection="typeIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+					) AND id IN(SELECT type_id FROM res_course_2_type WHERE course_id=a.id)) type_name
+    	  </if>
+    	   <if test="typeIds == null || typeIds == ''">
+            	,(select group_concat(name) from res_course_type where id in(
+            	select type_id from res_course_2_type where course_id =a.id
+					)) type_name
+    	  </if>
+    	from res_course a
+        left join res_course_category b on b.id=a.category_id
+        left join res_teacher c on a.teacher_id=c.teacher_id
+        left join manage_department d on d.id=a.sub_company_id
+        where 1=1
+    	<include refid="courseConditions"/> 
+    	order by a.create_time desc
+    	<if test="pageSize != null and pageSize != '' ">
+    		limit ${fromNum},${pageSize}
+    	</if>
+    </select>
+    
+    <!-- 查询共享课程 -->
+    <select id="selectShareResCourseList"  parameterType="com.jftt.wifi.bean.vo.CourseVo" resultMap="ResCourseBeanMap">
+    	select a.*,b.name category_name,(select reason from ap_approverecord where way_type=1 and object_id=a.id order by approve_time desc limit 1) check_reason
+    	from res_course a
+        left join res_course_category b on b.id=a.category_id
+        where 1=1
+    	<include refid="courseConditions"/> 
+    	order by a.create_time desc
+    	<if test="pageSize != null and pageSize != '' ">
+    		limit ${fromNum},${pageSize}
+    	</if>
+    </select>
+    
+       <select id="selectCourseListCount" parameterType="com.jftt.wifi.bean.vo.CourseVo" resultType="int">
+    	select count(*) from res_course a where 1 = 1
+    	<include refid="courseConditions"/> 
+    </select>
+    
+    <!-- 推广课程 -->
+    <update id="spreadResCourse" parameterType="Integer">
+    	update res_course set is_spread = 1 where id = #{id}
+    </update>
+    
+    <!-- 取消推广课程 -->
+    <update id="cancelSpreadResCourse" parameterType="Integer">
+    	update res_course set is_spread = 2 where id = #{id}
+    </update>
+    
+    <!-- 新增课程 -->
+     <insert id="insertCourse" parameterType="com.jftt.wifi.bean.ResCourseBean" useGeneratedKeys="true" keyProperty="id">
+     	insert into res_course(
+     		category_id,code,name,type,learn_time,learn_score,tags,crowd ,front_image,
+			outline,create_user_id,company_id,sub_company_id,teacher_id,share_status,mall_status
+     	)values(
+     		#{categoryId},#{code},#{name},#{type},#{learnTime},#{learnScore},#{tags},#{crowd},#{frontImage},
+			#{outline},#{createUserId},#{companyId},#{subCompanyId},#{teacherId},#{shareStatus},#{mallStatus}
+     	)
+     </insert>
+     
+     <!-- 修改课程 -->
+     <update id="updateCourse" parameterType="com.jftt.wifi.bean.ResCourseBean">
+     	update res_course
+     	set category_id = #{categoryId},
+     	name = #{name},
+     	code = #{code},
+     	type = #{type},
+     	learn_time = #{learnTime},
+     	learn_score = #{learnScore},
+     	tags = #{tags},
+     	crowd = #{crowd},
+     	front_image = #{frontImage},
+     	teacher_id = #{teacherId},
+     	outline = #{outline}
+     	<if test="mallStatus!=null and  mallStatus!='' ">
+     	,mall_status=#{mallStatus}
+     	</if>
+     	where id = #{id}
+     </update>
+     
+     <!-- 删除课程 -->
+     <delete id="deleteCourse" parameterType="Integer">
+     	delete from res_course where id = #{id};
+     </delete>
+     
+     <!-- 根据课程id删除章节/试卷 -->
+     <delete id="deleteSectionExamByCourseId" parameterType="Integer">
+     	delete from res_section_exam where section_id in(select id from res_section where course_id = #{courseId});
+     </delete>
+     
+     <!-- 根据课程id删除章节/课件 -->
+     <delete id="deleteSectionCoursewareByCourseId" parameterType="Integer">
+     	delete from res_section_courseware where section_id in(select id from res_section where course_id = #{courseId});
+     </delete>
+     
+     <!-- 新增课程开放人群 -->
+     <insert id="insertCourseAndOpenCrowd" parameterType="HashMap">
+     	insert into res_course_open_crowd(course_id, open_type, open_crow_id )
+     	values(#{courseId}, #{openType}, #{crowId})
+     </insert>
+     
+     <!-- 删除课程开放人群 -->
+     <delete id="deleteCourseAndOpenCrowd" parameterType="Integer">
+     	delete from res_course_open_crowd where course_id = #{courseId}
+     </delete>
+     
+      <!-- 发布课程 -->
+     <update id="releaseCourse" parameterType="Integer">
+     	update res_course
+     	set status = 2
+     	where id = #{id}
+     </update>
+     
+       <!-- 取消发布课程 -->
+     <update id="cancelReleaseCourse" parameterType="Integer">
+     	update res_course
+     	set status = 1
+     	where id = #{id}
+     </update>
+     
+     
+     <!-- 共享课程 -->
+     <update id="shareCourse" parameterType="HashMap">
+     	update res_course
+     	set share_status = #{shareStatus},
+     	share_time = (select now())
+     	where id = #{id}
+     </update>
+     
+     <!-- 精选、取消课程 -->
+     <update id="featurAndUnFeaturResCourse" parameterType="com.jftt.wifi.bean.ResCourseBean">
+     	update res_course
+     	set is_featured = #{isFeatured}
+     	where id = #{id}
+     </update>
+     
+     <update id="changeCategory"  parameterType="HashMap">
+     	update res_course
+     	set category_id=#{categoryId}
+     	where id=#{id}
+     </update>
+     
+      <!-- 新增章节 -->
+      <insert id="insertSection" parameterType="com.jftt.wifi.bean.ResSectionBean"  useGeneratedKeys="true" keyProperty="id">
+      		insert into res_section(course_id, name, descr) values(#{courseId}, #{name}, #{descr})
+      </insert>
+      
+      <update id="updateSection" parameterType="com.jftt.wifi.bean.ResSectionBean">
+      	update res_section set name=#{name},descr=#{descr}
+      	where id =#{id}
+      </update>
+      
+      <!-- 章节、课件的关系 -->
+      <insert id="insertSectionCourseware" parameterType="com.jftt.wifi.bean.ResSectionCoursewareBean">
+      		insert into res_section_courseware(section_id, courseware_id) 
+      		values(#{sectionId}, #{coursewareId})
+      </insert>
+      
+       <!-- 章节、试卷的关系 -->
+      <insert id="insertSectionExam" parameterType="com.jftt.wifi.bean.ResSectionExamBean">
+      		insert into res_section_exam(section_id, exam_id, exam_duration, exam_times, pass_percent)
+      		values(#{sectionId}, #{examId}, #{examDuration}, #{examTimes}, #{passPercent})
+      </insert>
+      
+      <!-- 删除章节 -->
+      <delete id="deleteSection" parameterType="com.jftt.wifi.bean.ResSectionBean">
+      		delete from res_section where  1=1
+      			<if test="id != null and id != ''">
+	      			AND id=#{id}
+	      		</if>
+	      		<if test="courseId != null and courseId != ''">
+	                AND course_id = #{courseId} 
+	            </if>
+      </delete>
+      
+      <!--  删除章节、课件关系 -->
+      <delete id="deleteSectionCourseware" parameterType="com.jftt.wifi.bean.ResSectionCoursewareBean">
+      		delete from res_section_courseware where 1=1
+	      		 <if test="id != null and id != ''">
+	      			AND id=#{id}
+	      		</if>
+	      		 <if test="sectionId != null and sectionId != ''">
+	                AND section_id = #{sectionId} 
+	            </if>
+	            <if test="coursewareId != null and coursewareId != ''">
+	                AND courseware_id = #{coursewareId} 
+	            </if>
+      </delete>
+      
+      <!--删除章节、试卷关系   -->
+      <delete parameterType="com.jftt.wifi.bean.ResSectionExamBean" id="deleteSectionExam">
+      		delete from res_section_exam where 1=1
+	      		 <if test="id != null and id != ''">
+	      			and id=#{id}
+	      		</if>
+	      		<if test="sectionId != null and sectionId != ''">
+	                AND section_id = #{sectionId} 
+	            </if>
+	             <if test="examId != null and examId != ''">
+	                AND exam_id = #{examId} 
+	            </if>
+      </delete>
+      
+       	<resultMap type="com.jftt.wifi.bean.ResSectionBean" id="sectionBeanMap">
+	        <id property="id" column="id"/>
+	        <result property="name" column="name"/>
+	        <result property="descr" column="descr"/>
+	        <result property="courseId" column="course_id"/>
+   		</resultMap>
+      
+      <select id="selectSectionByCourseId" resultMap="sectionBeanMap">
+      		select * from res_section where course_id=#{courseId} order by id asc
+      </select>
+      
+     <resultMap type="com.jftt.wifi.bean.ResCourseCategoryBean" id="CourseCategoryMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="descr" column="descr"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="createUserId" column="create_user_id"/>
+   	</resultMap>
+   	
+   	<resultMap type="com.jftt.wifi.bean.ResCourseTypeBean" id="CourseTypeMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="descr" column="descr"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="createUserId" column="create_user_id"/>
+   	</resultMap>
+   	
+   	 <!-- where条件 -->
+    <sql id="courseCategorywhere">
+        <trim>
+            <if test="companyId != null and companyId != ''">
+                AND company_id = #{companyId}
+            </if>
+            <if test="subCompanyId != null and subCompanyId != ''">
+                AND sub_company_id = #{subCompanyId}
+            </if>
+            <if test="categoryIds != null and categoryIds != ''">
+            	and category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+            <if test="id != null and id != ''">
+                AND id = #{id}
+            </if>
+             <if test="parentId != null and parentId != ''">
+                AND parent_id = #{parentId}
+            </if>
+             <if test="name != null and name != ''">
+                AND name = #{name}
+            </if>
+        </trim>
+    </sql>
+   	
+   	<!-- 课程体系 -->
+   	<select id="selectCourseCategory" resultMap="CourseCategoryMap" parameterType="HashMap">
+   		select id, name, parent_id, descr, company_id, sub_company_id , create_user_id from res_course_category 
+   		where company_id = sub_company_id
+   		<include refid="courseCategorywhere"/> 
+   	</select>
+   	
+   	<delete id="deleteCourseCategory" parameterType="int">
+   		delete from res_course_category where id=#{id}
+   	</delete>
+   	
+   	<update id="updateCourseCategory" parameterType="com.jftt.wifi.bean.ResCourseCategoryBean">
+   		update res_course_category set name = #{name}, descr = #{descr}  where id =#{id}
+   	</update>
+   	
+   	<insert id="insertCourseCategory" parameterType="com.jftt.wifi.bean.ResCourseCategoryBean">
+   		insert into res_course_category(name, parent_id, descr, company_id, sub_company_id, create_user_id)
+   		values(#{name}, #{parentId}, #{descr}, #{companyId}, #{subCompanyId}, #{createUserId})
+   	</insert>
+   	
+   	<!-- 课程分类 -->
+   	<select id="selectCourseType" resultMap="CourseTypeMap" parameterType="int">
+   		select id, name, parent_id, descr, company_id, sub_company_id , create_user_id from res_course_type where 1 = 1
+   		<include refid="courseCategorywhere"/> 
+   	</select>
+   	
+   	<delete id="deleteCourseType" parameterType="int">
+   		delete from res_course_type where id=#{id}
+   	</delete>
+   	
+   	<update id="updateCourseType" parameterType="com.jftt.wifi.bean.ResCourseTypeBean">
+   		update res_course_type set name = #{name}, descr = #{descr} where id =#{id}
+   	</update>
+   	
+   	<insert id="insertCourseType" parameterType="com.jftt.wifi.bean.ResCourseTypeBean">
+   		insert into res_course_type(name, parent_id, descr, company_id, sub_company_id, create_user_id)
+   		values(#{name}, #{parentId}, #{descr},#{companyId}, #{subCompanyId}, #{createUserId})
+   	</insert>
+   	
+   	<select id="selectCourseTypeByCourseId" resultType="HashMap">
+   		SELECT * FROM res_course_2_type where course_id=#{courseId}
+   	</select>
+   	
+   	<delete id="deleteCourseTypeByCourseId">
+   		delete from res_course_2_type where course_id=#{courseId}
+   	</delete>
+   	
+   	<insert id="changeCourseType">
+   		insert res_course_2_type(course_id, type_id)values(#{courseId}, #{typeId})
+   	</insert>
+      
+     <!-- luyunlong end -->
+     
+     
+     
+     <!-- zhangbocheng post start -->
+     <!-- 查询学习人数 -->
+     <select id="getStudentNumById" resultType="Integer">
+     SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = #{courseId}
+     </select>
+     
+     <!-- 查询课程 -->
+    <select id="selectCourseListByPostId" parameterType="com.jftt.wifi.bean.vo.CourseVo" resultMap="ResCourseBeanMap">
+    	select a.*,b.name category_name, c.teacher_name 
+    	  <if test="typeIds != null and typeIds != ''">
+            	,(select group_concat(name) from res_course_type where id in(
+            		<foreach collection="typeIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+					) AND id IN(SELECT type_id FROM res_course_2_type WHERE course_id=a.id)) type_name
+    	  </if>
+    	   <if test="typeIds == null || typeIds == ''">
+            	,(select group_concat(name) from res_course_type where id in(
+            	select type_id from res_course_2_type where course_id =a.id
+					)) type_name
+    	  </if>
+    	from res_course a
+        left join res_course_category b on b.id=a.category_id
+        left join res_teacher c on a.teacher_id=c.teacher_id
+        
+        where  ((select count(0) FROM  res_course_open_crowd where course_id = a.id and open_type = 1) > 0 OR 
+       (select count(0) FROM  res_course_open_crowd where course_id = a.id and open_type = 2 AND open_crow_id = #{postId} )>0)
+    	<include refid="courseConditions"/> 
+    	
+    	<if test="courseType!=null">
+    	and a.id not in (select course_id from post_course_relation where course_type=#{courseType} and post_id = #{postId})
+    	</if>
+    	order by a.create_time desc
+    	<if test="pageSize != null and pageSize != '' ">
+    		limit ${fromNum},${pageSize}
+    	</if>
+    	
+    </select>
+    
+         <select id="selectCourseListCountByPostId" parameterType="com.jftt.wifi.bean.vo.CourseVo" resultType="int">
+    	select count(*) from res_course a where ((select count(0) FROM  res_course_open_crowd where course_id = a.id and open_type = 1) > 0 OR 
+       (select count(0) FROM  res_course_open_crowd where course_id = a.id and open_type = 2 AND open_crow_id = #{postId} )>0)
+    	<include refid="courseConditions"/> 
+    	<if test="courseType!=null">
+    	and a.id not in (select course_id from post_course_relation where course_type=#{courseType} and post_id = #{postId})
+    	</if>
+        </select>
+     <!-- zhangbocheng post end -->
+     <!-- zhangbocheng mobile start -->
+     
+     
+     <!-- 获取推荐课程 -->
+    <select id="getRecommendCourse" resultMap="ResCourseVoMap">
+    	SELECT DISTINCT rc.id, rc.name, rc.front_image, rc.create_time,
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num,
+		    (SELECT COUNT(0) FROM course_collection WHERE rc.id = course_id AND user_id = #{userId})isCollect,
+		    (SELECT COUNT(0) FROM res_section_courseware  
+		    WHERE section_id in(SELECT id FROM res_section WHERE course_id = rc.id ))wareNum, 
+		    (SELECT COUNT(0) FROM course_collection WHERE course_id = rc.id AND company_id =  #{companyId} )collectUserCount
+		  FROM res_course rc 
+		 LEFT JOIN   res_course_open_crowd rcoc on rcoc.course_id= rc.id
+		  WHERE
+		  rc.type = 1    and
+        (	  <!-- 课程开放类型 -->
+        (rcoc.open_type = 1 AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        OR (rcoc.open_type = 2 AND rcoc.open_crow_id = #{postId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        <if test="groupIds != null and groupIds.size()>0">
+            OR (rcoc.open_type = 3 AND rcoc.open_crow_id IN <foreach collection="groupIds" item="groupId" open="(" separator="," close=")">#{groupId}</foreach>
+            AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        </if>
+        OR (rcoc.open_type = 4 AND rcoc.open_crow_id = #{deptId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        )
+
+        <if test="type!=2">
+	        ORDER BY rc.create_time DESC
+	     </if>
+	      <if test="type==2">
+	        ORDER BY student_num DESC
+	     </if>
+		  LIMIT 0,${top} 
+    </select>
+    
+        <!-- 查询出最新创建的课程数目 -->
+    <select id="getNewCoursesCount" resultType="int">
+    	SELECT COUNT(DISTINCT rc.id) 
+    	  FROM res_course rc 
+    	  LEFT JOIN   res_course_open_crowd rcoc on rcoc.course_id= rc.id
+		  WHERE
+        rc.type = 1    and
+        (	  <!-- 课程开放类型 -->
+        (rcoc.open_type = 1 AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        OR (rcoc.open_type = 2 AND rcoc.open_crow_id = #{postId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        <if test="groupIds != null and groupIds.size()>0">
+            OR (rcoc.open_type = 3 AND rcoc.open_crow_id IN <foreach collection="groupIds" item="groupId" open="(" separator="," close=")">#{groupId}</foreach>
+            AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        </if>
+        OR (rcoc.open_type = 4 AND rcoc.open_crow_id = #{deptId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1 )
+        )
+
+		     <if test="lastDate!=null and lastDate!=''">
+    	    AND rc.create_time >= #{lastDate}</if>
+    </select>
+
+    <!-- 根据条件查询课程 -->
+    <select id="getSearchCourseList" resultMap="ResCourseVoMap">
+		SELECT DISTINCT rc.id, rc.name, rc.front_image, rc.create_time
+		  <if test="type==1">
+		     ,
+		     (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num ,
+		    (SELECT COUNT(0) FROM course_collection WHERE course_id = rc.id AND company_id =  #{companyId} )collectUserCount,
+		    (SELECT COUNT(0) FROM res_section_courseware  WHERE section_id in(SELECT id FROM res_section WHERE course_id = rc.id ))wareNum
+		  
+		  </if>
+		  
+		  FROM res_course rc 
+		  LEFT JOIN   res_course_open_crowd rcoc on rcoc.course_id= rc.id
+		  WHERE  rc.type = 1    and
+        (	  <!-- 课程开放类型 -->
+        (rcoc.open_type = 1 AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1
+        <if test="name!=null and name !='' ">
+            AND rc.name like CONCAT('%',#{name},'%') </if>
+        <if test="categoryId != null and categoryId !=0 ">
+            AND rc.category_id = #{categoryId}
+        </if>)
+        OR (rcoc.open_type = 2 AND rcoc.open_crow_id = #{postId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1
+        <if test="name!=null and name !='' ">
+            AND rc.name like CONCAT('%',#{name},'%') </if>
+        <if test="categoryId != null and categoryId !=0 ">
+            AND rc.category_id = #{categoryId}
+        </if>)
+        <if test="groupIds != null and groupIds.size()>0">
+            OR (rcoc.open_type = 3 AND rcoc.open_crow_id IN <foreach collection="groupIds" item="groupId" open="(" separator="," close=")">#{groupId}</foreach>
+            AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1
+            <if test="name!=null and name !='' ">
+                AND rc.name like CONCAT('%',#{name},'%') </if>
+            <if test="categoryId != null and categoryId !=0 ">
+                AND rc.category_id = #{categoryId}
+            </if>)
+        </if>
+        OR (rcoc.open_type = 4 AND rcoc.open_crow_id = #{deptId} AND rc.company_id = #{companyId} AND rc.sub_company_id IN (<foreach collection="subCompanyIds" item="subId" separator=",">#{subId}</foreach>) AND rc.status = 2 AND rc.type = 1
+        <if test="name!=null and name !='' ">
+            AND rc.name like CONCAT('%',#{name},'%') </if>
+        <if test="categoryId != null and categoryId !=0 ">
+            AND rc.category_id = #{categoryId}
+        </if>)
+        )
+
+		  
+		ORDER BY rc.create_time desc
+		<if test="page!=null and pageSize !=null">
+		LIMIT ${page},${pageSize} 
+		</if>
+		
+    </select>
+    
+    
+     <!-- 根据条件获取我的课程（按照开始学习时间降序排序） -->
+    <select id="getMyCoursesForMobile" resultMap="ResCourseVoMap">
+		SELECT rc.id, rc.name, rc.front_image, rc.create_time,csr.learn_process learnProcess, 
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score, 
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num, 
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num,
+		    (SELECT COUNT(0) FROM course_collection WHERE course_id = rc.id  )collectUserCount,
+		    (SELECT COUNT(0) FROM res_section_courseware  WHERE section_id in(SELECT id FROM res_section WHERE course_id = rc.id ))wareNum 
+		  FROM course_study_record csr JOIN res_course rc ON csr.course_id = rc.id 
+		  WHERE csr.user_id = #{userId} 
+		   AND rc.status = 2
+		  <if test="learnProcess != null">
+                AND csr.learn_process = #{learnProcess}
+                </if>
+		    <if test="name != null and name != '' ">
+            	AND rc.name like CONCAT('%',#{name},'%') 
+            </if>
+             <if test="categoryId != null">
+                AND rc.category_id = #{categoryId} 
+                </if>
+		  ORDER BY csr.this_learn_time DESC 
+		  LIMIT ${fromNum},${pageSize} 
+    </select>
+    
+    	<!-- 获取收藏的课程 -->
+	<select id="getCollectCoursesForMobile" resultMap="ResCourseVoMap">
+		SELECT DISTINCT rc.id,rc.name,rc.front_image,
+		    (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num,
+		    (SELECT COUNT(0) FROM course_collection WHERE course_id = rc.id  )collectUserCount,
+		    (SELECT COUNT(0) FROM res_section_courseware  WHERE section_id in(SELECT id FROM res_section WHERE course_id = rc.id ))wareNum 
+		  FROM course_collection cc JOIN res_course rc ON cc.course_id = rc.id 
+		  WHERE cc.user_id = #{userId} AND rc.status = 2
+		  <trim>
+		  	<if test="courseName != null and courseName != '' ">
+		  		AND rc.name LIKE CONCAT('%',#{courseName},'%') 
+		  	</if>
+		 
+		  </trim>
+		  ORDER BY cc.id DESC
+		  LIMIT ${fromNum},${pageSize} 
+	</select>
+    
+       <!-- 根据id查询课程 -->
+    <select id="selectCourseByIdForMobile"  resultMap="ResCourseVoMap">
+        select rc.*,
+            (SELECT IFNULL(AVG(CAST(score AS DECIMAL(1, 0))),0) FROM course_evaluation WHERE course_id = rc.id) average_score,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_evaluation WHERE course_id = rc.id) evaluator_num,
+		    (SELECT COUNT(0) FROM  course_evaluation WHERE course_id = rc.id)evaluatorCount,
+		    (SELECT AVG(score) FROM course_evaluation WHERE course_id = rc.id AND user_id = #{userId}) myEvaluatorScore,
+		    (SELECT COUNT(DISTINCT(user_id)) FROM course_study_record WHERE course_id = rc.id) student_num ,
+		    (SELECT COUNT(0) FROM course_collection WHERE rc.id = course_id AND user_id = #{userId})isCollect,
+		    (SELECT COUNT(0) FROM course_collection WHERE course_id = rc.id )collectUserCount,
+		    (SELECT COUNT(0) FROM res_section_courseware  WHERE section_id in(SELECT id FROM res_section WHERE course_id = rc.id ))wareNum,
+            (SELECt COUNT(0) FROM res_section_exam WHERE section_id in(SELECT id FROM res_section WHERE course_id = rc.id ))examNum,
+            csr.id recordId
+            
+         from res_course rc 
+         LEFT JOIN course_study_record csr ON rc.id = csr.course_id AND csr.user_id = #{userId}
+         
+         where rc.id = #{id}
+    </select>
+    
+        <!-- 根据章节查询所有课件及该课件的学习记录 -->
+    <select id="getAllCourseWares" resultType="com.jftt.wifi.bean.vo.SectionWareVo">
+		SELECT ware.id,ware.name,ware.type,ware.file_name fileName,ware.section_id sectionId,ware.file_path filePath,ware.tags,ware.descr,IFNULL(record.progress_percent,0) AS progressPercent,record.total_content totalContent,record.studyed_content currentContent  
+		  FROM 
+		    (SELECT res_courseware.* ,res_section_courseware.section_id
+		       FROM res_courseware LEFT JOIN res_section_courseware ON res_courseware.id = res_section_courseware.courseware_id 
+		       WHERE res_section_courseware.section_id = #{courseId}) AS ware 
+		    LEFT JOIN 
+		    (SELECT * FROM course_ware_record WHERE user_id = #{userId} AND section_id  =  #{courseId}) AS record 
+		    ON ware.id = record.ware_id  AND ware.section_id = record.section_id
+    </select>
+    
+    
+     <!-- zhangbocheng mobile end -->
+    
+    <!-- chenrui start -->
+    
+    <!-- 同步购买后的课程 -->
+    <insert id="courseSynchronization" useGeneratedKeys="true" keyProperty="id">
+    	insert into res_course(
+     		category_id,code,name,type,learn_time,learn_score,tags,crowd ,front_image,
+			outline,create_user_id,company_id,sub_company_id,teacher_id,share_status,mall_status
+     	)values(
+     		#{categoryId},#{code},#{name},#{type},#{learnTime},#{learnScore},#{tags},#{crowd},#{frontImage},
+			#{outline},#{createUserId},#{companyId},#{subCompanyId},#{teacherId},#{shareStatus},#{mallStatus}
+     	)
+    </insert>
+    
+    <select id="judgeIsBuy" resultType="int">
+    	select count(0) from res_course rc where rc.id=#{courseId} 
+    	and rc.company_id=#{companyId} and rc.sub_company_id=#{subCompanyId} and rc.mall_status = 4
+    </select>
+    <!-- chenrui end -->
+    
+</mapper>

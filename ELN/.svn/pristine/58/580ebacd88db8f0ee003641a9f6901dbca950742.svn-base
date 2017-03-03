@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.IntegralManageDaoMapper">
+	<resultMap id="IntegralBean" type="com.jftt.wifi.bean.IntegralBean">
+		<id property="ruleId" column="rule_id"/>
+		<result property="companyId" column="company_id"/>
+		<result property="actionCode" column="action_code"/>
+		<result property="timeRange" column="time_range"/>
+		<result property="integral" column="integral"/>
+		<result property="maxTimes" column="max_times"/>
+		<result property="ruleDesc" column="rule_desc"/>
+		<result property="moduleName" column="module_name"/>
+		<result property="actionName" column="action_name"/>
+		<result property="isEnabled" column="is_enabled"/>
+	</resultMap>
+	
+	<!-- 查询某个公司的积分规则列表以及积分总数 -->
+	<select id="listIntegralRule" parameterType="com.jftt.wifi.bean.IntegralBean" resultMap="IntegralBean">
+		select t.rule_id,
+			(select property_category from int_properties tp where language=#{language} and t.action_code=tp.property_code) module_name,
+			(select property_desc from int_properties tp where language=#{language} and t.action_code=tp.property_code) action_name,
+			t.integral,
+			t.is_enabled,
+			t.rule_desc
+		 from int_integralrule  t
+		where company_id =#{companyId}
+		and is_delete!=1
+		order by operate_time desc
+		limit ${fromNum},${page}
+	</select>
+	<select id="querylistIntegralRuleCount" parameterType="com.jftt.wifi.bean.IntegralBean" resultType="int">
+		select count(1)
+		 from int_integralrule  t
+		where company_id =#{companyId} and is_delete!=1
+	</select>
+	
+	
+	<select id="queryActionPro" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select ip.* from int_properties ip  where ip.language=#{language} and  not exists
+		 (select * from int_integralrule ii where ii.action_code=ip.property_code and is_delete!=1 
+		 and ii.company_id=#{companyId})
+	</select>
+
+	
+	<!-- 查询当天的记录 -->
+	<select id="queryCurrDayData" parameterType="java.util.HashMap" resultType="int">
+		select COUNT(record_id) from int_userintegral 
+		where user_id = #{userId} and rule_id =#{ruleId} and
+		date(create_time)=curdate();
+	</select>
+	
+	<!-- 查询当前小时的记录 -->
+	<select id="queryCurrMinuteData" parameterType="java.util.HashMap" resultType="int">
+		select COUNT(record_id) from int_userintegral 
+		where user_id = #{userId} and rule_id =#{ruleId} and
+		 create_time<![CDATA[ > ]]>now()-interval 1 hour and create_time<![CDATA[ < ]]> now()
+	</select>
+	
+	<!-- 查询某个公司的用户积分条数-->
+	<select id="queryUesrInte" parameterType="java.util.HashMap" resultType="int">
+		select count(1) count from  int_userintegral iu inner join int_integralrule ii on iu.rule_id=ii.rule_id
+		where user_id =#{userId} and action_code =#{actionCode}
+	</select>
+	
+	<!-- 查询某个公司的相关动作的积分规则 -->
+	<select id="queryCompanyInteRule" parameterType="java.util.HashMap" resultMap="IntegralBean">
+		select * from int_integralrule
+		where company_id =#{companyId} and action_code =#{actionCode} and is_enabled =1 and is_delete!=1
+	</select>
+	
+	<select id="queryIntegralById"  resultMap="IntegralBean">
+		select t.rule_id,action_code,time_range,max_times,
+			(select property_category from int_properties tp where language='zh_CN' and t.action_code=tp.property_code) module_name,
+			(select property_desc from int_properties tp where language='zh_CN' and t.action_code=tp.property_code) action_name,
+			t.integral,
+			t.is_enabled,
+			t.rule_desc
+		 from int_integralrule  t
+		where rule_id =#{ruleId}
+		and is_delete!=1
+	</select>
+	
+	
+	<!--保存相关的积分规则 -->	
+	<insert id="saveIntRule" parameterType="com.jftt.wifi.bean.IntegralBean" useGeneratedKeys="true" keyProperty="rule_id" >
+		replace into int_integralrule (
+		 <if test="ruleId !=null">
+			rule_id,
+		 </if>
+			company_id,action_code,time_range,integral,max_times,rule_desc,is_enabled,operate_time,operate_id,is_delete
+		)
+		values(
+		 <if test="ruleId !=null">
+			#{ruleId},
+		</if>
+			 #{companyId},#{actionCode},#{timeRange},#{integral},#{maxTimes},#{ruleDesc},#{isEnabled},
+			 now(),#{userId},0
+			  )
+	</insert>
+	
+	
+	<!--插入总积分 -->	
+	<insert  id="insertTotalInteral" parameterType="com.jftt.wifi.bean.IntegralBean" >
+			replace  into  int_totalintegral (user_id,total_integral) 
+			values(#{userId},   (select  #{integral}+total_integral  from (
+				 select  case count( a.total_integral)
+					when '0' then  0
+				    else a.total_integral  end  as total_integral
+		from int_totalintegral  a  where user_id=#{userId} 
+		)  bb ) )
+	</insert>
+	
+	<!--插入积分记录 -->	
+	<insert  id="insertUserIntegral" parameterType="com.jftt.wifi.bean.IntegralBean" >
+			replace  into  int_userintegral (user_id,company_id,integral,rule_id,create_time,integral_desc) 
+			values(#{userId},#{companyId},#{integral},#{ruleId},now(),#{ruleDesc})
+	</insert>
+	
+	
+	<!-- 禁用启用相关的规则 -->
+	<update  id="updateOneRuleStatus" parameterType="java.util.HashMap">
+		update int_integralrule
+		set is_enabled =#{isDisabled},
+			operate_time=now(),
+			operate_id = #{userId}
+		where rule_id = #{ruleId}
+	</update>
+	
+	<!-- 删除相关的规则 -->
+	<update id="deleteOneIntRule" parameterType="java.util.HashMap">
+		update   int_integralrule set is_delete=1,operate_time=now(),
+			operate_id = #{userId}
+		where rule_id = #{ruleId}
+	</update>
+	
+</mapper>

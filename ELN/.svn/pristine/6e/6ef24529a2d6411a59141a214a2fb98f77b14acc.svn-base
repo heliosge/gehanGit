@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ResTeacherDaoMapper">
+	
+	<!-- shenhaijun start -->
+	
+	<!-- 根据讲师id查询讲师姓名 -->
+	<select id="getTeacherNameById" parameterType="java.lang.Integer" resultType="java.lang.String">
+		SELECT teacher_name FROM res_teacher WHERE teacher_id = #{teacherId} AND is_delete = 0 
+	</select>
+	
+	<!-- shenhaijun end -->
+	
+</mapper>

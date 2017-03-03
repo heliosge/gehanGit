@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExamPaperQuestionDaoMapper">
+	<!-- wangyifeng begin -->
+    <resultMap type="com.jftt.wifi.bean.exam.PaperQuestionBean" id="paperQuestionDetailMap">
+        <id property="id" column="id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="score" column="score"/>
+        <result property="scoreDetail" column="score_detail"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+	<insert id="addPaperQuestion" useGeneratedKeys="true"
+		keyProperty="id">
+		insert into exam_paper_question
+		(paper_id, question_id, score, score_detail, order_num, update_time)
+		values
+		(#{paperId}, #{questionId}, #{score}, #{scoreDetail}, #{orderNum}, now())
+	</insert>
+	<select id="getPaperQuestionList" resultMap="paperQuestionDetailMap">
+	   select *
+	   from exam_paper_question
+	   where paper_id = #{paperId}
+       order by order_num
+	</select>
+	<delete id="realDeleteRecords">
+	   delete from exam_paper_question
+	   where paper_id = #{paperId}
+	</delete>
+	<!-- wangyifeng end -->
+
+
+	<!--zhangchen start  -->
+		<resultMap type="com.jftt.wifi.bean.exam.PaperQuestionBean" id="paperQuestion">
+        <id property="id" column="id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="score" column="score"/>
+        <result property="scoreDetail" column="score_detail"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="updateTime" column="update_time"/>
+	</resultMap>
+	
+	<!--通过paperId查询一份试卷题目总数  -->
+	<select id="selectPaperQuestionNum" resultType="int" parameterType="int">
+		select count(1)
+		from exam_paper_question
+		where paper_id = #{paper_id}
+		order by order_num 
+	</select>
+	
+	<resultMap type="com.jftt.wifi.bean.exam.PaperQuestionBean" id="paperQuestionMap">
+         <id property="id" column="id"/>
+        <result property="paperId" column="paper_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="score" column="score"/>
+        <result property="scoreDetail" column="score_detail"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="updateTime" column="update_time"/>
+       <association property="questionBean" column="question_id"
+		        javaType="com.jftt.wifi.bean.exam.QuestionBean"
+			    select="com.jftt.wifi.dao.ExamQuestionDaoMapper.selectQuestionById"/>
+    </resultMap>
+	<!--通过试卷ID 查询试卷题目、题干等内容  -->
+	<select id="selectExamQuestionByPaperId" resultMap="paperQuestionMap" parameterType="int">
+		select id,question_id,paper_id,score,score_detail,order_num 
+		from exam_paper_question 
+		where paper_id = #{paper_id}
+		order by order_num
+	</select>
+	
+	<!--通过试卷ID,题目ID 查询某一题目、题干等内容  ，主要用于查看错题-->
+	<select id="selectByPaperIdAndQuestionId" resultMap="paperQuestionMap" parameterType="java.util.HashMap">
+		select id,question_id,paper_id,score,score_detail,order_num 
+		from exam_paper_question 
+		where paper_id = #{paper_id}
+		and question_id = #{question_id}
+	</select>
+	<!--zhangchen end  -->
+</mapper>

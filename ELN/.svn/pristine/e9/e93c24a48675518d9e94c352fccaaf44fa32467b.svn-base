@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.TrainPlanDaoMapper">
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainPlanBean">
+    <id column="id" property="id" />
+    <result column="name" property="name" />
+    <result column="time_type" property="timeType" />
+    <result column="time_value" property="timeValue" />
+    <result column="period" property="period" />
+    <result column="train_type" property="trainType" />
+    <result column="teacher_name" property="teacherName" />
+    <result column="agency" property="agency" />
+    <result column="target" property="target" />
+    <result column="submit_dept" property="submitDept" />
+    <result column="submit_user_name" property="submitUserName" />
+    <result column="descr" property="descr" />
+    <result column="status" property="status" />
+    <result column="company_id" property="companyId" />
+    <result column="sub_company_id" property="subCompanyId" />
+    <result column="create_time" property="createTime" />
+    <result column="create_user_id" property="createUserId" />
+    <result column="create_user_name" property="createUserName" />
+    <result column="update_time" property="updateTime" />
+    <result column="is_delete" property="isDelete" />
+    <result column="arrange_count" property="arrangeCount" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, name, time_type, time_value, period, train_type, teacher_name, agency, target, descr, submit_dept, submit_user_name,
+    status, company_id, sub_company_id, create_time, create_user_id, create_user_name, update_time, is_delete,
+    (select count(1) from train_arrange where train_plan_id=p.id and status = 3) arrange_count
+  </sql>
+  <select id="selectById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from train_plan p
+    where id = #{id}
+  </select>
+  <update id="deleteById" parameterType="java.lang.Integer">
+    update train_plan set is_delete = 1,
+      update_time = now()
+    where id = #{id}
+  </update>
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainPlanBean">
+    insert into train_plan (name, time_type, 
+      time_value, period, train_type, 
+      teacher_name, agency, target, 
+      descr, company_id, 
+      sub_company_id, create_user_id, create_user_name)
+    values (#{name}, #{timeType}, 
+      #{timeValue}, #{period}, #{trainType}, 
+      #{teacherName}, #{agency}, #{target}, 
+      #{descr}, #{companyId}, 
+      #{subCompanyId}, #{createUserId}, #{createUserName})
+  </insert>
+
+  <update id="updateById" parameterType="com.jftt.wifi.bean.TrainPlanBean">
+    update train_plan
+    set name = #{name},
+      time_value = #{timeValue},
+      period = #{period},
+      train_type = #{trainType},
+      teacher_name = #{teacherName},
+      agency = #{agency},
+      target = #{target},
+      descr = #{descr},
+      update_time = now()
+    where id = #{id}
+  </update>
+  <sql id="whereConditions">
+        <trim>
+            <if test="companyId != null and companyId != ''">
+                AND company_id = #{companyId} 
+            </if>
+            <if test="subCompanyId != null and subCompanyId != '' ">
+            	  AND sub_company_id = #{subCompanyId} 
+            </if>
+            <if test="createUserName != null and createUserName != '' ">
+            	  AND create_user_name like '%${createUserName}%'
+            </if>
+            <if test="timeType != null and timeType != '' ">
+            	  AND time_type = #{timeType}
+            </if>
+             <if test="timeValue != null and timeValue != '' ">
+            	  AND time_value = #{timeValue}
+            </if>
+            <if test="status != null and status != '' ">
+            	  AND status = #{status}
+            </if>
+        </trim>
+    </sql>
+  <select id="selectTrainPlanList" resultMap="BaseResultMap">
+  	 select 
+    <include refid="Base_Column_List" />
+    from train_plan p
+    where is_delete=2
+    <include refid="whereConditions"/>
+     order by create_time desc
+    <if test="pageSize != null and pageSize != ''">
+    	limit ${fromNum},${pageSize}
+    </if> 
+  </select>
+  
+   <select id="selectTrainPlanListCount" resultType="int">
+  	 select count(1)
+    from train_plan
+    where is_delete=2
+    <include refid="whereConditions"/> 
+  </select>
+  
+  <update id="submitTrainPlan" parameterType="com.jftt.wifi.bean.TrainPlanBean">
+  	update train_plan 
+  	set status = #{status}, 
+	  	submit_dept = #{submitDept}, 
+	  	submit_user_name=#{submitUserName},
+      	update_time = now() 
+	  	where id = #{id}
+  </update>
+  
+  <update id="rejectPlan" >
+  	update train_plan 
+  	set status = 4 
+  	where id = #{id}
+  </update>
+  
+  <update id="passPlan">
+  	update train_plan set status = 3 where id=#{trainId} 
+  	AND NOT EXISTS (select id from train_check where type = #{type} and train_id = #{trainId} and id > #{id})
+  </update>
+</mapper>

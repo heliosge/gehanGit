@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>课件播放</title>
+<script type="text/javascript">
+var ScormRTE = {};
+
+
+ScormRTE.prototype = {
+	LMSInitialize: function(param) {
+		return "true";
+	},
+
+	LMSFinish: function(param) {
+		return "true";
+	},
+
+	LMSSetValue: function(element, value) {
+		return "true";
+	},
+
+	LMSGetValue: function(element) {
+		return "true";
+	},
+
+	LMSCommit: function(param) {
+		return "true";
+	},
+
+	LMSGetLastError: function() {
+		//sendData('getlasterr', "")
+		return "";
+	},
+
+	LMSGetErrorString: function(errcode) {
+		//sendData('geterrstring', errcode)
+		return "";
+	},
+
+	LMSGetDiagnostic: function(errcode) {
+		//sendData('getdiagnostic', errcode)
+		return "";
+	}
+};
+
+function init_API () {
+	window['API'] = ScormRTE.prototype;
+}
+
+
+function setIframeSrc(filePath){
+	if(filePath&&filePath != ''){
+	document.getElementById("coursewareIFrame").src=filePath;
+	return true;
+	}
+	return false;
+}
+
+function setIframeWidth(width){
+  if(width){
+    document.getElementById("coursewareIFrame").style.width=width;
+    return true;
+  }
+  return false;
+}
+function setIframeHeight(height){
+   if(height){
+     document.getElementById("coursewareIFrame").style.height=height;
+     return true;
+     }
+   return false;
+}
+function setIframeWH(width,height){
+	 if(width){
+		    document.getElementById("coursewareIFrame").style.width=width;
+		  
+		  }
+	 if(height){
+	     document.getElementById("coursewareIFrame").style.height=height;
+	   
+	     }
+	
+}
+//获取当前页面Url中的参数
+function getUrlParam(name) {
+    var vars = [], hash, hashes = window.location.href.slice(window.location.href.indexOf('#') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars[name];
+}
+
+
+var iframeUrl = "";
+
+function watchUrl(){
+    if(iframeUrl == window.location.href)
+    {
+        return;
+    }
+
+    iframeUrl =window.location.href;
+    var url=getUrlParam("url").replace('[','').replace(']','');
+    var width =getUrlParam("width");
+    var height=getUrlParam("height");
+    if(width&&width.length>0){
+        setIframeWidth(width+"px")
+    }
+    if(height&&height.length>0){
+        setIframeHeight(height+"px")
+    }
+    if(url&&url.length>0){
+        setIframeSrc(url);
+    }
+
+
+}
+
+
+
+init_API();
+setInterval("watchUrl()", 500);
+
+</script>
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<iframe id="coursewareIFrame" frameborder="0" style="width:100%;height:100%;position: absolute;" src="">
+</iframe>
+</body>
+</html>

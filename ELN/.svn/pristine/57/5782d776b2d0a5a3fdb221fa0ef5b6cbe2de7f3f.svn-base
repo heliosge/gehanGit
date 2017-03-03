@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MallSellRecordDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.MallSellRecordBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="buy_user_id" property="buyUserId" jdbcType="INTEGER" />
+    <result column="course_id" property="courseId" jdbcType="INTEGER" />
+    <result column="order_id" property="orderId" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="course_name" property="courseName"/>
+    <result column="pay_user_name" property="payUserName"/>
+    <result column="pay_user_id" property="payUserId"/>
+    <result column="status" property="status"/>
+    <result column="gathering_user_name" property="gatheringUserName"/>
+    <result column="gathering_user_id" property="gatheringUserId"/>
+    <result column="company_id" property="companyId"/>
+    <result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime"  />
+    <result column="update_time" property="updateTime" />
+  </resultMap>
+    
+    <resultMap id="SellRecordVoMap" type="com.jftt.wifi.bean.vo.MallSellRecordVo" >
+	<id column="id" property="id" jdbcType="INTEGER" />
+    <result column="course_id" property="courseId" jdbcType="INTEGER" />
+    <result column="order_id" property="orderId" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="course_name" property="courseName"/>
+    <result column="pay_user_name" property="payUserName"/>
+    <result column="pay_user_id" property="payUserId"/>
+    <result column="status" property="status"/>
+    <result column="gathering_user_name" property="gatheringUserName"/>
+    <result column="gathering_user_id" property="gatheringUserId"/>
+    <result column="company_id" property="companyId"/>
+    <result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" />
+    <result column="update_time" property="updateTime" />
+  	</resultMap>
+  	
+
+   <!-- zhangbocheng start -->
+   
+   
+       <sql id="whereConditions">
+        <trim>
+           <if test="companyId !=null and companyId!='' ">
+              AND a.company_id = #{companyId}
+             
+            </if>
+            <if test="subCompanyId!=null and subCompanyId!=''">
+              AND a.sub_company_id = #{subCompanyId}
+            </if>
+            
+            <if test="orderCode != null and orderCode != '' ">
+            	  AND b.code like CONCAT('%', #{orderCode}, '%')
+            </if>
+            <if test="courseName != null and courseName != '' ">
+            	  AND a.course_name like CONCAT('%', #{courseName}, '%')
+            </if>
+            <if test="beginTime != null and beginTime!=''  ">
+            	  AND b.create_time >= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != '' ">
+                <![CDATA[  AND b.create_time <= #{endTime}]]>
+            	  
+            </if>
+             <if test="beginPrice != null and beginPrice!=''  ">
+            	  AND a.price >= #{beginPrice}
+            </if>
+            <if test="endPrice != null and endPrice != '' ">
+                <![CDATA[  AND a.price <= #{endPrice}]]>
+            	  
+            </if>
+  
+           <if test="status!= null  ">
+            	  AND a.status = #{status} 
+            </if>
+                 <if test="categoryIds != null and categoryIds != ''">
+            	and c.category_id in(
+            		<foreach collection="categoryIds" item="item" index="index" separator=",">
+							#{item}
+					</foreach>
+            	)
+            </if>
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+
+        </trim>
+    </sql>
+    
+    
+    <select id="getById" resultMap="BaseResultMap">
+    select * from mall_sell_record where id = #{id}
+    </select>
+    <select id="getDetailById"  resultMap="SellRecordVoMap">
+    select a.id,a.course_id,a.order_id,a.price,a.course_name,a.pay_user_name,a.pay_user_id,a.status,
+    a.gathering_user_name,a.gathering_user_id,
+     DATE_FORMAT(b.create_time, '%Y-%m-%d %H:%i')create_time,DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i') update_time,
+     a.company_id,a.company_id,b.code orderCode,b.status orderStatus
+     from mall_sell_record a
+     left join mall_order b on a.order_id = b.id
+     left join mall_course c on c.id = a.course_id
+      where a.id = #{id}
+    </select>
+    <!-- 检查是否购买了此课程 -->
+   <select id="checkIsBuy" resultType="Integer">
+   select count(0) from mall_sell_record a left join mall_order b on a.order_id = b.id
+   where a.course_id = #{courseId} and b.user_id = #{userId}
+   </select>
+   
+      <!-- 新增出售记录-->
+     <insert id="insertMallSellRecord" parameterType="com.jftt.wifi.bean.MallSellRecordBean" useGeneratedKeys="true" keyProperty="id">
+     	insert into mall_sell_record(
+     		 buy_user_id,course_id,order_id,price,course_name,status,is_delete,create_time,update_time,company_id,sub_company_id
+     	)values(
+     		#{buyUserId},#{courseId},#{orderId},#{price},#{courseName},
+             0,0,now(),now(),#{companyId},#{subCompanyId}
+     	)
+     </insert>
+     
+     <!-- 修改出售记录 -->
+     <update id="updateMallSellRecord" parameterType="com.jftt.wifi.bean.MallSellRecordBean">
+     	update mall_sell_record
+     	set
+     	<if test="courseId!=null">
+     	course_id =#{courseId},
+     	</if>
+     	<if test="orderId!=null">
+     	order_id =#{orderId},
+     	</if>
+     	<if test="price!=null">
+     	price =#{price},
+     	</if>
+     	<if test="courseName!=null">
+     	course_name =#{courseName},
+     	</if>
+     
+     	<if test="status!=null">
+     	status =#{status},
+     	</if>
+         update_time=now(),
+     	 is_delete = 0
+     	    
+     	where id = #{id}
+     </update>
+     
+       <!-- 删除 -->
+     <update id="deleteMallSellRecord" >
+     	update mall_sell_record
+     	set is_delete = 1
+     	where id = #{id}
+     </update>
+     
+     <!-- 查询 -->
+     <select id="selectMallSellRecordList" parameterType="com.jftt.wifi.bean.vo.MallSellRecordVo" resultMap="SellRecordVoMap">
+      select a.id,a.course_id,a.order_id,a.price,a.course_name,a.pay_user_name,a.pay_user_id,a.status,
+             a.gathering_user_name,a.gathering_user_id,
+             DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i')create_time,DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i') update_time,
+             a.company_id,a.sub_company_id,b.code orderCode,b.status orderStatus ,b.company_name buyCompanyName,
+             d.name companyName
+       from mall_sell_record a
+       left join mall_order b on a.order_id = b.id
+        left join mall_course c on c.id = a.course_id
+        left join manage_company d on d.id = a.company_id
+       <!--  
+      
+       left join res_course d on d.id c.course_id -->
+      where a.is_delete = 0 
+      <if test="type!=null and type !=''">
+        and a.company_id !=1
+      </if>
+      <include refid="whereConditions"/>
+      group by a.id
+      order by a.id desc
+      <if test="pageIndex!=null and pageSize!=null">
+      limit #{pageIndex},#{pageSize}
+      </if>
+     </select>
+     
+     
+      <select id="selectMallSellRecordCount" parameterType="com.jftt.wifi.bean.vo.MallSellRecordVo" resultType="Integer">
+      select count(0)
+       from mall_sell_record a
+      left join mall_order b on a.order_id = b.id
+       left join mall_course c on c.id = a.course_id
+      where a.is_delete = 0 
+       <if test="type!=null and type !=''">
+        and a.company_id !=1
+      </if>
+      <include refid="whereConditions"/>
+      
+     </select>
+     
+     
+     
+     <!-- 付款 -->
+     <update id="pay">
+        update mall_sell_record
+     	set status = 1 ,
+     	update_time=now(),
+     	pay_user_name =#{payUserName},
+     	pay_user_id =#{payUserId}
+     	where id = #{id} and status = 0
+     </update>
+       <!-- 收款 -->
+     <update id="gathering">
+        update mall_sell_record
+     	set status = 2 ,
+     	update_time=now(),
+     	gathering_user_name=#{gatheringUserName},
+     	gathering_user_id = #{gatheringUserId}
+     	where id = #{id} and status = 1
+     </update>
+     
+     
+     <!-- 销售的总金额 -->
+     <select id="getTotalMoney" parameterType="com.jftt.wifi.bean.vo.MallSellRecordVo" resultType="java.math.BigDecimal">
+     select sum(a.price) totalMoney
+     from mall_sell_record a
+     left join mall_order b on a.order_id = b.id
+      left join mall_course c on c.id = a.course_id
+     where a.is_delete = 0 
+     <if test="type!=null and type !=''">
+        and a.company_id !=1
+      </if>
+      <include refid="whereConditions"/>
+     </select>
+     <!-- 已付款的金额 -->
+     <select id="getPayMoney" parameterType="com.jftt.wifi.bean.vo.MallSellRecordVo" resultType="java.math.BigDecimal">
+     select sum(a.price) payMoney
+      from mall_sell_record a
+      left join mall_order b on a.order_id = b.id
+       left join mall_course c on c.id = a.course_id
+      where a.is_delete = 0  
+      <if test="type!=null and type !=''">
+        and a.company_id !=1 and a.status in (1,2)
+      </if>
+      <if test="type == null">
+      and a.status = 2
+      </if>
+      <include refid="whereConditions" />
+     </select>
+     
+     <!-- 订单总数-->
+      <select id="getOrderCount" resultType="java.math.BigDecimal">
+     select count(DISTINCT (b.id))
+      from mall_sell_record a
+      left join mall_order b on a.order_id = b.id
+       left join mall_course c on c.id = a.course_id
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+     </select>
+   
+   <!-- zhangbocheng end -->
+  
+</mapper>

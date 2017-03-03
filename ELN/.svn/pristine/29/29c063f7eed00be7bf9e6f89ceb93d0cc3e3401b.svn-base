@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.TrainArrangeOpenCrowdDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.TrainArrangeOpenCrowdBean" >
+    <id column="id" property="id"/>
+    <result column="dept_id" property="deptId"/>
+    <result column="dept_name" property="deptName"/>
+    <result column="train_arrange_id" property="trainArrangeId"/>
+  </resultMap>
+  <sql id="Base_Column_List" >
+    a.id, a.dept_id, a.train_arrange_id, b.name dept_name
+  </sql>
+  
+  <insert id="insert" parameterType="com.jftt.wifi.bean.TrainArrangeOpenCrowdBean" >
+    insert into train_arrange_open_crowd (dept_id, train_arrange_id )
+    values ( #{deptId}, #{trainArrangeId} )
+  </insert>
+ 
+  <select id="selectOpenCrowdByArrangeId" resultMap="BaseResultMap">
+  	select  <include refid="Base_Column_List" /> 
+    from train_arrange_open_crowd a
+    left join manage_department b on a.dept_id = b.id
+    where train_arrange_id = #{id}
+  </select>
+  
+  <delete id="deleteByArrangeId" parameterType="java.lang.Integer" >
+    delete from train_arrange_open_crowd
+    where train_arrange_id = #{id}
+  </delete>
+</mapper>

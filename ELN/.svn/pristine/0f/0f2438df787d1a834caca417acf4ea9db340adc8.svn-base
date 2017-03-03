@@ -1,0 +1,13 @@
+@charset "utf-8";
+/* focus */
+.focus{width:520px;height:150px;overflow:hidden;position:relative;background:#fff;margin-left: auto;margin-right: auto;}
+.focus ul{height:120px;position:absolute;}
+.focus ul li{float:left;width:500px;height:120px;overflow:hidden;position:relative;background:#fff;text-align: center;}
+.focus ul li div{position:absolute;overflow:hidden;}
+.focus .btnBg{position:absolute;width:1200px;height:20px;left:0;bottom:0;background:#fff;}
+.focus .btn{position:absolute;width:350px;height:10px;padding:5px 10px;right:0;bottom:0;text-align:right;}
+.focus .btn span{display:inline-block;_display:inline;_zoom:1;width:25px;height:10px;_font-size:0;margin-left:5px;cursor:pointer;background:#fff;}
+.focus .btn span.on{background:#fff;}
+.focus .preNext{width:50px;height:100px;position:absolute;top:20px;background:url(../images/img/sprite.png) no-repeat 0 0;cursor:pointer;}
+.focus .pre{left:0;}
+.focus .next{right:0;background-position:right top;}

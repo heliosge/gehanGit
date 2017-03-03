@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KlBrowerInfoDaoMapper" >
+  <resultMap id="KlBrowerInfoBean" type="com.jftt.wifi.bean.KlBrowerInfoBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="resource_id" property="resourceId" jdbcType="INTEGER" />
+    <result column="user_id" property="userId" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, resource_id, user_id, create_time, update_time
+  </sql>
+  <select id="getById" resultMap="KlBrowerInfoBean">
+  	select
+  	<include refid="Base_Column_List"></include>
+  	from kl_brower_info kbi
+  	where kbi.id=#{id}
+  </select>
+  <select id="isExist" resultType="int">
+  	select count(0) from kl_brower_info kbi
+  	where kbi.user_id=#{userId} and kbi.resource_id=#{knowledgeId}
+  </select>
+  <insert id="add">
+  	insert into kl_brower_info(resource_id, user_id, create_time) values(#{knowledgeId},#{userId},now())
+  </insert>
+</mapper>

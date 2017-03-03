@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.PoliciesRulesDaoCategoryMapper">
+
+	<resultMap id="PoliciesRulesCategoryBean" type="com.jftt.wifi.bean.PoliciesRulesCategoryBean">
+		<id column="id" property="id" />
+		<result column="parent_id" property="parentId" />
+	    <result column="name" property="name" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+		<result column="is_delete" property="isDelete" />
+	</resultMap>
+	
+	<select id="getCategorys" resultMap="PoliciesRulesCategoryBean">
+		select * from policies_rules_categroy where is_delete != 1
+	</select>
+	
+	<insert id="addCategory">
+		insert into policies_rules_categroy(parent_id,name,create_time)
+		values(#{parentId},#{name},now())
+	</insert>
+	
+	<update id="delCategory">
+		update policies_rules_categroy set is_delete = 1 where id=#{categoryId}
+	</update>
+	
+	<select id="getCategoryById" resultMap="PoliciesRulesCategoryBean">
+		select * from policies_rules_categroy where id = #{categoryId}
+	</select>
+	
+	<update id="modifyCategory">
+		update policies_rules_categroy set name = #{name}
+		where id=#{id}
+	</update>
+</mapper>

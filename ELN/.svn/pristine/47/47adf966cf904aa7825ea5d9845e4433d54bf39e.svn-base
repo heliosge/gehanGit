@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MallTopicDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.MallTopicBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="code" property="code" jdbcType="VARCHAR" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="cheap_price" property="cheapPrice" jdbcType="DECIMAL" />
+    <result column="cover_image" property="coverImage" jdbcType="VARCHAR" />
+    <result column="banner_image" property="bannerImage" jdbcType="VARCHAR" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_user_id" property="updateUserId" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="putaway_user_id" property="putawayUserId" jdbcType="INTEGER" />
+    <result column="putaway_time" property="putawayTime" jdbcType="TIMESTAMP" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+    <result column="descr" property="descr"/>
+     <result column="courseCount" property="courseCount"/>
+  </resultMap>
+  <!-- 专题课程关联表resultMap -->
+  <resultMap id="MallTopicCourseMap" type="com.jftt.wifi.bean.MallTopicCourseBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="mall_course_id" property="mallCourseId" jdbcType="INTEGER" />
+    <result column="topic_id" property="topicId" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+  </resultMap>
+  
+    <resultMap id="MallTopicVoMap" type="com.jftt.wifi.bean.vo.MallTopicVo" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="code" property="code" jdbcType="VARCHAR" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="cheap_price" property="cheapPrice" jdbcType="DECIMAL" />
+    <result column="cover_image" property="coverImage" jdbcType="VARCHAR" />
+    <result column="banner_image" property="bannerImage" jdbcType="VARCHAR" />
+    <result column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_user_id" property="updateUserId" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="putaway_user_id" property="putawayUserId" jdbcType="INTEGER" />
+    <result column="putaway_time" property="putawayTime" jdbcType="TIMESTAMP" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="is_delete" property="isDelete" jdbcType="INTEGER" />
+    <result column="descr" property="descr"/>
+     <result column="courseCount" property="courseCount"/>
+  </resultMap>
+  
+  <resultMap type="com.jftt.wifi.bean.vo.MallTopicDetailVo" id="MallTopicDetailVo" extends="BaseResultMap">
+  	<collection property="courseList" column="id" select="com.jftt.wifi.dao.MallCourseDaoMapper.getCoursesByTopicId"></collection>
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, name, code, price, cheap_price, cover_image, banner_image, create_user_id, create_time,descr, 
+    update_user_id, update_time, putaway_user_id, putaway_time, status, is_delete
+  </sql>
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" >
+    select 
+    <include refid="Base_Column_List" />
+    from mall_topic
+    where id = #{id}
+  </select>
+  <!-- chenrui start -->
+  <!-- 获取首页专题 -->
+  <select id="getCourseTopic" resultMap="BaseResultMap">
+  	select 
+  	<include refid="Base_Column_List"></include>
+  	from mall_topic mt
+  	where mt.is_delete=0 and mt.status=1
+  	order by create_time desc
+  	limit 5
+  </select>
+  
+  <!-- 获取专题列表 -->
+  <sql id="where_getMallTopicList">
+  	where mt.is_delete=0 and mt.status=1
+  </sql>
+  
+  <select id="getMallTopicList" resultMap="BaseResultMap">
+  	select mt.*,count(mtc.id) courseCount from mall_topic mt 
+	left join mall_topic_course mtc on(mt.id=mtc.topic_id)
+	<include refid="where_getMallTopicList"></include>
+	group by mt.id
+	order by mt.putaway_time desc
+	limit ${fromNum},${pageSize}
+  </select>
+  
+  <select id="getMallTopicListCount" resultType="int">
+  	select count(0) from mall_topic mt 
+	<include refid="where_getMallTopicList"></include>
+  </select>
+  
+  <!-- 获取专题及其下课程的详细信息 -->
+  <select id="getMallTopicDetailsById" resultMap="MallTopicDetailVo">
+  	select 
+    <include refid="Base_Column_List" />
+    from mall_topic
+    where id = #{id}
+  </select>
+  <!-- 根据专题id获取对应的专题课程关联记录 -->
+  <select id="getByTopicId" resultMap="MallTopicCourseMap">
+  	select mtc.id,mtc.mall_course_id,mtc.topic_id,mtc.price from mall_topic_course mtc
+  </select>
+ <!-- chenrui end -->
+ 
+ 
+   <!-- zhangbocheng start -->
+   
+   
+       <sql id="whereConditions">
+        <trim>
+            <if test="code != null and code != '' ">
+            	  AND a.code like CONCAT('%', #{code}, '%')
+            </if>
+            <if test="name != null and name != '' ">
+            	  AND a.name like CONCAT('%', #{name}, '%')
+            </if>
+            <if test="beginTime != null and beginTime!=''  ">
+            	  AND a.putaway_time >= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime!='' ">
+                <![CDATA[  AND a.putaway_time <= #{endTime}]]>
+            	  
+            </if>
+  
+           <if test="status!= null  ">
+            	  AND a.status = #{status} 
+            </if>
+            <if test="id != null and id != '' ">
+            	  AND a.id = #{id} 
+            </if>
+
+        </trim>
+    </sql>
+    
+    
+    <select id="getById" resultMap="BaseResultMap">
+    select * from mall_topic where id = #{id}
+    </select>
+    <select id="getDetailById"  resultMap="MallTopicVoMap">
+    select mt.*,count(mtc.id) courseCount 
+    from mall_topic mt 
+	left join mall_topic_course mtc on(mt.id=mtc.topic_id)
+	where mt.id=#{id}
+    </select>
+    
+    <!-- 检查编号是否重复 -->
+    <select id="checkCode"  resultType="java.lang.Integer">
+    select count(0) from mall_topic 
+     where code=#{code} and is_delete = 0 
+    <if test="id!=null">
+    and id != #{id}
+    </if>
+    </select>
+      <!-- 新增 -->
+     <insert id="insertMallTopic" parameterType="com.jftt.wifi.bean.MallTopicBean" useGeneratedKeys="true" keyProperty="id">
+     	insert into mall_topic(
+     	name,code,price,cheap_price,cover_image,banner_image,descr,create_user_id,create_time,update_user_id,update_time,status,is_delete
+     	)values(
+     		#{name},#{code},#{price},#{cheapPrice},#{coverImage},
+     		#{bannerImage},#{descr},#{createUserId},now(),#{createUserId},now(),
+            0,0
+     	)
+     </insert>
+     <!-- 新建专题课程关联 -->
+     <insert id="insertMallTopicCourse" parameterType="com.jftt.wifi.bean.MallTopicCourseBean">
+     insert into mall_topic_course
+     (mall_course_id,topic_id,price)values(
+     #{mallCourseId},#{topicId},#{price}
+     )
+     </insert>
+     <!-- 删除专题课程关联 -->
+     <delete id="deleteMallTopicCourse" parameterType="com.jftt.wifi.bean.MallTopicCourseBean" >
+     delete from mall_topic_course where 1=1
+     
+     <if test="id != null and id != ''">
+	      			AND id=#{id}
+	   </if> 
+	  <if test="topicId != null and topicId != ''">
+	      			AND topic_id=#{topicId}
+	   </if> 
+	   <if test="mallCourseId != null and mallCourseId != ''">
+	      			AND mall_course_id=#{mallCourseId}
+	   </if> 
+	   </delete>
+      
+     <!-- 修改商城课程 -->
+     <update id="updateMallTopic" parameterType="com.jftt.wifi.bean.MallTopicBean">
+     	update mall_topic
+     	set
+     	<if test="name!=null">
+     	name =#{name},
+     	</if>
+     	<if test="code!=null">
+     	code =#{code},
+     	</if>
+     	<if test="price!=null">
+     	price =#{price},
+     	</if>
+     	<if test="cheapPrice!=null">
+     	cheap_price =#{cheapPrice},
+     	</if>
+     	<if test="coverImage!=null">
+     	cover_image =#{coverImage},
+     	</if>
+     	<if test="bannerImage!=null">
+     	banner_image =#{bannerImage},
+     	</if>
+     	 <if test="descr!=null">
+     	 descr =#{descr},
+     	</if>
+     	
+     	<if test="status!=null">
+     	status =#{status},
+     	</if>
+        <if test="updateUserId!=null">
+        update_user_id =#{updateUserId},
+        </if>
+     	update_time=now()
+     	    
+     	where id = #{id}
+     </update>
+     
+       <!-- 删除 -->
+     <update id="deleteMallTopic" >
+     	update mall_topic
+     	set is_delete = 1
+     	where id = #{id} and status = 0
+     </update>
+     
+     <!-- 查询 -->
+     <select id="selectMallTopicList" parameterType="com.jftt.wifi.bean.vo.MallTopicVo" resultMap="MallTopicVoMap">
+     select a.id, a.name, a.code, a.price, a.cheap_price, a.cover_image, a.banner_image, a.create_user_id, 
+     a.descr, 
+     a.putaway_user_id, 
+     DATE_FORMAT(a.putaway_time,'%Y-%m-%d %H:%i') putaway_time, a.status, a.is_delete,
+     (select count(d.id) from mall_order_relate d left join mall_order e on e.id = d.order_id where d.commodity_type = 2 and d.relate_id = a.id and e.status in (1,2,3)) sellCount 
+     from mall_topic a 
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      group by a.id
+      order by a.id desc
+      <if test="pageIndex!=null and pageSize!=null">
+      limit #{pageIndex},#{pageSize}
+      </if>
+     </select>
+     
+     
+      <select id="selectMallTopicCount" parameterType="com.jftt.wifi.bean.vo.MallTopicVo" resultType="Integer">
+      select count(0)
+       from mall_topic a  
+      where a.is_delete = 0 
+      <include refid="whereConditions"/>
+      
+     </select>
+     
+     <!-- 上架 -->
+     <update id="putawayById">
+        update mall_topic
+     	set status = 1 ,
+     	putaway_time=now(),
+     	putaway_user_id =#{putawayUserId}
+     	where id = #{id}
+     </update>
+     <!-- 下架 -->
+      <update id="putoutById">
+        update mall_topic
+     	set status = 0
+     	where id = #{id}
+     </update>
+   
+   <select id="selectCourseListByTopicId" resultType="com.jftt.wifi.bean.vo.MallCourseVo">
+   	select a.topic_id,b.id ,b.course_id courseId,b.price,b.cheap_price cheapPrice,c.name ,c.code,
+   	(select count(0) from mall_order_relate where commodity_type=1 and  relate_id = b.id ) sellCount,
+   	d.name categoryName,e.name companyName
+   	from mall_topic_course a 
+	left join mall_course b on a.mall_course_id = b.id
+	left join res_course c on b.course_id = c.id
+	left join mall_course_category d on d.id = b.category_id
+	left join manage_company e on c.company_id = e.id
+	where a.topic_id = #{topicId}
+	order by a.id desc
+   </select>
+   <select id="getPrice" resultType ="java.util.HashMap">
+    select SUM(b.price) newPrice,SUM(b.cheap_price) newCheapPrice,c.price,c.cheap_price cheapPrice from mall_topic_course a
+    left join mall_course b on a.mall_course_id = b.id
+    left join mall_topic c on a.topic_id =c.id
+    where a.topic_id =#{id}
+   </select>
+   
+    <!-- 查询专题是否上架 -->
+   <select id="checkTopicIsOn" resultType="Integer">
+   select count(0)  from mall_topic 
+    where id = #{id} and status = 1 
+   </select> 
+   
+   <!-- zhangbocheng end -->
+ 
+</mapper>

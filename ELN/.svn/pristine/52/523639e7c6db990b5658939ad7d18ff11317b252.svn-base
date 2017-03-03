@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.ManagePostDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.ManagePostBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+     <result column="code" property="code" jdbcType="VARCHAR" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="descr" property="descr" jdbcType="VARCHAR" />
+    <result column="company_id" property="companyId" jdbcType="INTEGER" />
+    <result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+    <result column="parent_id" property="parentId" jdbcType="INTEGER" />
+  </resultMap>
+  
+  <sql id="postWhere">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="code != null and code != '' ">
+				AND code = #{code}
+			</if>
+			<if test="name != null and name != '' ">
+				AND name like CONCAT('%', #{name}, '%')
+			</if>
+			<if test="id != null and id != '' ">
+				AND id = #{id}
+			</if>
+			<if test="companyId != null and companyId != '' ">
+				AND company_id = #{companyId}
+			</if>
+			<if test="subCompanyId != null and subCompanyId != '' ">
+				AND sub_company_id = #{subCompanyId}
+			</if>
+			<if test="parentId != null and parentId != ''">
+				AND parent_id = #{parentId}
+			</if>
+		</trim>
+	</sql>
+  
+  <select id="selectManagePost" resultMap="BaseResultMap">
+    select 
+    id, code, name,parent_id, company_id, sub_company_id, descr
+    from manage_post
+    <include refid="postWhere" />
+  </select>
+  
+  <delete id="deleteManagePost" parameterType="java.lang.Integer" >
+    delete from manage_post
+    where id = #{id}
+  </delete>
+  
+  <insert id="insertManagePost" parameterType="com.jftt.wifi.bean.ManagePostBean" >
+    insert into manage_post (code,  name,  
+      company_id, sub_company_id, parent_id, descr)
+    values (#{code}, #{name},  
+      #{companyId}, #{subCompanyId}, #{parentId}, #{descr})
+  </insert>
+  
+  <update id="updateManagePost" parameterType="com.jftt.wifi.bean.ManagePostBean" >
+    update manage_post
+    set name = #{name},
+    	code = #{code},
+    	descr = #{descr}
+    where id = #{id}
+  </update>
+  
+  <select id="selectCourseOpenPostByCourseId" resultMap="BaseResultMap">
+  	select * from manage_post where id in 
+  	(select open_crow_id  from res_course_open_crowd where course_id=#{courseId} and open_type=2)
+  </select>
+  
+  <select id="getById" resultMap="BaseResultMap">
+  	select * from manage_post where id=#{id}
+  </select>
+  
+  <select id="getPostByParentId" resultMap="BaseResultMap" >
+  	select * from manage_post where parent_id=#{postId}
+  </select>
+</mapper>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ManageNoticeDaoMapper">
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.ManageNoticeBean">
+    <id column="id" jdbcType="INTEGER" property="id" />
+	<result column="title" jdbcType="VARCHAR" property="title" />
+    <result column="content" jdbcType="VARCHAR" property="content" />
+    <result column="send_user_id" jdbcType="INTEGER" property="sendUserId" />
+    <result column="send_time" jdbcType="TIMESTAMP" property="sendTime" />
+    <result column="rec_user_id" jdbcType="INTEGER" property="recUserId" />
+    <result column="is_read" jdbcType="INTEGER" property="isRead" />
+    <result column="is_system" jdbcType="INTEGER" property="isSystem" />
+    <result column="send_delete_flag" jdbcType="INTEGER" property="sendDeleteFlag" />
+    <result column="rec_delete_flag" jdbcType="INTEGER" property="recDeleteFlag" />
+  </resultMap>
+  
+  <sql id="manageNoticeWhere">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="id != null and id != '' ">
+				AND id = #{id}
+			</if>
+			<if test="recUserId != null and recUserId != '' ">
+				AND rec_user_id = #{recUserId}
+			</if>
+			<if test="sendUserId != null and sendUserId != '' ">
+				AND send_user_id = #{sendUserId}
+			</if>
+			<if test="title != null and title != '' ">
+				AND title like CONCAT('%', #{title}, '%')
+			</if>
+			<if test="recDeleteFlag != null and recDeleteFlag != '' ">
+				AND rec_delete_flag = #{recDeleteFlag}
+			</if>
+			<if test="sendDeleteFlag != null and sendDeleteFlag != '' ">
+				AND send_delete_flag = #{sendDeleteFlag}
+			</if>
+			<if test="isSystem != null and isSystem != '' ">
+				AND is_system = #{isSystem}
+			</if>
+			<if test="isRead != null and isRead != '' ">
+				AND is_read = #{isRead}
+			</if>
+			<if test="startTime != null and startTime != ''">
+				AND send_time &gt;= str_to_date(#{startTime},"%Y-%m-%d %T") 
+			</if>
+			<if test="endTime != null and endTime != ''">
+				AND send_time &lt;= str_to_date(CONCAT(#{endTime}," 23:59:59"),"%Y-%m-%d %T") 
+			</if>
+		</trim>
+	</sql>
+
+	<select id="select"  resultMap="BaseResultMap" parameterType="com.jftt.wifi.bean.vo.ManageNoticeVo">
+	    select id, title, content, send_user_id, send_time, rec_user_id, is_read, 
+	    is_system, send_delete_flag, rec_delete_flag
+	    from manage_notice
+   	<include refid="manageNoticeWhere"/>
+   	order by send_time desc
+   	<if test="pageSize != null and pageSize != '' ">
+   		limit ${fromNum},${pageSize}
+   	</if>
+  </select>
+  
+  <select id="selectCount"  resultType="int" parameterType="com.jftt.wifi.bean.vo.ManageNoticeVo">
+	    select count(1)
+	    from manage_notice
+   	<include refid="manageNoticeWhere"/>
+  </select>
+  
+  <update id="deleteById" parameterType="java.lang.Integer">
+    update manage_notice
+    set 
+    <if test="sendDeleteFlag != null and sendDeleteFlag != '' ">
+		send_delete_flag = 2
+	</if>
+	<if test="recDeleteFlag != null and recDeleteFlag != '' ">
+		rec_delete_flag = 2
+	</if>		
+    where id = #{id}
+  </update>
+  
+  <update id="updateNoticeReadStatus">
+  	update manage_notice set is_read=1 where id=#{id}
+  </update>
+  
+  <insert id="insert" parameterType="com.jftt.wifi.bean.ManageCompanyBean">
+    insert into manage_notice (title, content, send_user_id, rec_user_id, is_system)
+    values (#{title}, #{content}, #{sendUserId}, #{recUserId}, #{isSystem})
+  </insert>
+  
+   <resultMap id="SendNoticeResultMap" type="com.jftt.wifi.bean.ManageNoticeBean">
+    <id column="id" jdbcType="INTEGER" property="id" />
+	<result column="title" jdbcType="VARCHAR" property="title" />
+    <result column="content" jdbcType="VARCHAR" property="content" />
+    <result column="send_user_id" jdbcType="INTEGER" property="sendUserId" />
+    <result column="send_user_name" jdbcType="VARCHAR" property="sendUserName" />
+    <result column="send_time" jdbcType="TIMESTAMP" property="sendTime" />
+    <result column="rec_user_id" jdbcType="INTEGER" property="recUserId" />
+    <result column="rec_user_name" jdbcType="VARCHAR" property="recUserName" />
+    <result column="is_read" jdbcType="INTEGER" property="isRead" />
+    <result column="is_system" jdbcType="INTEGER" property="isSystem" />
+    <result column="send_delete_flag" jdbcType="INTEGER" property="sendDeleteFlag" />
+    <result column="rec_delete_flag" jdbcType="INTEGER" property="recDeleteFlag" />
+  </resultMap>
+  
+  <select id="selectSendNoticeCount" parameterType="com.jftt.wifi.bean.vo.ManageNoticeVo" resultType="int">
+  	select count(1) from 
+  	(SELECT GROUP_CONCAT(id)
+		FROM manage_notice
+		<include refid="manageNoticeWhere"/>
+		GROUP BY title,send_user_id, send_time
+		) a
+  </select>
+  
+  <select id="selectSendNotice" parameterType="com.jftt.wifi.bean.vo.ManageNoticeVo" resultMap="SendNoticeResultMap">
+  	SELECT GROUP_CONCAT(id) send_user_name,title,send_time,GROUP_CONCAT(rec_user_id) rec_user_name
+		FROM manage_notice
+		<include refid="manageNoticeWhere"/>
+		GROUP BY title,send_user_id, send_time
+		order by send_time desc
+   	<if test="pageSize != null and pageSize != '' ">
+   		limit ${fromNum},${pageSize}
+   	</if>
+  </select>
+  
+</mapper>

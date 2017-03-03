@@ -1,0 +1,278 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>首页</title>
+</head>
+<link rel="stylesheet" href="css/style.css" />
+<body>
+<div id="header_i">
+	<div class="head_i">
+    	<ul id="nav">
+        	<li class="focus">
+            	<a href="index.html"><span>首页</span></a>
+            	<ul></ul>
+            
+            </li>
+            <li>
+            	<a href="course.html"><span>课程</span></a>
+              		<ul>
+                		<a href="#">全部课程</a>
+                    	<a href="#">我的课程</a>
+                    	<a href="#">我的笔记</a>
+                    	<a href="#">我的问答</a>
+                    	<a href="#">我的收藏</a>
+                    	<a href="#">我的地图</a>
+                    	<a href="#">学习计划</a>
+               	 	</ul>
+            </li>
+            <li>
+            	<a href="join_exam.html"><span>考试</span></a>
+                <ul>
+                	<a href="#">参与考试</a>
+                    <a href="#">错题集</a>
+                    <a href="#">模拟考试</a>
+                </ul>
+            </li>
+            <li>
+            	<a href="#"><span>培训</span></a>
+                <ul></ul>
+            
+            </li>
+            <li>
+            	<a href="#"><span>问卷</span></a>
+                <ul></ul>
+                </li>
+            <li>
+            	<a href="#"><span>更多</span><img src="img/ico_5.png" /></a>
+                <ul></ul>
+                </li>
+        
+        </ul>
+        <div class="tools fr">
+        	<a href="#" class="tool_1"></a>
+            <a href="#" class="tool_2"></a>
+            <a href="#" class="tool_3"></a>
+        </div>
+    </div>
+	
+</div>
+
+<div id="content_i">
+	<div class="content_top">
+    	<div class="pic">
+        	<img src="img/pic.png" title="头像" />
+        </div>
+        <div class="info">
+        	<h3>张筱雨</h3>
+            <span>关注0</span>
+            <span class="last">粉丝0</span>
+            <ul>
+            	<li><a href="#">我的积分（0）</a></li>
+                <li><a href="#">我的学时（0）</a></li>
+                <li><a href="#">待参与的考试（0）</a></li>
+                <li><a href="#">待参与的调查（0）</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="search">
+    	<h3>搜一搜</h3>
+        <input type="text" value="全站搜课程/学习/知识"/>
+        <a href="#">搜索</a>
+    </div>
+    
+    <div class="pic_1" >
+    	<div class="left_pic fl">
+        	<div class="left_1">
+            	<h4>标题文字</h4>
+                
+            </div>
+            <div class="left_2">
+            	<h4>标题文字</h4>
+            </div>
+            <div class="left_3">
+            	<h4>标题文字</h4>
+            </div>
+        </div>
+        <div class="right_pic fl">
+        	<div class="right_top clear">
+            	<div class="top_12">
+            		<div class="right_1">
+                    	<h4>标题文字</h4>
+                    </div>
+               	 	<div class="right_2">
+                    	<h4>标题文字</h4>
+                	</div>
+                </div>
+                <div class="right_3">
+                	<h4>标题文字</h4>
+                </div>
+                	
+            	
+            <div class="right_bottom">
+            	<div class="right_4">
+                	<h4>标题文字</h4>
+                </div>
+                <div class="right_5">
+                	<h4>标题文字</h4>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    <div class="course">
+    	<h3>精选课程</h3>
+        <div class="course_list">
+        	<ul>
+        		<li>
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_7.png" /></a>
+                    </div>
+                     <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                        
+                    
+                    </div>
+                </li>
+                <li>
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_7.png" /></a>
+                    </div>
+                     <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                    </div>
+                </li>
+                <li>
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_8.png" /></a>
+                    </div>
+                     <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                    </div>
+                </li>
+                <li class="last">
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_7.png" /></a>
+                    </div>
+                   <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                    </div>
+                </li>
+                <li>
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_7.png" /></a>
+                    </div>
+                     <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                    </div>
+                </li>
+                <li>
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_7.png" /></a>
+                    </div>
+                     <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                    </div>
+                </li>
+                <li>
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_7.png" /></a>
+                    </div>
+                     <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                    </div>
+                </li>
+                <li  class="last">
+                	<div class="course_1">
+                    	<a href="#"><img src="img/course_1.png" /></a>
+                        <a href="#" class="ico"><img src="img/ico_7.png" /></a>
+                    </div>
+                     <div class="course_txt">
+                     	<h4>教学设计方案编写</h4>
+                        <p>*注：各门课件至少学习到80%，才能参与测试；测试全部通过，课程才能通过</p>
+                    
+                    </div>
+                    <div class="course_bottom">
+                    	<a href="#"><img src="img/ico_9.png" />我要评价</a>
+                        <a href="#" class="fr"><img src="img/ico_10.png" />15</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer">
+    	<div class="foot_1">
+        	<a href="#" class="first_a"></a>
+            <a href="#" class="sec_a"></a>
+            <a href="#" class="thir_a">
+            	<p style="text-indent:1em;">256</p>
+                <p>考试数量</p>
+            </a>
+            <a href="#" class="forth_a"></a>
+            <a href="#" class="last_a"></a>
+        </div>
+    	<div class="about_us">
+        	<div class="left_foot fl">
+        	<ul>
+        		<li><a href="#">关于我们</a></li>
+                <li><a href="#">人才招聘</a></li>
+                <li><a href="#">讲师招募</a></li>
+                <li><a href="#">联系我们</a></li>
+            </ul>
+            <p>COPYRIGHT@2015IMOOC.COM ALL RIGHTS RESERVERD丨京ICP备13046642号-2</p>
+        </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="js/webhr.js"></script>
+<script type="text/javascript" src="js/jquery-1.10.1.min.js"></script>
+</html>

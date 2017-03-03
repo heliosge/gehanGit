@@ -1,0 +1,48 @@
+ 	.tags-box {
+		padding: 4px;
+		border: 1px solid #cacaca;
+		height: auto;
+		width:70%;
+	}
+	
+	.tagspan {
+		background: #d8f4f2;
+		padding: 2px 4px;
+		margin: 5px 0px 0px 5px;
+		cursor: pointer;
+		position: relative;
+		top: -2px;
+		border: 1px solid #88c6c1;
+		text-overflow: ellipsis;
+		-o-text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow: hidden;
+	}
+	
+	.tagspan:hover {
+		border-color: #0C9C92
+	}
+	
+	.deleteTag {
+		position: relative;
+		top: 1px;
+		margin-left: 3px;
+		text-decoration: none;
+		color: #88c6c1;
+		font-size: 14px
+	}
+	
+	.tagspan:hover .deleteTag {
+		color: #0C9C92
+	}
+	
+	.icon-remove-circle:before {
+		content: "X"
+	}
+	
+	.noborder {
+		border: none ;
+		margin-top: 4px !important;
+		height: 30px;
+	    margin-top: 0px;
+	}

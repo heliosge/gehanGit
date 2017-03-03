@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.QuestionnaireAnswerDaoMapper">
+    
+    <!--调查报告人员map  -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.QuestionnaireAnswerBean" id="answerMap">
+        <id property="id" column="id"/>
+        <result property="assignId" column="assign_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="answer" column="answer"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="submitTime" column="submit_time"/>
+    </resultMap>
+    
+    <!--查询答案  -->
+    <select id="get" resultMap="answerMap">
+    	select a.*,b.user_id,DATE_FORMAT(b.submit_time, '%Y-%m-%d %H:%i:%S') submit_time from(
+			select * from questionnaire_answer 
+			where assign_id = #{assignId}
+			and answer != '-' ) a
+		left join investigation_assign b
+		on a.assign_id = b.id
+    </select>
+    <!--答案的插入  -->
+    <insert id="add">
+    	insert questionnaire_answer(assign_id,question_id,answer) 
+    	values(#{assignId},#{questionId},#{answer})
+    </insert>
+    
+    <!--删除答案 -->
+    <delete id="delete">
+        delete from questionnaire_answer where assign_id=#{assignId}
+    </delete>
+    
+    <!--查询问题答案 -->
+    <select id="getAnswer" parameterType="java.util.HashMap" resultType="String">
+    	select answer from questionnaire_answer 
+    	where assign_id = #{assignId} and question_id = #{questionId}
+    </select>
+    
+    <!--查询某个问题被回答的次数 -->
+    <select id="getTotalAnswerNum" parameterType="java.util.HashMap" resultType="int">
+    	select count(1) from questionnaire_answer
+		where  question_id = #{questionId} and assign_id in (${assignIds})
+		and answer != '-'
+    </select>
+      
+</mapper>

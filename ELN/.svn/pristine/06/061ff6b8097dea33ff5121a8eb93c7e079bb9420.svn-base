@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MallOrderRelateDaoMapper" >
+  <resultMap id="BaseResultMap" type="com.jftt.wifi.bean.MallOrderRelateBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="relate_id" property="relateId" jdbcType="INTEGER" />
+    <result column="commodity_type" property="commodityType" jdbcType="INTEGER" />
+    <result column="order_id" property="orderId" jdbcType="INTEGER" />
+    <result column="price" property="price" jdbcType="DECIMAL" />
+    <result column="commodity_name" property="commodityName" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    id, relate_id, commodity_type, order_id, price, commodity_name
+  </sql>
+  <!-- chenrui start -->
+  
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from mall_order_relate
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <!-- 新增记录 -->
+  <insert id="addMallOrderRelate">
+  	insert into mall_order_relate(relate_id, commodity_type, order_id, price, commodity_name)
+  	values(#{relateId},#{commodityType},#{orderId},#{price},#{commodityName})
+  </insert>
+  
+  <select id="getRelateProducts" resultMap="BaseResultMap">
+  	select <include refid="Base_Column_List" />
+    from mall_order_relate
+    where order_id = #{orderId}
+  </select>
+  
+  <!-- chenrui end -->
+</mapper>

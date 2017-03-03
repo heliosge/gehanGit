@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.MatchJoinUserDaoMapper">
+	<resultMap id="MatchJoinUserBean" type="com.jftt.wifi.bean.MatchJoinUserBean">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="user_id" property="userId" jdbcType="INTEGER" />
+		<result column="match_id" property="matchId" jdbcType="INTEGER" />
+		<result column="is_promote" property="isPromote" jdbcType="INTEGER" />
+		<result column="current_process" property="currentProcess"
+			jdbcType="INTEGER" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, user_id, match_id, is_promote, current_process, 
+		update_time
+	</sql>
+	<!-- chenrui start -->
+	<select id="getById" resultMap="MatchJoinUserBean">
+		select
+		<include refid="Base_Column_List" />
+		from match_join_user mju
+		where mju.id=#{id}
+	</select>
+	<!-- 获取成绩公示的信息 -->
+	<sql id="SQL_getGradeInfoPublic">
+		from match_join_user mju
+		left join knowledge_contest_match
+		kcm on(kcm.id=mju.current_process)
+		left join exam_assign_info eai
+		on(eai.relation_id=kcm.exam_id and  mju.user_id=eai.user_id)
+		where mju.current_process=#{processId}
+		and eai.relation_type=1
+	</sql>
+	<select id="getGradeInfoPublicCount" resultType="int">
+		select count(1)
+		<include refid="SQL_getGradeInfoPublic"></include>
+	</select>
+	<select id="getGradeInfoPublic" resultType="com.jftt.wifi.bean.vo.ShowWinAwardsVo">
+		select mju.user_id userId,eai.score score
+		<include refid="SQL_getGradeInfoPublic"></include>
+		order by
+		<if test="isAutoMark!=1">
+			eai.is_marked desc,
+		</if>
+		 eai.score desc
+		limit ${fromNum},${pageSize}
+	</select>
+	<!-- 获取参赛列表 -->
+	<sql id="SQL_getJoinListByProcessId">
+		FROM
+		(SELECT
+			mju.user_id userId,
+			mju.is_promote isPromote,kcm.exam_id
+		FROM
+			match_join_user mju
+		LEFT JOIN knowledge_contest_match kcm ON (kcm.id = mju.current_process)
+		where mju.current_process =#{processId} 
+		<if test="userList!=null and userList.size>0">
+			and mju.user_id in
+			<foreach collection="userList" item="user" open="(" close=")"
+				separator=",">
+				#{user.id}
+			</foreach>
+		</if>
+		) t
+		LEFT JOIN exam_assign_info eai ON (eai.relation_id = t.exam_id and t.userId=eai.user_id)
+		where eai.relation_type = 1
+		<if test="isPromote!=null and isPromote!=''">
+			and isPromote=#{isPromote}
+		</if>
+	</sql>
+	<select id="getJoinListByProcessId" resultType="com.jftt.wifi.bean.vo.ShowWinAwardsVo">
+		
+		SELECT t2.*,@rownum :=@rownum + 1 rownum from (
+			SELECT
+				t.userId,
+				t.isPromote,
+				eai.score ,@rownum := 0
+		<include refid="SQL_getJoinListByProcessId"></include>
+		ORDER BY
+		<if test="isAutoMark!=1">
+			eai.is_marked desc,
+		</if>
+		eai.score DESC
+		) t2
+		limit ${fromNum},${pageSize}
+	</select>
+	<select id="getJoinListByProcessIdCount" resultType="int">
+		select count(1)
+		<include refid="SQL_getJoinListByProcessId"></include>
+	</select>
+	<!-- 根据赛程id获取当前赛程下的晋级者信息 -->
+	<select id="getPromoteInfoByProcessId" resultType="com.jftt.wifi.bean.vo.ShowWinAwardsVo">
+		select mju.user_id userId,eai.score from match_join_user mju
+		left join knowledge_contest_match kcm on(kcm.id=mju.current_process)
+		left join exam_assign_info eai on(eai.relation_id=kcm.exam_id and mju.user_id=eai.user_id)
+		where mju.current_process=#{processId} and mju.is_promote=1 and eai.relation_type=1 and eai.is_passed=1
+		order by eai.score desc
+	</select>
+	 <!-- 获取得奖用户信息 -->
+  <select id="getShowWinAwards" resultType="com.jftt.wifi.bean.vo.ShowWinAwardsVo">
+  	select mju.user_id userId,eai.score from match_join_user mju
+	left join exam_assign_info eai on(eai.user_id = mju.user_id)
+	where mju.is_promote=1 and mju.current_process=#{processId} 
+	and mju.match_id=#{megagameId} and eai.relation_id=#{examId} and eai.relation_type=1  and eai.is_passed=1
+	order by eai.score desc
+  </select>
+  <!-- 增加人员参赛信息 -->
+  <insert id="addJoinNotes">
+  	insert into match_join_user(user_id, match_id, is_promote, current_process,update_time) 
+  	values(#{userId},#{megagameId},0,#{matchId},now())
+  </insert>
+  <!-- 检查人员是否已参赛 -->
+  <select id="checkExistJoinNote" resultType="int">
+	select count(0) from match_join_user mju
+	where mju.user_id=#{userId} and mju.current_process=#{matchId}
+  </select>
+  <!-- 更新参赛人员晋升状态 -->
+  <update id="updatePromoteStatus">
+  	update match_join_user set is_promote=#{isPromote}
+  	where user_id=#{userId} and current_process=#{matchId}
+  	
+  </update>
+  <select id="getLastPromoteInfo" resultType="int">
+  	select mju.is_promote from match_join_user mju
+  	where mju.user_id=#{userId} and mju.current_process=#{matchId}
+  </select>
+	<!-- chenrui end -->
+</mapper>

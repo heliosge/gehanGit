@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.ExerciseQuestionDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.ExerciseQuestionBean" id="exerciseQuestion">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="isWrong" column="is_wrong"/>
+    </resultMap>
+    
+    <!--查询完成题目ID  -->
+    <select id="getCompleteQuestionId" resultType="String" parameterType="com.jftt.wifi.bean.ExerciseQuestionBean">
+       select group_concat(question_id) from(
+       		select * from exercise_question
+       		 <where>
+	          <if test="categoryId != null">
+	            and category_id = #{categoryId}
+	          </if>
+	          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+	            and category_id in (${categoryIdListStr})
+	          </if>
+	          <if test="userId != null">
+	            and user_id=#{userId}
+	          </if>
+		    </where>
+       )a
+       left join exam_question b
+		on a.question_id = b.id
+       where (b.is_deleted is null or b.is_deleted != 1) and b.is_enabled = 1
+       <!-- select group_concat(question_id) from exercise_question a
+       left join exam_question b
+		on a.question_id = b.id
+        <where>
+        	b.is_deleted != 1 and b.is_enabled = 1
+          <if test="categoryId != null">
+            and category_id = #{categoryId}
+          </if>
+          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+            and category_id in (${categoryIdListStr})
+          </if>
+          <if test="userId != null">
+            and user_id=#{userId}
+          </if>
+	    </where> -->
+    </select>
+    <!--练习答题的插入  -->
+    <insert id="insertExerciseQuestion" parameterType="com.jftt.wifi.bean.ExerciseQuestionBean">
+    	insert exercise_question(user_id,category_id,question_id,is_wrong) 
+    	values(#{userId},#{categoryId},#{questionId},#{isWrong})
+    </insert>
+    
+    <!--查询完成题目总条数  -->
+    <select id="getCompleteQuestionNum" resultType="int" parameterType="com.jftt.wifi.bean.ExerciseQuestionBean">
+       select count(1) from(
+       		select * from exercise_question
+       		<where>
+	          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+	            and category_id in (${categoryIdListStr})
+	          </if>
+	          <if test="userId != null">
+	            and user_id=#{userId}
+	          </if>
+	          <if test="isWrong == 1">
+	            and is_wrong = 1
+	          </if>
+		    </where>
+       ) a
+       left join exam_question b
+       on a.question_id = b.id
+       where  (b.is_deleted is null or b.is_deleted != 1) and b.is_enabled = 1
+       
+       <!-- select count(1) from exercise_question a
+       left join exam_question b
+		on a.question_id = b.id
+        <where>
+       		 b.is_deleted != 1 and b.is_enabled = 1
+          <if test="categoryId != null">
+            and category_id = #{categoryId}
+          </if>
+          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+            and a.category_id in (${categoryIdListStr})
+          </if>
+          <if test="userId != null">
+            and a.user_id=#{userId}
+          </if>
+          <if test="isWrong == 1">
+            and a.is_wrong = 1
+          </if>
+	    </where> -->
+    </select>
+    
+    <!--清空已经做完的题目  -->
+    <delete id="deleteCompleteQuestion" parameterType="com.jftt.wifi.bean.ExerciseQuestionBean">
+    	delete from exercise_question
+    	<where>
+          <if test="categoryIdListStr != null and categoryIdListStr != ''">
+            and category_id in (${categoryIdListStr})
+          </if>
+          <if test="userId != null">
+            and user_id=#{userId}
+          </if>
+	    </where>
+    </delete>
+    
+    <!--更新试题错误字段  -->
+    <update id="updateExerciseQuestion" parameterType="com.jftt.wifi.bean.ExerciseQuestionBean">
+    	update exercise_question set is_wrong = #{isWrong}
+        where id = #{id}
+    </update>
+    
+    <!--查询该题是否已经做过  -->
+    <select id="isCompleted" parameterType="com.jftt.wifi.bean.ExerciseQuestionBean" resultType="Integer">
+    	select id from exercise_question
+    	where user_id = #{userId} and question_id = #{questionId}
+    </select>
+      
+</mapper>

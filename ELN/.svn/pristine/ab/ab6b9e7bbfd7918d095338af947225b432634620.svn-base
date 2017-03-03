@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jftt.wifi.dao.KnowledgeContestMatchDaoMapper" >
+  <resultMap id="KnowledgeContestMatchBean" type="com.jftt.wifi.bean.KnowledgeContestMatchBean" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="contest_id" property="contestId" jdbcType="INTEGER" />
+    <result column="order_num" property="orderNum" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="content" property="content" jdbcType="VARCHAR" />
+    <result column="exam_id" property="examId" jdbcType="INTEGER" />
+    <result column="rule" property="rule" jdbcType="VARCHAR" />
+    <result column="promotion_number" property="promotionNumber" jdbcType="INTEGER" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="sub_company_id" property="subCompanyId" jdbcType="INTEGER" />
+	<result column="company_id" property="companyId" jdbcType="INTEGER" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, contest_id, order_num, name, content, exam_id, rule, promotion_number, update_time
+  </sql>
+  <select id="getById" resultMap="KnowledgeContestMatchBean">
+  	select 
+  	<include refid="Base_Column_List"></include>
+  	from knowledge_contest_match kcm
+  	where kcm.id=#{id}
+  </select>
+  <!-- chenrui start -->
+  <!-- 获取赛程安排信息 -->
+  <select id="getMegagameProcessInfo" resultType="com.jftt.wifi.bean.vo.MegagameProcessInfoVo">
+  	select kcm.id, kcm.contest_id contestId, kcm.order_num orderNum, kcm.name, kcm.content, kcm.exam_id examId, kcm.rule, 
+  	kcm.promotion_number promotionNumber, kcm.update_time updateTime,
+  	es.duration,es.allow_times allowTimes,es.begin_time beginTime,es.end_time endTime 
+  	from knowledge_contest_match kcm
+	left join exam_schedule es on(kcm.exam_id=es.id) 
+	where kcm.contest_id=#{megagameId}
+	order by kcm.order_num asc
+  </select>
+  <!-- 根据赛程id获取大赛赛程安排信息 -->
+  <select id="getMegagameProcessInfoById" resultType="com.jftt.wifi.bean.vo.MegagameProcessInfoVo">
+  	select kcm.id,kcm.contest_id contestId,kcm.order_num orderNum,kcm.name,kcm.content,kcm.exam_id examId,
+  	kcm.rule,kcm.promotion_number promotionNumber,kcm.status matchState,es.duration,es.allow_times allowTimes,es.begin_time beginTime,es.end_time endTime 
+  	from knowledge_contest_match kcm
+	left join exam_schedule es on(kcm.exam_id=es.id) 
+	where kcm.id=#{processId}
+  </select>
+  <!-- 根据大赛id获取本次大赛最后一个赛程的详细信息 -->
+  <select id="getLastMatchInfo" resultMap="KnowledgeContestMatchBean">
+  	select kcm2.* from knowledge_contest_match kcm2
+	where kcm2.order_num = (select MAX(order_num) from knowledge_contest_match kcm where kcm.contest_id=#{megagameId}) 
+	and kcm2.contest_id=#{megagameId}
+  </select>
+  <!-- 获取赛程、考试信息 -->
+  <select id="getMatchLists" resultType="com.jftt.wifi.bean.vo.MegagameCheckReturnVo">
+  	select kcm.id processId,kcm.promotion_number promoteCount,
+		es.duration examTime,es.allow_times examCount,DATE_FORMAT(es.begin_time, '%Y-%m-%d %H:%i:%S') startTime,
+		DATE_FORMAT(es.end_time, '%Y-%m-%d %H:%i:%S') endTime
+	from knowledge_contest_match kcm
+	left join exam_schedule es on(kcm.exam_id=es.id)
+	where kcm.contest_id=#{megagameId}
+  </select>
+  <!-- 获取当前大赛下所有赛程信息 -->
+  <select id="getAllMatchBymegagameId" resultMap="KnowledgeContestMatchBean">
+  	select kcm.* from knowledge_contest_match kcm where kcm.contest_id=#{megagameId}
+  	order by kcm.order_num asc
+  </select>
+  
+  <!-- 新增赛程 -->
+  <insert id="add2Match">
+  	insert into knowledge_contest_match(contest_id, order_num, name, content,
+    	exam_id, rule, promotion_number,status,sub_company_id,company_id)
+    values(#{megagameId},#{matchOrderNum},#{matchName},#{matchContent},#{examId},#{rule},#{promotionNumber},1,#{subCompanyId},#{companyId})
+  </insert>
+  <!-- 更新赛程 -->
+  <update id="update2Match">
+  	update knowledge_contest_match set name=#{matchName}, 
+  	content=#{matchContent},rule=#{rule}, promotion_number=#{promotionNumber}
+  	where id=#{matchId}
+  </update>
+  <!-- 根据大赛id获取当前大赛下的赛程数  -->
+  <select id="getCountByMegagame" resultType="int">
+  	select count(0) from knowledge_contest_match kcm
+  	where kcm.contest_id=#{megagameId}
+  </select>
+  
+  <select id="checkMatchNameIsOnly" resultType="int">
+  	select count(0) from  knowledge_contest_match kcm
+		where kcm.name=#{name} and kcm.company_id = #{companyId}
+			and kcm.contest_id=#{megagameId}
+		 	and kcm.sub_company_id=#{subCompanyId} and kcm.id &lt;&gt;#{matchId}
+  </select>
+  
+  <select id="getMatchCounts" resultType="int">
+  	select count(0) from knowledge_contest_match kcm
+  	where kcm.contest_id=#{megagameId}
+  </select>
+  
+  <select id="getDoPublish" resultType="int">
+  	select kcm.id from knowledge_contest_match kcm
+  	where contest_id=#{megagameId} and order_num=1
+  </select>
+  
+  <update id="getDoPublish1">
+  	update knowledge_contest_match set status=2
+  	where id=#{id}
+  </update>
+  <!-- 根据大赛id及orderNum获取赛程id -->
+  <select id="getMatchInfoByOrderNum" resultMap="KnowledgeContestMatchBean">
+  	select kcm.* from knowledge_contest_match kcm
+  	where kcm.contest_id=#{megagameId} and kcm.order_num=#{orderNum}
+  </select>
+  <!-- chenrui end -->
+  
+  <!-- wangyifeng begin -->
+  <insert id="addMatch">
+    insert into knowledge_contest_match
+    (contest_id, order_num, name, content,
+    exam_id, rule, promotion_number, update_time,
+    status)
+    values
+    (#{contestId}, #{orderNum}, #{name}, #{content},
+    #{examId}, #{rule}, #{promotionNumber}, now(),
+    1)
+  </insert>
+  
+  <delete id="realDeleteMatch">
+    delete from knowledge_contest_match
+    where id = #{id}
+  </delete>
+  
+  <select id="getMatch" resultMap="KnowledgeContestMatchBean">
+    select *
+    from knowledge_contest_match
+    where id = #{id}
+  </select>
+  
+  <select id="getMatchIdListOrderByOrderNum" resultType="Integer">
+    select id
+    from knowledge_contest_match
+    where contest_id = #{contestId}
+  </select>
+  
+  <update id="updateMatchStatus">
+    update knowledge_contest_match
+    set status = #{status}
+    where id = #{id}
+  </update>
+  <!-- wangyifeng end -->
+</mapper>

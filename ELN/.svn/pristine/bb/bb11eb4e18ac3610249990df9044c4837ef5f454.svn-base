@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.IntegralCommodityCategoryDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.IntegralCommodityCategoryBean" id="IntegralCommodityCategoryBeanMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="descr" column="descr"/>
+        <result property="createUserId" column="create_user_id"/>
+    </resultMap>
+    
+      <resultMap type="com.jftt.wifi.bean.vo.IntegralCommodityCategoryVo" id="IntegralCommodityCategoryVoMap">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="descr" column="descr"/>
+        <result property="createUserId" column="create_user_id"/>
+      
+        <result property="updateUserId" column="update_user_id"/>
+    </resultMap>
+    
+    <!-- 根据id查询商品分类 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="IntegralCommodityCategoryBeanMap">
+        select * from integral_commodity_category where id = #{id}
+    </select>
+    
+    <!-- zhangbocheng start -->
+    
+ <!-- 根据id查询商品分类 -->
+    <select id="checkName" parameterType="com.jftt.wifi.bean.IntegralCommodityCategoryBean" resultType="java.lang.Integer">
+        select count(0) from integral_commodity_category where 
+        name=#{name}  and is_delete = 0
+             <if test="parentId !=null">
+        and parent_id = #{parentId}</if>
+         <if test="parentId ==null">
+        and parent_id is null</if>
+        <if test="id!=null">
+        and id != #{id} 
+        </if>
+       
+    </select>
+    <!-- 删除 -->
+   	<update id="deleteIntegralCommodityCategory" parameterType="java.lang.Integer">
+   	update integral_commodity_category set is_delete = 1 where id = #{id}
+   	</update>
+   	<update id="updateIntegralCommodityCategory" parameterType="com.jftt.wifi.bean.IntegralCommodityCategoryBean">
+   		update integral_commodity_category set name = #{name}, descr = #{descr},update_time=now()  where id =#{id}
+   	</update>
+   	
+   	<insert id="insertIntegralCommodityCategory" parameterType="com.jftt.wifi.bean.IntegralCommodityCategoryBean">
+   		insert into integral_commodity_category(name, parent_id, descr, create_user_id,create_time,update_user_id,update_time,is_delete)
+   		values(#{name}, #{parentId}, #{descr}, #{createUserId},now(), #{createUserId},now(),0)
+   	</insert>
+    
+    
+    <!-- 查询商品分类一级 -->
+    <select id="getIntegralCommodityCategorys" resultMap="IntegralCommodityCategoryVoMap">
+        SELECT * 
+          FROM integral_commodity_category 
+          WHERE is_delete = 0  AND ISNULL(parent_id) 
+    </select>
+    
+    <!-- 获取商品分类的子分类 -->
+    <select id="getChildCategorys" parameterType="java.lang.Integer" resultMap="IntegralCommodityCategoryVoMap">
+    	SELECT * 
+    	  FROM integral_commodity_category 
+    	  WHERE parent_id = #{categoryId}   and is_delete = 0
+    </select>
+    
+    <!-- 获取上一级的所有商品分类 -->
+    <select id="getUpCategorys" parameterType="java.lang.Integer" resultMap="IntegralCommodityCategoryBeanMap">
+    	SELECT icc.* FROM integral_commodity_category icc
+    	  WHERE icc.parent_id = 
+    	  (SELECT parent_id FROM integral_commodity_category WHERE id = #{categoryId}) and icc.is_delete = 0 
+    </select>
+    
+  <select id="hasCommodity" resultType="Integer">
+  
+  select count(0) from integral_commodity where is_delete = 0 and category_id = #{id}
+  </select>
+    
+    <!-- zhangbocheng end -->
+    
+    
+    
+    <!-- chenrui start -->
+    <!-- 获取积分商城分类信息 -->
+    <select id="getMallIntegralCategory" resultMap="IntegralCommodityCategoryBeanMap">
+    	select * from integral_commodity_category icc where icc.is_delete = 0
+    </select>
+    <!-- 根据id获取其下级子分类 -->
+    <select id="getChildsByParentId" resultMap="IntegralCommodityCategoryBeanMap">
+    	select * from integral_commodity_category icc where icc.is_delete = 0 and icc.parent_id=#{id}
+    </select>
+    <!-- chenrui end -->
+</mapper>

@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseNoteDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.CourseNoteBean" id="CourseNoteBeanMap">
+        <id property="id" column="id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="frontImage" column="front_image"/>
+        <result property="courseName" column="name"/>
+        <result property="code" column="code"/>
+        <result property="num" column="num"/>
+        <result property="companyId" column="company_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.CourseNoteVoForStudy" id="CourseNoteVoForStudyMap">
+    	<id property="id" column="id"/>
+    	<result property="userId" column="user_id"/>
+    	<result property="userName" column="user_name"/>
+    	<result property="content" column="content"/>
+    	<result property="createTime" column="create_time"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.MyNoteVo" id="MyNoteVoMap">
+    	<result property="courseId" column="course_id"/>
+    	<result property="courseName" column="course_name"/>
+    	<result property="courseFrontImage" column="course_front_image"/>
+    	<result property="courseCode" column="course_code"/>
+    	<result property="noteCount" column="note_count"/>
+    	<result property="noteDate" column="note_date"/>
+    </resultMap>
+    
+    <resultMap type="com.jftt.wifi.bean.vo.MyNoteDetailVo" id="MyNoteDetailVoMap">
+    	<id property="id" column="id"/>
+    	<result property="userId" column="user_id"/>
+    	<result property="userName" column="user_name"/>
+    	<result property="userPhoto" column="user_photo"/>
+    	<result property="createTime" column="create_time"/>
+    	<result property="content" column="content"/>
+    </resultMap>
+    
+    <sql id="courseNoteAll">
+    	cn.id,cn.course_id,cn.user_id,cn.create_time,cn.title,cn.content,cn.company_id,cn.sub_company_id 
+    </sql>
+    
+    <!-- 根据id查询课程笔记 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="CourseNoteBeanMap">
+        select * from course_note where id = #{id}
+    </select>
+    
+    <!--查询条件 -->
+    <sql id="Where_Clause">
+		<trim prefix="where" prefixOverrides="AND">
+			<if test="userId != null and userId != '' ">
+			   <![CDATA[   AND a.user_id = #{userId}]]> 
+			</if>
+			<if test="courseName != null and courseName != '' ">
+			   <![CDATA[   AND b.name like '%#{courseName}%']]> 
+			</if>
+			<if test="createTimeStart != null and createTimeStart != '' ">
+				<![CDATA[  AND b.create_time >= #{createTimeStart}]]> 
+			</if>
+			<if test="createTimeEnd != null and createTimeEnd != '' ">
+				<![CDATA[  AND b.create_time <= #{createTimeEnd}]]>
+			</if>
+		</trim>
+	</sql>
+     <!-- 根据查询条件查询我的笔记 -->
+    <select id="queryMyNoteByCondition" parameterType="com.jftt.wifi.bean.CourseNoteBean" resultMap="CourseNoteBeanMap">
+        SELECT
+			a.course_id,
+			a.user_id,
+			b.code,
+			b.create_time,
+			b.front_image,
+			b.name,
+			count(1) AS num 
+		FROM 
+			course_note AS a
+		INNER JOIN res_course AS b ON a.course_id = b.id 
+		<include refid="Where_Clause" /> 
+		GROUP BY  
+			a.course_id  
+		ORDER BY ${sort} ${order}   
+		LIMIT ${pageStartSize}, ${pageSize}
+    </select>
+    <!--根据条件查询我的笔记总记录数-->
+	<select id="countByCondition" parameterType="com.jftt.wifi.bean.CourseNoteBean" resultType="java.lang.Integer">
+	    select count(*) from 
+        ( 
+        SELECT
+		   count(*)
+		FROM 
+			course_note AS a 
+		INNER JOIN res_course AS b ON a.course_id = b.id 
+		<include refid="Where_Clause" /> 
+		GROUP BY 
+			a.course_id 
+		) as b
+    </select>
+     <!-- 根据查询条件查询我的笔记详情-->
+    <select id="queryMyNoteDetails" parameterType="com.jftt.wifi.bean.CourseNoteBean" resultMap="CourseNoteBeanMap">
+         SELECT
+			  a.user_id,
+			  a.content,
+			  a.create_time,
+			  a.title,
+			  a.course_id,
+			  a.id
+		 FROM
+			course_note as a
+		 WHERE 
+		    a.user_id=#{userId}  and  a.course_id=#{courseId} 
+		 ORDER BY a.create_time desc 
+		 LIMIT ${pageStartSize}, ${pageSize}
+    </select>
+    <!--笔记详情总记录数-->
+	<select id="countFromNoteDetails" parameterType="com.jftt.wifi.bean.CourseNoteBean" resultType="java.lang.Integer">
+        SELECT
+		   count(*)
+		FROM
+			course_note as a
+		WHERE 
+		    a.user_id=#{userId}  and  a.course_id=#{courseId}
+    </select>
+     <!--添加笔记-->
+    <insert id="addMyNote" parameterType="com.jftt.wifi.bean.CourseNoteBean">
+	    insert into course_note (course_id,user_id,create_time,title,content,company_id,sub_company_id)
+	    values 
+	    (#{courseId},#{userId},#{createTime},#{title},#{content},#{companyId},#{subCompanyId})
+    </insert>
+     <!--编辑笔记-->
+    <update id="editMyNote" parameterType="com.jftt.wifi.bean.CourseNoteBean">
+	    update course_note set 
+			<trim>
+				<if test="content != null and content != '' ">
+					content = #{content}
+				</if>
+			</trim>
+		where id = #{id}
+    </update>
+    <!-- 删除笔记-->
+	<delete id="delMyNote" parameterType="java.lang.Long">
+		delete from course_note where id = ${id}
+	</delete>
+	
+	<!-- shenhaijun start -->
+	
+	<!-- 获取课程笔记数目 -->
+	<select id="getCourseNotesCount" resultType="java.lang.Integer">
+		SELECT COUNT(0) FROM course_note WHERE course_id = #{courseId} AND company_id = #{companyId} AND sub_company_id = #{subCompanyId}
+	</select>
+	
+	<!-- 获取课程所有笔记 -->
+	<select id="getCourseNotes" resultMap="CourseNoteVoForStudyMap">
+		SELECT cn.id,cn.user_id,cn.create_time,cn.content 
+		  FROM course_note cn 
+		  WHERE cn.course_id = #{courseId} 
+		    AND cn.company_id = #{companyId} AND cn.sub_company_id = #{subCompanyId} 
+		  ORDER BY cn.create_time DESC 
+		  LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 获取我的笔记的数量 -->
+	<select id="getMyNotesCount" resultType="java.lang.Integer">
+		SELECT IFNULL(COUNT(DISTINCT(cn.course_id)),0) 
+		  FROM course_note cn LEFT JOIN res_course rc ON cn.course_id = rc.id 
+		  WHERE cn.user_id = #{userId} AND cn.company_id = #{companyId} AND cn.sub_company_id = #{subCompanyId} 
+		  <trim>
+		  	<if test="courseName != null and courseName != '' ">
+		  		AND rc.name like CONCAT('%',#{courseName},'%')  
+		  	</if>
+		  	<if test="createTimeStart != null and createTimeStart != '' ">
+		  		AND cn.create_time &gt;= #{createTimeStart} 
+		  	</if>
+		  	<if test="createTimeEnd != null and createTimeEnd != '' ">
+		  		AND cn.create_time &lt;= #{createTimeEnd} 
+		  	</if>
+		  </trim>
+	</select>
+	
+	<!-- 获取我的笔记 -->
+	<select id="getMyNotes" resultMap="MyNoteVoMap">
+		SELECT DISTINCT rc.id course_id, rc.name course_name, rc.front_image course_front_image,rc.code course_code,
+		    (SELECT COUNT(DISTINCT(id)) FROM course_note WHERE course_id = rc.id AND user_id = #{userId} AND company_id = #{companyId} AND sub_company_id = #{subCompanyId}) note_count,
+		    (SELECT MAX(create_time) FROM course_note WHERE course_id = rc.id AND user_id = #{userId} AND company_id = #{companyId} AND sub_company_id = #{subCompanyId}) note_date  
+		  FROM res_course rc LEFT JOIN course_note cn ON rc.id = cn.course_id
+		  WHERE cn.user_id = #{userId} AND cn.company_id = #{companyId} AND cn.sub_company_id = #{subCompanyId} 
+		  <trim>
+		  	<if test="courseName != null and courseName != '' ">
+		  		AND rc.name like CONCAT('%',#{courseName},'%')  
+		  	</if>
+		  	<if test="createTimeStart != null and createTimeStart != '' ">
+		  		AND cn.create_time &gt;= #{createTimeStart} 
+		  	</if>
+		  	<if test="createTimeEnd != null and createTimeEnd != '' ">
+		  		AND cn.create_time &lt;= #{createTimeEnd} 
+		  	</if>
+		  </trim>
+		  ORDER BY ${sortName} ${sortOrder} 
+		  LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 获取笔记详情数量 -->
+	<select id="getNotesDetailCount" resultType="java.lang.Integer">
+		SELECT COUNT(id) 
+		  FROM course_note 
+		  WHERE course_id = #{courseId} AND user_id = #{userId} 
+		    AND company_id = #{companyId} AND sub_company_id = #{subCompanyId} 
+	</select>
+	
+	<!-- 获取笔记详情 -->
+	<select id="getNotesDetail" resultMap="MyNoteDetailVoMap">
+		SELECT cn.id,cn.user_id,cn.create_time,cn.content 
+		  FROM course_note cn 
+		  WHERE cn.course_id = #{courseId} AND cn.user_id = #{userId} 
+		    AND cn.company_id = #{companyId} AND cn.sub_company_id = #{subCompanyId} 
+		  ORDER BY cn.create_time DESC 
+		  LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- 删除一条记录 -->
+	<delete id="deleteNote" parameterType="java.lang.Integer">
+		DELETE FROM course_note WHERE id = #{id} 
+	</delete>
+	
+	<!-- 删除学员该课程所有笔记 -->
+	<delete id="deleteRecord">
+		DELETE FROM course_note 
+		WHERE id IN (SELECT a.id FROM (SELECT cn.id FROM course_note cn WHERE cn.course_id = #{courseId} AND cn.user_id = #{userId}) a)
+	</delete>
+	
+	<!-- 根据用户id和课程id查询笔记数量  -->
+	<select id="getCourseNoteCountByUserIdCourseId" resultType="java.lang.Integer">
+		SELECT COUNT(cn.id) 
+		FROM course_note cn 
+		WHERE cn.course_id = #{courseId} AND cn.user_id = #{userId} 
+	</select>
+	
+	<!-- 根据用户id和课程id查询笔记 -->
+	<select id="getCourseNotesByUserIdCourseId" resultMap="CourseNoteBeanMap">
+		SELECT <include refid="courseNoteAll"/> 
+		FROM course_note cn 
+		WHERE cn.course_id = #{courseId} AND cn.user_id = #{userId} 
+		ORDER BY cn.create_time DESC 
+		LIMIT ${fromNum},${pageSize} 
+	</select>
+	
+	<!-- shenhaijun end -->
+	
+</mapper>

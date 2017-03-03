@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.InvestigationDaoMapper">
+    
+    <!--调查报告map  -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.InvestigationBean" id="investigationMap">
+        <id property="id" column="id"/>
+        <result property="questionnaireId" column="questionnaire_id"/>
+        <result property="title" column="title"/>
+        <result property="aim" column="aim"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="intendType" column="intend_type"/>
+        <result property="isPublic" column="is_public"/>
+        <result property="isPublished" column="is_published"/>
+        <result property="createUserId" column="create_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="publishTime" column="publish_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="companyId" column="company_id"/>
+    </resultMap>
+    
+    <!--调查报告map  -->
+    <resultMap type="com.jftt.wifi.bean.questionnaire.InvestigationVoBean" id="investigationVoMap">
+        <id property="id" column="id"/>
+        <result property="questionnaireId" column="questionnaire_id"/>
+        <result property="title" column="title"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="isPublic" column="is_public"/>
+        <result property="isPublished" column="is_published"/>
+        <result property="publishTime" column="publish_time"/>
+        <!--总人数  -->
+        <association property="totalNum" column="id"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.InvestigationAssignDaoMapper.getTotalNum"/>
+		<!--参与人数  -->
+		<association property="intendNum" column="id"
+		        javaType="String"
+			    select="com.jftt.wifi.dao.InvestigationAssignDaoMapper.getIntendNum"/>
+    </resultMap>
+    
+    <!--查询调查报告信息  -->
+    <select id="getInvestigation" resultMap="investigationMap">
+    	select 	id,questionnaire_id,title,aim,
+    			DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time,
+        		DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time,
+    			intend_type,is_public,is_published
+    	from investigation where id=#{id}
+    </select>
+    <!--调查报告的插入  -->
+    <insert id="addInvestigation" useGeneratedKeys="true" keyProperty="id">
+    	insert investigation(questionnaire_id,title,aim,begin_time,end_time,intend_type,
+    			is_public,is_published,create_time,publish_time,create_user_id,is_deleted,sub_company_id,company_id) 
+    	values(#{questionnaireId},#{title},#{aim},#{beginTime},#{endTime},#{intendType},
+    			#{isPublic},#{isPublished},now(),#{publishTime},#{createUserId},#{isDeleted},#{subCompanyId},#{companyId})
+    </insert>
+    
+    <!--删除调查报告  -->
+    <update id="deleteInvestigation">
+        update investigation set is_deleted = 1 where id = #{id}
+    </update>
+    
+    <!--发布调查报告  -->
+    <update id="publishInvestigation">
+        update investigation set is_published = 1,publish_time = now()
+        where id = #{id}
+    </update>
+    
+    <!--更新问卷  -->
+    <update id="modifyInvestigation">
+        update investigation
+        <set>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="questionnaireId != null">questionnaire_id = #{questionnaireId},</if>
+            <if test="aim != null and aim != ''">aim = #{aim},</if>
+            <if test="beginTime != null and beginTime != ''">begin_time = #{beginTime},</if>
+            <if test="endTime != null and endTime != ''">end_time = #{endTime},</if>
+            <if test="intendType != null">intend_type = #{intendType},</if>
+            <if test="isPublic != null">is_public = #{isPublic},</if>
+            <if test="isPublished != null">is_published = #{isPublished},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            <if test="createUserId != null">create_user_id = #{createUserId},</if>
+            <if test="isDeleted != null">is_deleted = #{isDeleted},</if>
+            <if test="subCompanyId != null">sub_company_id = #{subCompanyId},</if>
+            <if test="companyId != null">company_id = #{companyId},</if>
+        </set>
+        where id = #{id}
+    </update>
+    
+    <!--获取调查报告列表  -->
+    <select id="getVoList" resultMap="investigationMap">
+        select id,title,DATE_FORMAT(publish_time, '%Y-%m-%d %H:%i:%S') publish_time,
+        		DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time,
+        		DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time,
+    			intend_type,is_public,is_published
+        from investigation
+        <include refid="where_getVoList"></include>
+        order by update_time desc
+        <include refid="limitClause"></include>
+    </select>
+    
+     <!--获取结果统计列表  -->
+    <select id="getResultVoList" resultMap="investigationVoMap">
+        select id,title,DATE_FORMAT(publish_time, '%Y-%m-%d %H:%i:%S') publish_time,
+        		DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time,
+        		DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time,
+    			intend_type,is_public,is_published
+        from investigation
+        <include refid="where_getVoList"></include>
+        and is_published = 1
+        order by update_time desc
+        <include refid="limitClause"></include>
+    </select>
+    
+     <!--获取调查报告列表条数  -->
+    <select id="getTotalCount" resultType="int">
+        select count(1)
+        from investigation
+        <include refid="where_getVoList"></include>
+    </select>
+    
+    <!--获取结果统计列表条数  -->
+    <select id="getVoTotalCount" resultType="int">
+        select count(1)
+        from investigation
+        <include refid="where_getVoList"></include>
+        and is_published = 1
+    </select>
+    
+     <!--获取调查报告vo  -->
+    <select id="getResultVo" resultMap="investigationVoMap">
+        select id,title,aim,DATE_FORMAT(publish_time, '%Y-%m-%d %H:%i:%S') publish_time,
+        		DATE_FORMAT(begin_time, '%Y-%m-%d %H:%i') begin_time,
+        		DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') end_time,
+    			intend_type,is_public,is_published
+        from investigation
+        where id=#{id}
+    </select>
+    
+     <sql id="where_getVoList">
+        <where>
+           	<if test="title != null and title != ''">title like CONCAT('%', #{title}, '%')</if>
+            <if test="beginTime != null and beginTime != ''">and DATE_FORMAT(publish_time, '%Y-%m-%d %H:%i') &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and DATE_FORMAT(publish_time, '%Y-%m-%d %H:%i') &lt;= #{endTime}</if>
+           	<if test="isPeriod == 1">
+           		and ( (begin_time &lt; now() and end_time &gt; now() )
+           			or( begin_time &lt; now() and end_time is null)
+           		)
+           	</if>
+           	<if test="isPeriod == 2">
+           		and (begin_time &gt;= now() or end_time &lt;= now() )
+           	</if>
+            <!-- <if test="intendType != null">and intend_type = #{intendType}</if>
+            <if test="isPublic != null">is_public = #{isPublic}</if>
+            <if test="isPublished != null">is_published = #{isPublished}</if> -->
+            <if test="createUserId != null">and create_user_id = #{createUserId}</if>
+            <if test="subCompanyId != null">and sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null">and company_id = #{companyId}</if>
+            <if test="state == 1">
+           		and begin_time &gt; now()
+           	</if>
+           	<if test="state == 2">
+           		and ((begin_time &lt;= now() and end_time &gt;= now() )
+           			or(begin_time &lt;= now() and end_time is null)
+           		)
+           	</if>
+           	<if test="state == 3">
+           		and (end_time &lt;= now() and end_time is not null)
+           	</if>
+            and (is_deleted is null or is_deleted != 1)
+        </where>
+    </sql>
+    
+    <sql id="limitClause">
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </sql>
+    
+    <!--根据ID获取调查标题  -->
+    <select id="getInvestigationName" parameterType="int" resultType="String">
+    	select title from investigation
+        where id=#{id}
+    </select>
+    
+    <!--获取相同标题的数量  -->
+    <select id="getTitleCount" resultType="int">
+    	select count(1) from investigation
+    	<where>
+    		title = #{title}
+    		<if test="id != null and id != 0">and id != #{id}</if>
+    		<if test="subCompanyId != null">and sub_company_id = #{subCompanyId}</if>
+            <if test="companyId != null">and company_id = #{companyId}</if>
+    	</where>
+    </select>
+    
+</mapper>

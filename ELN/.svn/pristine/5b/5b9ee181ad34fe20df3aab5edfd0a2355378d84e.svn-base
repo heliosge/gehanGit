@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.CourseWareRecordDaoMapper">
+    
+    <resultMap type="com.jftt.wifi.bean.CourseWareRecordBean" id="CourseWareRecordBeanMap">
+        <id property="id" column="id"/>
+        <result property="recordId" column="record_id"/>
+        <result property="sectionId" column="section_id"/>
+        <result property="wareId" column="ware_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="companyId" column="company_id"/>
+        <result property="progressPercent" column="progress_percent"/>
+        <result property="wareType" column="ware_type"/>
+        <result property="courseId" column="course_id"/>
+        <result property="subCompanyId" column="sub_company_id"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="studyedContent" column="studyed_content"/>
+        <result property="totalContent" column="total_content"/>
+        <result property="startLearnTime" column="start_learn_time"/>
+        <result property="endLearnTime" column="end_learn_time"/>
+        <result property="totalDuration" column="total_duration"/>
+    </resultMap>
+    
+    <sql id="beanProperties">
+    	id,
+    	record_id,
+    	section_id,
+    	ware_id,
+    	user_id,
+    	company_id,
+    	progress_percent,
+    	ware_type,
+    	course_id,
+    	sub_company_id,
+    	update_time,
+    	studyed_content,
+    	total_content,
+    	start_learn_time,
+    	end_learn_time,
+    	total_duration
+    </sql>
+    
+    <sql id="beanProperties2">
+    	cwr.id,
+    	cwr.record_id,
+    	cwr.section_id,
+    	cwr.ware_id,
+    	cwr.user_id,
+    	cwr.company_id,
+    	cwr.progress_percent,
+    	cwr.ware_type,
+    	cwr.course_id,
+    	cwr.sub_company_id,
+    	cwr.update_time,
+    	cwr.studyed_content,
+    	cwr.total_content,
+    	cwr.start_learn_time,
+    	cwr.end_learn_time,
+    	cwr.total_duration
+    </sql>
+    
+    <!-- 根据id查询课件学习进度 -->
+    <select id="getById" parameterType="java.lang.Integer" resultMap="CourseWareRecordBeanMap">
+        select * from course_ware_record where id = #{id}
+    </select>
+    
+    <!-- shenhaijun start -->
+    
+    <!-- 根据条件查询课件记录id -->
+    <select id="getIdByConditions" resultType="java.lang.Integer">
+        select id 
+          from course_ware_record 
+          where section_id = #{sectionId} and ware_id = #{wareId} 
+            and user_id = #{userId} 
+    </select>
+    
+    <!-- 添加一条学习记录 -->
+    <insert id="addCourseWareRecordBean" parameterType="com.jftt.wifi.bean.CourseWareRecordBean">
+        insert into course_ware_record(record_id,section_id,ware_id,user_id,company_id,progress_percent,
+          ware_type,course_id,sub_company_id,update_time,start_learn_time,end_learn_time,total_duration) 
+        values(#{recordId},#{sectionId},#{wareId},#{userId},#{companyId},#{progressPercent},
+          #{wareType},#{courseId},#{subCompanyId},now(),#{startLearnTime},#{endLearnTime},#{totalDuration}) 
+    </insert>
+    
+    <!-- 更新一条学习记录 -->
+    <update id="updateCourseWareRecordBean" parameterType="com.jftt.wifi.bean.CourseWareRecordBean">
+        update course_ware_record 
+        <set>
+            <if test="recordId != null">
+                record_id = #{recordId},
+            </if>
+            <if test="sectionId != null">
+                section_id = #{sectionId},
+            </if>
+            <if test="wareId != null">
+                ware_id = #{wareId},
+            </if>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="companyId != null">
+                company_id = #{companyId},
+            </if>
+            <if test="progressPercent != null">
+                progress_percent = #{progressPercent},
+            </if>
+            <if test="wareType != null">
+                ware_type = #{wareType},
+            </if>
+            <if test="courseId != null">
+                course_id = #{courseId},
+            </if>
+            <if test="subCompanyId != null">
+            	sub_company_id = #{subCompanyId},
+            </if>
+            <if test="studyedContent != null">
+            	studyed_content = #{studyedContent},
+            </if>
+            <if test="totalContent != null">
+            	total_content = #{totalContent},
+            </if>
+            <if test="startLearnTime != null">
+            	start_learn_time = #{startLearnTime},
+            </if>
+            <if test="endLearnTime != null">
+            	end_learn_time = #{endLearnTime},
+            </if>
+            <if test="totalDuration != null">
+            	total_duration = #{totalDuration},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    
+    <!-- 根据课程学习记录id查询课件的学习记录 -->
+    <select id="getWareRecordsBycourseRecordId" parameterType="java.lang.Integer" resultMap="CourseWareRecordBeanMap">
+    	SELECT * FROM course_ware_record WHERE record_id = #{courseRecordId} 
+    </select>
+    
+    <!-- 根据条件查询课件学习记录 -->
+    <select id="getCourseWareByConditions" resultMap="CourseWareRecordBeanMap">
+    	SELECT * 
+    	  FROM course_ware_record 
+    	  WHERE section_id = #{sectionId} AND ware_id = #{courseWareId} AND user_id = #{userId} 
+    </select>
+    
+    <!-- 根据课程id和用户id查询所有课件记录 -->
+    <select id="getWareRecordsByCourseIdUserId" resultMap="CourseWareRecordBeanMap">
+    	SELECT <include refid="beanProperties2"/>  
+    	  FROM res_section rs LEFT JOIN res_section_courseware rsc ON rs.id = rsc.section_id 
+    	    LEFT JOIN (SELECT * FROM course_ware_record WHERE user_id = #{userId} AND course_id = #{courseId}) cwr ON rsc.courseware_id = cwr.ware_id 
+    	  WHERE rs.course_id = #{courseId} 
+    </select>
+    
+    <!-- 删除该学员的该课程的所有课件学习记录 -->
+    <delete id="deleteRecord">
+    	DELETE FROM course_ware_record 
+    	WHERE id IN (SELECT a.id FROM (SELECT cwr.id FROM course_ware_record cwr WHERE cwr.course_id = #{courseId} AND cwr.user_id = #{userId}) a)
+    </delete>
+    
+    <!-- 获取课程已学时长（时、分、秒依次存储） -->
+    <select id="getCourseStudyedDuration" resultType="java.lang.Long">
+    	SELECT cwr.total_duration 
+    	FROM course_ware_record cwr 
+    	WHERE cwr.user_id = #{userId} AND cwr.course_id = #{courseId} 
+    </select>
+    
+    <!-- 获取该课程所有课件学习进度 -->
+    <resultMap type="com.jftt.wifi.bean.vo.CourseWareProgressVo" id="CourseWareProgressVoMap">
+    	<id column="id" property="id"/>
+    	<result column="ware_id" property="wareId"/>
+    	<result column="progress_percent" property="progressPercent"/>
+    </resultMap>
+    
+    <select id="getStudyedPercents" resultMap="CourseWareProgressVoMap">
+    	SELECT cwr.id, cwr.ware_id, cwr.progress_percent 
+    	FROM course_ware_record cwr 
+    	WHERE cwr.user_id = #{userId} AND cwr.course_id = #{courseId} 
+    </select>
+    
+    <!-- shenhaijun end -->
+    
+</mapper>

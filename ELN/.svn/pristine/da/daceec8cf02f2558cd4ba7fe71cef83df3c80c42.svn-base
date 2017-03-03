@@ -1,0 +1,37 @@
+jdbc.driverClass=com.mysql.jdbc.Driver
+#jdbc.jdbcUrl = jdbc:mysql://10.167.14.227:3306/eln?useUnicode=true&characterEncoding=utf-8
+#jdbc.user = eln
+#jdbc.password = eln123456
+jdbc.jdbcUrl = jdbc:mysql://192.168.1.28:3306/anpeitest?useUnicode=true&characterEncoding=utf-8
+jdbc.user = root
+jdbc.password = 123456
+#jdbc.jdbcUrl = jdbc:mysql://172.16.163.53:8066/eln_test?useUnicode=true&characterEncoding=utf-8
+#jdbc.user = amoeba
+#jdbc.password = eln3205/*-
+jdbc.miniPoolSize = 1
+jdbc.maxPoolSize = 100
+jdbc.initialPoolSize = 1
+jdbc.maxIdleTime = 25000
+jdbc.acquireIncrement = 1
+jdbc.acquireRetryAttempts = 30
+jdbc.acquireRetryDelay = 1000
+jdbc.testConnectionOnCheckin = true
+jdbc.automaticTestTable = c3p0check
+jdbc.idleConnectionTestPeriod = 18000
+jdbc.checkoutTimeout=3000
+
+#mongo.host = 10.167.14.248
+#mongo.port = 27017
+#mongo.dbname = eln
+#mongo.username = eln
+#mongo.password = 123456
+
+mongo.host = 192.168.1.28
+#mongo.host = localhost
+mongo.port = 27017
+mongo.dbname = admin
+#mongo.dbname = eln_test
+mongo.username = eln
+mongo.password = 123456
+
+keyword = 2017YAKJ

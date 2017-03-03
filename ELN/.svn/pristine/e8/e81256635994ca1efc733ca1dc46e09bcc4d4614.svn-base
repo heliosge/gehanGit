@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jftt.wifi.dao.AskAnswerDaoMapper">
+	
+	<resultMap type="com.jftt.wifi.bean.ask.AskAnswerBean" id="AskAnswerBeanMap">
+		<id property="id" column="id"/>
+		<result property="questionId" column="question_id"/>
+		<result property="replyerType" column="replyer_type"/>
+		<result property="content" column="content"/>
+		<result property="platformResources" column="platform_resources"/>
+		<result property="localFiles" column="local_files"/>
+		<result property="isAnonymous" column="is_anonymous"/>
+		<result property="replyerId" column="replyer_id"/>
+		<result property="replyerName" column="replyer_name"/>
+		<result property="createTime" column="create_time"/>
+		<result property="isThematic" column="is_thematic"/>
+		<result property="isShield" column="is_shield"/>
+		<result property="isSatisfactory" column="is_satisfactory"/>
+		<result property="companyId" column="company_id"/>
+		<result property="subCompanyId" column="sub_company_id"/>
+		<result property="isDelete" column="is_delete"/>
+		<result property="resourceNames" column="resource_names"/>
+		<result property="fileNames" column="file_names"/>
+	</resultMap>
+	
+	<sql id="askAnswerAll">
+		aa.id, aa.question_id, aa.replyer_type, aa.content, aa.platform_resources, aa.local_files, 
+		aa.is_anonymous, aa.replyer_id, aa.replyer_name, DATE_FORMAT(aa.create_time,'%Y-%m-%d %H:%I:%S') create_time, aa.is_thematic, aa.is_shield, 
+		aa.is_satisfactory, aa.is_delete, aa.company_id, aa.sub_company_id   
+	</sql>
+	
+	<!-- 根据id获取问问回答 -->
+	<select id="getById" parameterType="java.lang.Integer" resultMap="AskAnswerBeanMap">
+		SELECT <include refid="askAnswerAll"/> 
+		  FROM ask_answer aa 
+		  WHERE aa.id = #{id} 
+	</select>
+	
+	<!-- 根据问题id查询所有回答 -->
+	<select id="getByQuestionId" parameterType="java.lang.Integer" resultMap="AskAnswerBeanMap">
+		SELECT <include refid="askAnswerAll"/> 
+		  FROM ask_answer aa 
+		WHERE aa.question_id = #{questionId} AND aa.is_thematic = 2 AND aa.is_delete = 2 
+	</select>
+	
+	<!-- 获取专题问答回答数量 -->
+	<select id="getAnswerCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT COUNT(aa.id) FROM ask_answer aa 
+		WHERE aa.question_id = #{thematicAskId} AND aa.is_thematic = 2 AND aa.is_shield = 2 AND aa.is_delete = 2
+	</select>
+	
+	<!-- 获取问题满意回答 -->
+	<select id="getSatisfactoryAnswer" resultMap="AskAnswerBeanMap">
+		SELECT <include refid="askAnswerAll"/> 
+		  FROM ask_answer aa 
+		WHERE aa.question_id = #{questionId} AND aa.is_satisfactory = 1 AND aa.is_delete = 2
+	</select>
+	
+	<!-- 获取其他问答 -->
+	<select id="getOtherAnswers" resultMap="AskAnswerBeanMap">
+		SELECT <include refid="askAnswerAll"/> 
+		  FROM ask_answer aa 
+		WHERE aa.question_id = #{questionId} AND aa.is_satisfactory = 2 AND aa.is_shield = 2 AND aa.is_delete = 2
+	</select>
+	
+	<!-- 获取该问答的所有回答 -->
+	<select id="getAllAnswers" resultMap="AskAnswerBeanMap">
+		SELECT <include refid="askAnswerAll"/> 
+		  FROM ask_answer aa 
+		WHERE aa.question_id = #{questionId} AND aa.is_delete = 2 
+		ORDER BY aa.satisfact_time DESC, aa.create_time DESC 
+	</select>
+	
+	<!-- 屏蔽回答 -->
+	<update id="shielAnswer" parameterType="java.lang.Integer">
+		UPDATE ask_answer 
+		SET is_shield = 1 
+		WHERE id = #{id} 
+	</update>
+	
+	<!-- 解除屏蔽回答 -->
+	<update id="showAnswer" parameterType="java.lang.Integer">
+		UPDATE ask_answer 
+		SET is_shield = 2 
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 采为满意答案 -->
+	<update id="setSatisfactoryAnswer" parameterType="java.lang.Integer">
+		UPDATE ask_answer 
+		SET is_satisfactory = 1, satisfact_time = now()  
+		WHERE id = #{id} 
+	</update>
+	
+	<!-- 获取回答数量 -->
+	<select id="getAnswerCountByReplyerId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		SELECT COUNT(aa.id) 
+		FROM ask_answer aa 
+		WHERE aa.replyer_id = #{replyerId} AND aa.is_thematic = 1 AND aa.is_delete = 2 
+	</select>
+	
+	<!--zhangchen add  -->
+	<!-- 获取问答回答数量 -->
+	<select id="getAskAnswerCount" resultType="java.lang.Integer">
+		SELECT COUNT(1) FROM ask_answer
+		<include refid="where_condition"></include>
+		and is_shield = 2 and is_delete = 2
+	</select>
+	
+	<!-- 获取问问回答列表 -->
+	<select id="getAskAnswerList" resultMap="AskAnswerBeanMap">
+		SELECT id,question_id,replyer_type,content,replyer_id,replyer_name,is_satisfactory,
+				DATE_FORMAT(create_time,'%Y-%m-%d %H:%I:%S') create_time,is_anonymous,
+				platform_resources,resource_names,local_files,file_names,is_shield 
+		FROM ask_answer
+		<include refid="where_condition"></include>
+		and is_shield = 2 and is_delete = 2 
+		ORDER BY satisfact_time DESC, create_time DESC 
+	</select>
+	
+	<!-- 获取问问回答列表 （包含已屏蔽） -->
+	<select id="getAnswerListIncludeShield" resultMap="AskAnswerBeanMap">
+		SELECT id,question_id,replyer_type,content,replyer_id,replyer_name,is_satisfactory,
+				DATE_FORMAT(create_time,'%Y-%m-%d %H:%I:%S') create_time,is_anonymous,
+				platform_resources,resource_names,local_files,file_names,is_shield 
+		FROM ask_answer
+		<include refid="where_condition"></include>
+		and is_delete = 2 
+		ORDER BY satisfact_time DESC, create_time DESC 
+	</select>
+	
+	 <sql id="where_condition">
+	 	<where>
+			<if test="questionId != null">
+               question_id = #{questionId}
+            </if>
+			<if test="isThematic != null">
+               and is_thematic = #{isThematic}
+            </if>
+            <if test="replyerType != null">
+                and replyer_type = #{replyerType}
+            </if>
+            <if test="isSatisfactory != null">
+                and is_satisfactory = #{isSatisfactory}
+            </if>
+            <if test="replyerId != null">
+                and replyer_id = #{replyerId}
+            </if>
+		</where>
+	 </sql>
+	
+	<!--插入回答内容  -->
+	<insert id="add">
+		insert ask_answer(question_id,replyer_type,content,platform_resources,local_files,is_anonymous,
+    			replyer_id,replyer_name,create_time,is_thematic,is_shield,is_satisfactory,is_delete,company_id,sub_company_id,
+    			satisfact_time,resource_names,file_names) 
+    	values(#{questionId},#{replyerType},#{content},#{platformResources},#{localFiles},#{isAnonymous},
+    			#{replyerId},#{replyerName},now(),#{isThematic},#{isShield},#{isSatisfactory},#{isDelete},#{companyId},#{subCompanyId},
+    			#{satisfactTime},#{resourceNames},#{fileNames})
+	</insert>
+	
+	<!--删除问题的回答  -->
+	<delete id="deleteAnswer" parameterType="int">
+		delete from ask_answer where question_id = #{questionId}
+	</delete>
+	
+	<!--zhangchen end  -->
+	
+</mapper>
