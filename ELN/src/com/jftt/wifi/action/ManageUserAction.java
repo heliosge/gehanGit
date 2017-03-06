@@ -30,6 +30,7 @@ import net.sf.json.JSONObject;
 import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -768,7 +769,7 @@ public class ManageUserAction {
 	 */
 	@RequestMapping(value="updatePulianUser")
 	@ResponseBody
-	public String updatePulianUser(HttpServletRequest request, ManageUserBean manageUserBean){
+	public String updatePulianUser(HttpServletRequest request, @RequestBody ManageUserBean manageUserBean){
 		
 		try {
 			//获取部门的信息

@@ -1,4 +1,4 @@
-package com.jftt.wifi.action_new;
+package com.jftt.wifi.clientAction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,8 +25,8 @@ import com.jftt.wifi.service.ManageUserService;
 
 @Controller
 @RequestMapping(value = "node")
-public class PcNodeAction {
-	private static Logger log = Logger.getLogger(LoginNewAction.class);
+public class ClientCommonAction {
+	private static Logger log = Logger.getLogger(ClientLoginAction.class);
 
 	@Resource(name = "manageCompanyService")
 	private ManageCompanyService manageCompanyService;
@@ -74,7 +74,7 @@ public class PcNodeAction {
 				// 根据部门Id与公司Id查出该部门是否是子公司并查出子公司Id
 				departmentMap.put("id", dept_id.toString());// TODO
 				departmentMap.put("companyId", companyId.toString());
-				List<ManageDepartmentBean> deptList0 = manageDepartmentService.getManageDepartmentByMap2(departmentMap);
+				List<ManageDepartmentBean> deptList0 = manageDepartmentService.getManageDepartmentByMap(departmentMap);
 				if (deptList0 != null && deptList0.size() > 0) {
 					isSubCompany = deptList0.get(0).getIsSubCompany();// 是否是子公司
 					subCompanyId = deptList0.get(0).getSubCompanyId();// 子公司Id
@@ -90,7 +90,7 @@ public class PcNodeAction {
 				departmentMap.put("companyId", companyId.toString());
 			}
 		}
-		List<ManageDepartmentBean> deptList1 = manageDepartmentService.getManageDepartmentByMap2(departmentMap);
+		List<ManageDepartmentBean> deptList1 = manageDepartmentService.getManageDepartmentByMap(departmentMap);
 		log.debug("deptList:" + deptList1.size() + "||" + deptList1.toString());
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		return deptList1;
@@ -125,7 +125,6 @@ public class PcNodeAction {
 			usermap.put("deptName", userList.get(i).getDeptName() == null ? "" : userList.get(i).getDeptName());
 			usermap.put("postName", userList.get(i).getPostName() == null ? "" : userList.get(i).getPostName());
 			listmap.add(usermap);
-			
 		}
 		
 		return listmap;

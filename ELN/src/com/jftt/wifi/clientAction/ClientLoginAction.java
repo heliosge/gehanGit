@@ -1,4 +1,4 @@
-package com.jftt.wifi.actionClient;
+package com.jftt.wifi.clientAction;
 
 import java.util.Date;
 import java.util.HashMap;
