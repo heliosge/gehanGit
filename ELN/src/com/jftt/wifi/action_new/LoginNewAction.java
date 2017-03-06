@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.jftt.wifi.bean.ManageCompanyBean;
@@ -71,22 +72,16 @@ public class LoginNewAction {
 	 */
 	@RequestMapping(value = "pclogin")
 	@ResponseBody
-	public Object login(HttpServletRequest request, HttpServletResponse response, String userName, String passWord) {
-		Map<String,Object> resultMap = new HashMap<String,Object>();
+	public Object login(HttpServletRequest request, HttpServletResponse response,@RequestParam(required=true) String userName, @RequestParam(required=true)String passWord,
+			@RequestParam(required=true)String domain) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
 		try {
-			log.debug("系统登陆 参数信息 UserName: " + userName + "PassWord: " + passWord);
+			log.debug("系统登陆 参数信息 UserName: " + userName + "PassWord: " + passWord + "domain:" + domain);
 			// TODO:修改companyId
 			// 默认普联企业id
 			Integer companyId = Constant.PULIAN_COMPANY_ID;
 			// Integer companyId = null;
 			ManageCompanyBean company = new ManageCompanyBean();
-			// 获取用户登录域名
-			String url = request.getHeader("Host");// TODO
-			log.debug("url: "+url);
-			// System.out.println("url:"+url);
-			// StringBuffer url= request.getRequestURL();
-			String domain = url.split(Constant.PULIAN_SITE)[0].replace(Constant.HTTP, "");// TODO
-			log.debug("domain: "+domain);
 			// 根据域名获取该用户的公司
 			ManageCompanyVo vo = new ManageCompanyVo();
 			vo.setDomain(domain);// TODO

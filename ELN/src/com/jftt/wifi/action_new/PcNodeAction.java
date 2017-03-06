@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.jftt.wifi.bean.ManageCompanyBean;
@@ -44,7 +45,7 @@ public class PcNodeAction {
 	@RequestMapping(value = "nodetree")
 	@ResponseBody
 	public List<ManageDepartmentBean> getNodeTree(HttpServletRequest request, HttpServletResponse response,
-			String userName, String domain) throws Exception {
+			@RequestParam(required=true)String userName,@RequestParam(required=true) String domain) throws Exception {
 		log.debug("userName:" + userName + "  " + "domain:" + domain);
 		Integer companyId = null;
 		Integer dept_id = null;
@@ -87,16 +88,15 @@ public class PcNodeAction {
 						departmentMap.put("subCompanyId", subCompanyId.toString());
 					}
 				}
-			}else {//如果部门Id为空，查总公司组织机构
+			} else {// 如果部门Id为空，查总公司组织机构
 				departmentMap.put("companyId", companyId.toString());
 			}
 		}
 		List<ManageDepartmentBean> deptList1 = manageDepartmentService.getManageDepartmentByMap2(departmentMap);
 		log.debug("deptList:" + deptList1.size() + "||" + deptList1.toString());
+		response.addHeader("Access-Control-Allow-Origin", "*");
 		return deptList1;
 
-		
-		
 	}
 
 	/**
@@ -251,7 +251,6 @@ public class PcNodeAction {
 		}
 		return listuser;
 
-		
 	}
 
 }
