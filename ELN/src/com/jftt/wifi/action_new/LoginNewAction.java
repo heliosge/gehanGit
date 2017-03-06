@@ -30,6 +30,8 @@ import com.jftt.wifi.service.ManageUserService;
 import com.jftt.wifi.util.CommonUtil;
 import com.jftt.wifi.util.TimeUtil;
 
+import net.sf.json.JSONObject;
+
 /**
  * class name:LoginAction <BR>
  * class description: 处理登录页面 <BR>
@@ -43,6 +45,10 @@ import com.jftt.wifi.util.TimeUtil;
 public class LoginNewAction {
 
 	private static Logger log = Logger.getLogger(LoginNewAction.class);
+	
+	private String jsonpcall = "jsonpCallback({msg:"+"'";
+	
+	private String jsonpcallEnding = "'"+"})";
 
 	@Resource(name = "manageUserService")
 	private ManageUserService manageUserService;
@@ -74,7 +80,6 @@ public class LoginNewAction {
 	@ResponseBody
 	public Object login(HttpServletRequest request, HttpServletResponse response,@RequestParam(required=true) String userName, @RequestParam(required=true)String passWord,
 			@RequestParam(required=true)String domain) {
-		Map<String, Object> resultMap = new HashMap<String, Object>();
 		try {
 			log.debug("系统登陆 参数信息 UserName: " + userName + "PassWord: " + passWord + "domain:" + domain);
 			// TODO:修改companyId
@@ -94,24 +99,18 @@ public class LoginNewAction {
 				if (companyId > Constant.PULIAN_COMPANY_ID) {
 					// 判断公司账号过期时间
 					if (new Date().getTime() > TimeUtil.parseString2Date(company.getEndTime()).getTime()) {
-						resultMap.put("result", "OVER_DATE");
-						resultMap.put("msg", "该企业租用时间已经过期");
-						return resultMap;
+						return jsonpcall+"该企业租用时间已经过期"+jsonpcallEnding;
 					}
 					// 判断该企业是否冻结
 					if (!"1".equals(company.getStatus().toString())) {
-						resultMap.put("result", "COMPANY_STATUS_FREEZE");
-						resultMap.put("msg", "该企业已经被冻结");
-						return resultMap;
+						return jsonpcall+"该企业已经被冻结"+jsonpcallEnding;
 					}
 					// 判断该企业当前在线用户是否大于最大并发用户
 					Map<String, Object> param = new HashMap<String, Object>();
 					param.put("companyId", companyId);
 					int currentUser = loginHisService.selectUserCountByMap(param);
 					if (currentUser >= company.getMaxConcurrent()) {
-						resultMap.put("result", "OVER_MAXCONCURRENT");
-						resultMap.put("msg", "该企业当前在线用户大于最大并发用户");
-						return resultMap;
+						return jsonpcall+"该企业当前在线用户大于最大并发用"+jsonpcallEnding;
 					}
 				}
 			}
@@ -124,9 +123,7 @@ public class LoginNewAction {
 				if (CommonUtil.getMD5(passWord).equalsIgnoreCase(userBean.getPassword())) {
 
 					if (!"1".equals(userBean.getStatus().toString())) {
-						resultMap.put("result", "STATUS_FREEZE");
-						resultMap.put("msg", "该企业已经被冻结");
-						return resultMap;
+						return jsonpcall+"该企业已经被冻结"+jsonpcallEnding;
 					}
 
 					// 设置Session
@@ -142,16 +139,11 @@ public class LoginNewAction {
 					// 积累积分
 					integralManageService.handleIntegral(Integer.parseInt(userBean.getId()), 7009);
 					// 初始化课件查询参数
-					String VideoLimitMinute = baseMetaDaoMapper.getValueByKey("VideoLimitMinute");
-					String TestLimitMinute = baseMetaDaoMapper.getValueByKey("TestLimitMinute");
-					String ScormLimitMinute = baseMetaDaoMapper.getValueByKey("ScormLimitMinute");
-					String LimitPage = baseMetaDaoMapper.getValueByKey("LimitPage");
-					String PdfTimeInterval = baseMetaDaoMapper.getValueByKey("PdfTimeInterval");
-					log.debug("当前视频课件预览最大分钟=>" + VideoLimitMinute);
-					log.debug("测试课件预览最大分钟=>" + TestLimitMinute);
-					log.debug("Scorm课件预览最大分钟=>" + ScormLimitMinute);
-					log.debug("flexpaper预览最大页码=>" + LimitPage);
-					log.debug("pdf课件翻页间隔时间=>" + PdfTimeInterval);
+					String VideoLimitMinute = baseMetaDaoMapper.getValueByKey("VideoLimitMinute");//当前视频课件预览最大分钟
+					String TestLimitMinute = baseMetaDaoMapper.getValueByKey("TestLimitMinute");//测试课件预览最大分钟
+					String ScormLimitMinute = baseMetaDaoMapper.getValueByKey("ScormLimitMinute");//Scorm课件预览最大分钟
+					String LimitPage = baseMetaDaoMapper.getValueByKey("LimitPage");//flexpaper预览最大页码
+					String PdfTimeInterval = baseMetaDaoMapper.getValueByKey("PdfTimeInterval");//pdf课件翻页间隔时间
 					if (VideoLimitMinute != null && !VideoLimitMinute.isEmpty()) {
 						session.setAttribute("VideoLimitMinute", Integer.parseInt(VideoLimitMinute));
 					}
@@ -167,31 +159,22 @@ public class LoginNewAction {
 					if (PdfTimeInterval != null && !PdfTimeInterval.isEmpty()) {
 						session.setAttribute("PdfTimeInterval", Integer.parseInt(PdfTimeInterval));
 					}
-					resultMap.put("result", "OK");
-					resultMap.put("msg", "登录成功");
-					return resultMap;
-
+					return jsonpcall+"登录成功"+jsonpcallEnding;
 				} else {
 
 					log.debug(userName + " 密码错误");
-					resultMap.put("result", "PASSWORD_ERROR");
-					resultMap.put("msg", "密码错误");
-					return resultMap;
+					return jsonpcall+"密码错误"+jsonpcallEnding;
 				}
 
 			} else {
 
 				log.debug(userName + " 不存在");
-				resultMap.put("result", "NO_EXIST");
-				resultMap.put("msg", "用户不存在");
-				return resultMap;
+				return jsonpcall+"用户不存在"+jsonpcallEnding;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error(e, e);
-			resultMap.put("result", "ERROR");
-			resultMap.put("msg", "其他错误");
-			return resultMap;
+			return jsonpcall+"其他错误"+jsonpcallEnding;
 		}
 	}
 

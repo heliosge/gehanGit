@@ -104,8 +104,8 @@ public class PcNodeAction {
 	 */
 	@RequestMapping(value = "userList")
 	@ResponseBody
-	public List<ManageUserBean> getUserInformation(HttpServletRequest request, HttpServletResponse response,
-			Integer companyId, Integer subCompanyId, Integer deptId) throws Exception {
+	public List<Map<String, Object>> getUserInformation(HttpServletRequest request, HttpServletResponse response,
+		@RequestParam(required=true) Integer companyId, Integer subCompanyId, Integer deptId) throws Exception {
 		log.debug("companyId:" + companyId + "  " + "subCompanyId:" + subCompanyId + "  " + "deptId:" + deptId);
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("companyId", companyId);
@@ -114,140 +114,21 @@ public class PcNodeAction {
 		log.debug("map:" + map.toString());
 		List<ManageUserBean> userList = manageUserService.findUserByCondition(map);
 		log.debug("userList:" + userList.size() + " " + userList.toString());
-		List<ManageUserBean> listuser = new ArrayList<ManageUserBean>();
+		List<Map<String, Object>> listmap = new ArrayList<Map<String,Object>>();
+		
 		for (int i = 0; i < userList.size(); i++) {
-			ManageUserBean user = new ManageUserBean();
-			user.setUserName(userList.get(i).getUserName() == null ? "" : userList.get(i).getUserName());
-			user.setName(userList.get(i).getName() == null ? "" : userList.get(i).getName());
-			user.setIdCard(userList.get(i).getIdCard());
-			user.setSex(userList.get(i).getSex());
-			user.setDeptName(userList.get(i).getDeptName() == null ? "" : userList.get(i).getDeptName());
-			user.setPostName(userList.get(i).getPostName() == null ? "" : userList.get(i).getPostName());
-			user.setAddress("");
-			user.setBirthDay("");
-			user.setCompanyName("");
-			user.setCreateTime("");
-			user.setEmail("");
-			user.setGraduateCollege("");
-			user.setWorkYear("");
-			user.setWorkNo("");
-			user.setWechartNo("");
-			user.setSubCompanyName("");
-			user.setQqNo("");
-			user.setPhoto("");
-			user.setPassword("");
-			user.setMobile("");
-			user.setMajor("");
-			user.setJoinWorkTime("");
-			user.setIsEdit("");
-			user.setId("");
-			user.setHighEducation("");
-			user.setHeadPhoto("");
-			user.setGraduateCollege("");
-			user.setField1("");
-			user.setField2("");
-			user.setField3("");
-			user.setField4("");
-			user.setField5("");
-			user.setField6("");
-			user.setField7("");
-			user.setField8("");
-			user.setField9("");
-			user.setField10("");
-			user.setField11("");
-			user.setField12("");
-			user.setField13("");
-			user.setField14("");
-			user.setField15("");
-			user.setField16("");
-			user.setField17("");
-			user.setField18("");
-			user.setField19("");
-			user.setField20("");
-			user.setField21("");
-			user.setField22("");
-			user.setField23("");
-			user.setField24("");
-			user.setField25("");
-			user.setField26("");
-			user.setField27("");
-			user.setField28("");
-			user.setField29("");
-			user.setField30("");
-			user.setField31("");
-			user.setField32("");
-			user.setField33("");
-			user.setField34("");
-			user.setField35("");
-			user.setField36("");
-			user.setField37("");
-			user.setField38("");
-			user.setField39("");
-			user.setField40("");
-			user.setField41("");
-			user.setField42("");
-			user.setField43("");
-			user.setField44("");
-			user.setField45("");
-			user.setField46("");
-			user.setField47("");
-			user.setField48("");
-			user.setField49("");
-			user.setField50("");
-			user.setField51("");
-			user.setField52("");
-			user.setField53("");
-			user.setField54("");
-			user.setField55("");
-			user.setField56("");
-			user.setField57("");
-			user.setField58("");
-			user.setField59("");
-			user.setField60("");
-			user.setField61("");
-			user.setField62("");
-			user.setField63("");
-			user.setField64("");
-			user.setField65("");
-			user.setField66("");
-			user.setField67("");
-			user.setField68("");
-			user.setField69("");
-			user.setField70("");
-			user.setField71("");
-			user.setField72("");
-			user.setField73("");
-			user.setField74("");
-			user.setField75("");
-			user.setField76("");
-			user.setField77("");
-			user.setField78("");
-			user.setField79("");
-			user.setField80("");
-			user.setField81("");
-			user.setField82("");
-			user.setField83("");
-			user.setField84("");
-			user.setField85("");
-			user.setField86("");
-			user.setField87("");
-			user.setField88("");
-			user.setField89("");
-			user.setField90("");
-			user.setField91("");
-			user.setField92("");
-			user.setField93("");
-			user.setField94("");
-			user.setField95("");
-			user.setField96("");
-			user.setField97("");
-			user.setField98("");
-			user.setField99("");
-			user.setField100("");
-
-			listuser.add(user);
+			Map<String, Object> usermap = new HashMap<String, Object>();
+			usermap.put("userName", userList.get(i).getUserName() == null ? "" : userList.get(i).getUserName());
+			usermap.put("name", userList.get(i).getName() == null ? "" : userList.get(i).getName());
+			usermap.put("idCard", userList.get(i).getIdCard());
+			usermap.put("sex", userList.get(i).getSex());
+			usermap.put("deptName", userList.get(i).getDeptName() == null ? "" : userList.get(i).getDeptName());
+			usermap.put("postName", userList.get(i).getPostName() == null ? "" : userList.get(i).getPostName());
+			listmap.add(usermap);
+			
 		}
-		return listuser;
+		
+		return listmap;
 
 	}
 
