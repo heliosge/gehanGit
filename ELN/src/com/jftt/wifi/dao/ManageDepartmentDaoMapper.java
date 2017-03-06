@@ -26,11 +26,6 @@ public interface ManageDepartmentDaoMapper {
 	 * 根据条件获得部门
 	 */
 	public List<ManageDepartmentBean> getManageDepartmentByMap(Map<String, String> map);
-	/**
-	 * 根据条件获得部门
-	 * null值转换，PC端调用
-	 */
-	public List<ManageDepartmentBean> getManageDepartmentByMap2(Map<String, String> map);
 	
 	/**
 	 * 新增部门
