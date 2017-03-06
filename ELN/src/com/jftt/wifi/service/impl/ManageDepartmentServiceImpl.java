@@ -83,10 +83,6 @@ public class ManageDepartmentServiceImpl implements ManageDepartmentService{
 		return manageDepartmentDaoMapper.getManageDepartmentCountByMap(map);
 	}
 
-	@Override
-	public List<ManageDepartmentBean> getManageDepartmentByMap2(Map<String, String> map) throws Exception {
-		return manageDepartmentDaoMapper.getManageDepartmentByMap2(map);
-	}
 
 	@Override
 	public void setDeptToSubCom(ManageDepartmentBean departmentBean)
