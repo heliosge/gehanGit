@@ -30,11 +30,6 @@ public interface ManageDepartmentService {
 	public List<ManageDepartmentBean> getManageDepartmentByMap(Map<String, String> map) throws Exception;
 	
 	/**
-	 * 根据条件获得部门信息
-	 * null值转换，PC端调用
-	 */
-	public List<ManageDepartmentBean> getManageDepartmentByMap2(Map<String, String> map) throws Exception;
-	/**
 	 * 新增部门信息
 	 */
 	public void addManageDepartment(ManageDepartmentBean departmentBean) throws Exception;
