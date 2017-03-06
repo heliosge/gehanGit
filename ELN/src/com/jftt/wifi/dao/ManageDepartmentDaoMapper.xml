@@ -80,17 +80,6 @@
 		order by is_sub_company desc,order_ asc, id asc
 	</select>
 
-	<!-- 根据条件获得用户 -->
-	<select id="getManageDepartmentByMap2" resultMap="ManageDepartmentBean"
-		parameterType="java.util.HashMap">
-		select
-		id,code,name,parent_id,company_id,descr,is_sub_company,sub_company_id,order_
-		from
-		manage_department
-		<include refid="manageDepartmentMap" />
-		order by is_sub_company desc,order_ asc, id asc
-	</select>
-
 	<!-- 新增部门 -->
 	<insert id="addManageDepartment" parameterType="com.jftt.wifi.bean.ManageDepartmentBean"
 		useGeneratedKeys="true" keyProperty="id">
