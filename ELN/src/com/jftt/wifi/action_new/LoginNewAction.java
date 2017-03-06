@@ -115,7 +115,7 @@ public class LoginNewAction {
 					}
 				}
 			}
-			// 根据域名、登陆账号获取该用户
+			// 根据公司Id、登陆账号获取该用户
 			ManageUserBean userBean = manageUserService.findUserByUserName(userName.trim(), companyId);
 			log.debug("userBean:" + "\n" + userBean);
 			if (null != userBean) {

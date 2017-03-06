@@ -49,7 +49,6 @@ public class PcNodeAction {
 		log.debug("userName:" + userName + "  " + "domain:" + domain);
 		Integer companyId = null;
 		Integer dept_id = null;
-		String companyName = null;
 		Integer isSubCompany = null;
 		Integer subCompanyId = null;
 		// 根据域名查询公司信息
@@ -61,9 +60,8 @@ public class PcNodeAction {
 		if (comList != null && comList.size() > 0) {
 			company = comList.get(0);
 			companyId = company.getId();// 企业Id
-			companyName = company.getName();// 企业名称
 		}
-		log.debug("companyId/companyName:" + companyId + "||" + companyName);
+		log.debug("companyId/companyName:" + companyId + "||" + company.getName());
 		// 根据companyId与userName获得岗位id
 		ManageUserBean userBean = manageUserService.findUserByUserName(userName.trim(), companyId);
 		log.debug("userBean:" + "||" + userBean.toString());
